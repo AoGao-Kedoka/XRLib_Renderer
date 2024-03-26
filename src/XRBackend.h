@@ -5,18 +5,18 @@
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
 
-
-#include <string>
 #include <iostream>
+#include <string>
 
 #include "Info.h"
 #include "Logger.h"
 
 class XRBackend {
-public:
+   public:
     XRBackend(Info info);
     ~XRBackend();
-private:
+
+   private:
     Info info;
 
     XrInstance xrInstance;
@@ -26,14 +26,11 @@ private:
     XrSystemId xrSystemID;
     void GetSystemID();
 
-    
-    std::vector<const char *> activeAPILayers = {};
-    std::vector<const char *> activeInstanceExtensions = {};
+    std::vector<const char*> activeAPILayers = {};
+    std::vector<const char*> activeInstanceExtensions = {};
     std::vector<std::string> apiLayers = {};
-    std::vector<std::string> instanceExtensions = { XR_KHR_VULKAN_ENABLE_EXTENSION_NAME };
+    std::vector<std::string> instanceExtensions = {
+        XR_KHR_VULKAN_ENABLE_EXTENSION_NAME};
 
     XrDebugUtilsMessengerEXT debugUtilsMessenger;
-
-    
 };
-
