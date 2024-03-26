@@ -1,5 +1,8 @@
-#pragma once
+/*
+* Author: Ao Gao
+*/
 
+#pragma once
 #include <chrono>
 #include <iostream>
 #include <sstream>
@@ -18,9 +21,21 @@ public:
     };
 
     LOGGER(LOG_LEVEL level)
-        : _outfile(_logger_file_path, std::ios_base::app), _log_level(level) {}
+        : _outfile(_logger_file_path, std::ios_base::app), _log_level(level) {
+        if (_log_level >= _program_log_level) {
+            _outfile << "[" << get_current_time() << "] ["
+                << convert_log_level(_log_level) << "] ["
+                << std::source_location::current().function_name()
+                << "]: ";
+            std::cout << "[" << get_current_time() << "] ["
+                << convert_log_level(_log_level) << "] ["
+                << std::source_location::current().function_name()
+                << "]: ";
+        }
+    }
 
     ~LOGGER() {
+        std::cout << '\n';
         _outfile << '\n';
         _outfile.close();
     }
@@ -38,15 +53,8 @@ public:
     template <class T>
     LOGGER& operator<<(const T& thing) {
         if (_log_level >= _program_log_level) {
-            _outfile << "[" << get_current_time() << "] ["
-                << convert_log_level(_log_level) <<  "] ["
-                << std::source_location::current().function_name()
-                << "]: " << thing;
-            std::cout << "[" << get_current_time() << "] ["
-                << convert_log_level(_log_level) << "] ["
-                << std::source_location::current().function_name()
-                << "]: " << thing
-                << std::endl;
+            _outfile << thing;
+            std::cout << thing;
         }
         return *this;
     }
