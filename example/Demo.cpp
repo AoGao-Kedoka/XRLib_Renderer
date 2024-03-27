@@ -3,10 +3,11 @@
 int main() {
     XRLib xrLib;
 
-    xrLib.SetVersionNumber(1)
-        .SetApplicationName("Demo Application")
-        .EnableValidationLayer();
+    auto [xr, renderer] = xrLib.SetVersionNumber(1)
+                              .SetApplicationName("Demo Application")
+                              .EnableValidationLayer()
+                              .InitRenderBackend()
+                              .InitXRBackend()
+                              .GetBackend();
 
-    XRBackend xr = xrLib.InitXRBackend();
-    RenderBackend renderer = xrLib.InitRenderBackend();
 }

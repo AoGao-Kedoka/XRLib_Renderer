@@ -1,14 +1,33 @@
 #include "XRBackend.h"
 
-XRBackend::XRBackend(Info info) {
-    this->info = info;
+XRBackend::XRBackend(Info& info, std::shared_ptr<RenderBackend> renderBackend)
+    : info{&info}, renderBackend{std::move(renderBackend)} {
     CreateXrInstance();
     GetSystemID();
+    LogOpenXRRuntimeProperties();
 }
 
-XRBackend::~XRBackend() {}
+XRBackend::~XRBackend() {
+    Cleanup();
+}
+
+void XRBackend::Cleanup() const {
+
+    if (xrInstance != XR_NULL_HANDLE) {
+        xrDestroyInstance(xrInstance);
+    }
+
+    if (xrSession != XR_NULL_HANDLE) {
+        xrDestroySession(xrSession);
+    }
+}
 
 void XRBackend::CreateXrInstance() {
+
+    if (info->validationLayer) {
+        activeInstanceExtensions.push_back(XR_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    }
+
     uint32_t apiLayerCount = 0;
     std::vector<XrApiLayerProperties> apiLayerProperties;
     if ((xrEnumerateApiLayerProperties(0, &apiLayerCount, nullptr) !=
@@ -70,11 +89,11 @@ void XRBackend::CreateXrInstance() {
     instanceCreateInfo.type = XR_TYPE_INSTANCE_CREATE_INFO;
     instanceCreateInfo.createFlags = 0;
     strcpy(instanceCreateInfo.applicationInfo.applicationName,
-           info.applicationName.c_str());
-    instanceCreateInfo.applicationInfo.applicationVersion = info.version;
+           info->applicationName.c_str());
+    instanceCreateInfo.applicationInfo.applicationVersion = info->version;
     strcpy(instanceCreateInfo.applicationInfo.engineName,
-           info.applicationName.c_str());
-    instanceCreateInfo.applicationInfo.engineVersion = info.version;
+           info->applicationName.c_str());
+    instanceCreateInfo.applicationInfo.engineVersion = info->version;
     instanceCreateInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
     instanceCreateInfo.enabledApiLayerCount =
         static_cast<uint32_t>(activeAPILayers.size());
@@ -89,16 +108,8 @@ void XRBackend::CreateXrInstance() {
         LOGGER(LOGGER::ERR) << "Failed to create XR instance";
         exit(-1);
     }
-
-    XrInstanceProperties instanceProperties{XR_TYPE_INSTANCE_PROPERTIES};
-    xrGetInstanceProperties(xrInstance, &instanceProperties);
-    LOGGER(LOGGER::INFO) << "Using XR Runtime: "
-                         << instanceProperties.runtimeName;
 }
 
-void XRBackend::DeleteXRInstance() {
-    xrDestroyInstance(xrInstance);
-}
 
 void XRBackend::GetSystemID() {
     XrSystemGetInfo systemGetInfo{};
@@ -109,4 +120,39 @@ void XRBackend::GetSystemID() {
         LOGGER(LOGGER::ERR) << "Failed to get system id, HMD may not connected";
         exit(-1);
     }
+}
+
+void XRBackend::CreateXrSession() {
+    XrGraphicsBindingVulkanKHR graphicsBinding;
+    graphicsBinding.type = XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR;
+    graphicsBinding.instance = renderBackend->GetRenderInstance();
+    graphicsBinding.device = renderBackend->GetRenderDevice();
+    graphicsBinding.queueFamilyIndex = renderBackend->GetQueueFamilyIndex();
+    graphicsBinding.physicalDevice = renderBackend->GetRenderPhysicalDevice();
+    graphicsBinding.queueIndex = 0;
+    
+    XrSessionCreateInfo sessionCreateInfo{};
+    sessionCreateInfo.createFlags = XR_TYPE_SESSION_CREATE_INFO;
+    sessionCreateInfo.systemId = xrSystemID;
+    sessionCreateInfo.next = &graphicsBinding;
+    if (xrCreateSession(xrInstance, &sessionCreateInfo, &xrSession) !=
+        XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to create session";
+        exit(-1);
+    }
+}
+
+void XRBackend::LogOpenXRRuntimeProperties() const {
+
+    if (xrInstance == XR_NULL_HANDLE) {
+        LOGGER(LOGGER::ERR) << "XR Instance is null";
+    }
+
+    XrInstanceProperties instanceProperties{XR_TYPE_INSTANCE_PROPERTIES};
+    xrGetInstanceProperties(xrInstance, &instanceProperties);
+    LOGGER(LOGGER::INFO) << "Using OpenXR Runtime: "
+                         << instanceProperties.runtimeName << " - "
+                         << XR_VERSION_MAJOR(instanceProperties.runtimeVersion)
+                         << XR_VERSION_MINOR(instanceProperties.runtimeVersion)
+                         << XR_VERSION_PATCH(instanceProperties.runtimeVersion);
 }
