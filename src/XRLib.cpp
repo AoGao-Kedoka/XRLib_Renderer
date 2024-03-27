@@ -7,10 +7,12 @@ XRLib& XRLib::SetApplicationName(std::string applicationName) {
     return *this;
 }
 
-XRLib& XRLib::SetVersionNumber(unsigned int versionNumber) {
+XRLib& XRLib::SetVersionNumber(unsigned int majorVersion, unsigned int minorVersion, unsigned int patchVersion) {
     _LOGFUNC_;
 
-    info.version = versionNumber;
+    info.majorVersion = majorVersion;
+    info.minorVersion = minorVersion;
+    info.patchVersion = patchVersion;
     return *this;
 }
 
@@ -43,8 +45,10 @@ XRLib& XRLib::InitXRBackend() {
 XRLib& XRLib::InitRenderBackend() {
     _LOGFUNC_;
 
-    if (info.version == 0) {
-        LOGGER(LOGGER::WARNING) << "Version number is zero";
+    if (info.majorVersion == 0 &&
+        info.minorVersion == 0 &&
+        info.patchVersion == 0) {
+        LOGGER(LOGGER::WARNING) << "Version number is 0";
     }
 
     if (info.applicationName.empty()) {

@@ -9,7 +9,9 @@
 class XRLib {
    public:
     XRLib& SetApplicationName(std::string applicationName);
-    XRLib& SetVersionNumber(unsigned int versionNumber);
+    XRLib& SetVersionNumber(unsigned int majorVersion,
+                            unsigned int minorVersion,
+                            unsigned int patchVersion);
     XRLib& EnableValidationLayer();
 
     XRLib& InitXRBackend();

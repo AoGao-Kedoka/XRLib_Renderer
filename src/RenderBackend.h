@@ -1,8 +1,11 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+#include <vector>
+#include <GLFW/glfw3.h>
 
 #include "Info.h"
+#include "Logger.h"
 
 class RenderBackend {
    public:
@@ -15,7 +18,14 @@ class RenderBackend {
 
    private:
     Info* info;
+    void Cleanup();
+
     VkInstance vkInstance{VK_NULL_HANDLE};
+    void CreateVulkanInstance();
+
     VkPhysicalDevice vkPhysicalDevice{VK_NULL_HANDLE};
     VkDevice vkDevice{VK_NULL_HANDLE};
+
+    const std::vector<const char*> validataionLayers = {
+        "VK_LAYER_KHRONOS_validation"};
 };

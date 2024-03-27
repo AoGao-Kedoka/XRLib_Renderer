@@ -91,10 +91,12 @@ void XRBackend::CreateXrInstance() {
     instanceCreateInfo.createFlags = 0;
     strcpy(instanceCreateInfo.applicationInfo.applicationName,
            info->applicationName.c_str());
-    instanceCreateInfo.applicationInfo.applicationVersion = info->version;
+    instanceCreateInfo.applicationInfo.applicationVersion = XR_MAKE_VERSION(
+        info->majorVersion, info->minorVersion, info->patchVersion);
     strcpy(instanceCreateInfo.applicationInfo.engineName,
            info->applicationName.c_str());
-    instanceCreateInfo.applicationInfo.engineVersion = info->version;
+    instanceCreateInfo.applicationInfo.engineVersion = XR_MAKE_VERSION(
+        info->majorVersion, info->minorVersion, info->patchVersion);
     instanceCreateInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
     instanceCreateInfo.enabledApiLayerCount =
         static_cast<uint32_t>(activeAPILayers.size());
