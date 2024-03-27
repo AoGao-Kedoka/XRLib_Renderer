@@ -27,10 +27,10 @@ class LOGGER {
                      << convert_log_level(_log_level) << "] ["
                      << std::source_location::current().function_name()
                      << "]: ";
-            std::cout << "[" << get_current_time() << "] ["
-                      << convert_log_level(_log_level) << "] ["
+            std::cout << log_color(level, true) << "[" << get_current_time()
+                      << "] [" << convert_log_level(_log_level) << "] ["
                       << std::source_location::current().function_name()
-                      << "]: ";
+                      << "]: " << log_color(level, false);
         }
     }
 
@@ -72,6 +72,24 @@ class LOGGER {
                 return "ERROR";
             case LOG_LEVEL::WARNING:
                 return "WARNING";
+            default:
+                exit(EXIT_FAILURE);
+        }
+    }
+
+    constexpr std::string_view log_color(LOG_LEVEL level, bool start) {
+        if (!start)
+            return "\033[0m";
+
+        switch (level) {
+            case LOG_LEVEL::DEBUG:
+                return "\033[1;36m";
+            case LOG_LEVEL::INFO:
+                return "";
+            case LOG_LEVEL::ERR:
+                return "\033[1;31m";
+            case LOG_LEVEL::WARNING:
+                return "\033[1;33m";
             default:
                 exit(EXIT_FAILURE);
         }

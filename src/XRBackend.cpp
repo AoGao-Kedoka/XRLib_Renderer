@@ -1,4 +1,5 @@
 #include "XRBackend.h"
+#include "NMB.h"
 
 XRBackend::XRBackend(Info& info, std::shared_ptr<RenderBackend> renderBackend)
     : info{&info}, renderBackend{std::move(renderBackend)} {
@@ -105,11 +106,14 @@ void XRBackend::CreateXrInstance() {
     XrResult result = xrCreateInstance(&instanceCreateInfo, &xrInstance);
 
     if (result != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to create XR instance";
+        std::string message{
+            "Failed to create XR instance, no OpenXR runtime set."};
+        LOGGER(LOGGER::ERR) << message;
+        NMB::show("Error", message.c_str(), NMB::Icon::ICON_ERROR);
+        Cleanup();
         exit(-1);
     }
 }
-
 
 void XRBackend::GetSystemID() {
     XrSystemGetInfo systemGetInfo{};
@@ -117,7 +121,10 @@ void XRBackend::GetSystemID() {
     systemGetInfo.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
     XrResult result = xrGetSystem(xrInstance, &systemGetInfo, &xrSystemID);
     if (result != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to get system id, HMD may not connected";
+        std::string message{"Failed to get system id, HMD may not connected."};
+        LOGGER(LOGGER::ERR) << message;
+        NMB::show("Error", message.c_str(), NMB::Icon::ICON_ERROR);
+        Cleanup();
         exit(-1);
     }
 }
@@ -130,7 +137,7 @@ void XRBackend::CreateXrSession() {
     graphicsBinding.queueFamilyIndex = renderBackend->GetQueueFamilyIndex();
     graphicsBinding.physicalDevice = renderBackend->GetRenderPhysicalDevice();
     graphicsBinding.queueIndex = 0;
-    
+
     XrSessionCreateInfo sessionCreateInfo{};
     sessionCreateInfo.createFlags = XR_TYPE_SESSION_CREATE_INFO;
     sessionCreateInfo.systemId = xrSystemID;

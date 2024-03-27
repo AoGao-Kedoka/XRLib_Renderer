@@ -43,10 +43,15 @@ XRLib& XRLib::InitXRBackend() {
 XRLib& XRLib::InitRenderBackend() {
     _LOGFUNC_;
 
+    if (info.version == 0) {
+        LOGGER(LOGGER::WARNING) << "Version number is zero";
+    }
+
     if (info.applicationName.empty()) {
         LOGGER(LOGGER::ERR) << "No application name specified";
         return *this;
     }
+
     RenderBackend renderer{info};
     renderBackend = std::make_shared<RenderBackend>(renderer);
 

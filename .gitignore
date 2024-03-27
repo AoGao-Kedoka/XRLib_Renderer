@@ -38,3 +38,6 @@
 
 # Build
 [Bb]uild/
+
+# External
+lib/external/
