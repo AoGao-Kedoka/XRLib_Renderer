@@ -1,12 +1,5 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-#define XR_USE_GRAPHICS_API_VULKAN
-#include <openxr/openxr.h>
-#include <openxr/openxr_platform.h>
-
-#include <string>
-
 #include "Info.h"
 #include "Logger.h"
 #include "RenderBackend.h"
@@ -30,6 +23,7 @@ class XRBackend {
     XrSystemId xrSystemID;
     void GetSystemID();
 
+
     XrGraphicsRequirementsVulkanKHR graphicsRequirements;
     XrSession xrSession{XR_NULL_HANDLE};
     XrSessionState xrSessionState{XR_SESSION_STATE_UNKNOWN};
@@ -41,6 +35,8 @@ class XRBackend {
     PFN_xrGetVulkanDeviceExtensionsKHR xrGetVulkanDeviceExtensionsKHR{nullptr};
     PFN_xrGetVulkanGraphicsRequirementsKHR xrGetVulkanGraphicsRequirementsKHR{
         nullptr};
+    void LoadXRExtensionFunctions() const;
+    void GetFunctionExtensions() const;
 
     std::vector<const char*> activeAPILayers = {};
     std::vector<const char*> activeInstanceExtensions = {};

@@ -5,6 +5,7 @@ XRBackend::XRBackend(Info& info, std::shared_ptr<RenderBackend> renderBackend)
     : info{&info}, renderBackend{std::move(renderBackend)} {
     CreateXrInstance();
     GetSystemID();
+    GetFunctionExtensions();
     LogOpenXRRuntimeProperties();
 }
 
@@ -131,7 +132,31 @@ void XRBackend::GetSystemID() {
     }
 }
 
+void XRBackend::GetFunctionExtensions() const {
+    LoadXRExtensionFunctions();
+    uint32_t xrVulkanInstanceExtensionsCount;
+    if (xrGetVulkanInstanceExtensionsKHR(xrInstance, xrSystemID, 0,
+        &xrVulkanInstanceExtensionsCount,
+        nullptr) != XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to get vulkan instance extension count";
+        Cleanup();
+        exit(-1);
+    }
+
+    std::string buffer(xrVulkanInstanceExtensionsCount, ' ');
+    if (xrGetVulkanInstanceExtensionsKHR(xrInstance, xrSystemID, 0,
+                                         &xrVulkanInstanceExtensionsCount, buffer.data()) != XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to get vulkan instance extension";
+        Cleanup();
+        exit(-1);
+    }
+
+    renderBackend->GetVulkanInstanceExtensions().push_back(buffer.c_str());
+    renderBackend->CreateVulkanInstance();
+}
+
 void XRBackend::CreateXrSession() {
+
     XrGraphicsBindingVulkanKHR graphicsBinding;
     graphicsBinding.type = XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR;
     graphicsBinding.instance = renderBackend->GetRenderInstance();
@@ -147,6 +172,7 @@ void XRBackend::CreateXrSession() {
     if (xrCreateSession(xrInstance, &sessionCreateInfo, &xrSession) !=
         XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to create session";
+        Cleanup();
         exit(-1);
     }
 }
@@ -164,4 +190,25 @@ void XRBackend::LogOpenXRRuntimeProperties() const {
                          << XR_VERSION_MAJOR(instanceProperties.runtimeVersion)
                          << XR_VERSION_MINOR(instanceProperties.runtimeVersion)
                          << XR_VERSION_PATCH(instanceProperties.runtimeVersion);
+}
+
+void XRBackend::LoadXRExtensionFunctions() const {
+    const std::vector<std::pair<PFN_xrVoidFunction*, std::string>> functionPairs{
+        {reinterpret_cast<PFN_xrVoidFunction*>(xrGetVulkanInstanceExtensionsKHR),
+         "xrGetVulkanInstanceExtensionsKHR"},
+        {reinterpret_cast<PFN_xrVoidFunction*>(xrGetVulkanGraphicsDeviceKHR),
+         "xrGetVulkanGraphicsDeviceKHR"},
+        {reinterpret_cast<PFN_xrVoidFunction*>(xrGetVulkanDeviceExtensionsKHR),
+         "xrGetVulkanDeviceExtensionsKHR"},
+        {reinterpret_cast<PFN_xrVoidFunction*>(xrGetVulkanGraphicsRequirementsKHR),
+         "xrGetVulkanGraphicsRequirementsKHR"},
+    };
+
+    for (const auto& [fst, snd] : functionPairs) {
+        if (xrGetInstanceProcAddr(xrInstance, snd.c_str(),
+                                  fst) != XR_SUCCESS) {
+            LOGGER(LOGGER::WARNING)
+                << "OpenXR extension" << snd << "not supported";
+        }
+    }
 }

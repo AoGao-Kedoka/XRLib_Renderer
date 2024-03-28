@@ -1,14 +1,17 @@
 #include "RenderBackend.h"
 
 RenderBackend::RenderBackend(Info& info) : info{&info} {
-    CreateVulkanInstance();
+    glfwInit();
 }
 
 uint32_t RenderBackend::GetQueueFamilyIndex() {
+    //TODO
     return 0;
 }
 
+
 void RenderBackend::Cleanup() {
+    glfwTerminate();
 }
 
 void RenderBackend::CreateVulkanInstance() {
@@ -22,7 +25,6 @@ void RenderBackend::CreateVulkanInstance() {
         info->majorVersion, info->minorVersion, info->patchVersion);
     applicationInfo.apiVersion = VK_API_VERSION_1_2;
 
-    std::vector<const char*> vulkanInstanceExtensions;
     uint32_t requiredExtensionCount;
     const char** glfwExtensions =
         glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
@@ -30,19 +32,19 @@ void RenderBackend::CreateVulkanInstance() {
         LOGGER(LOGGER::ERR) << "Error getting glfw instance extension";
         exit(-1);
     }
-
-    std::vector<const char*> extensions(
-        glfwExtensions, glfwExtensions + requiredExtensionCount);
+    
+    for (uint32_t i = 0; i < requiredExtensionCount; ++i) {
+        vulkanInstanceExtensions.push_back(glfwExtensions[i]);
+    }
 
     if (info->validationLayer) {
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        vulkanInstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
     
-    VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     createInfo.pApplicationInfo = &applicationInfo;
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    createInfo.ppEnabledExtensionNames = extensions.data();
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(vulkanInstanceExtensions.size());
+    createInfo.ppEnabledExtensionNames = vulkanInstanceExtensions.data();
     if (info->validationLayer) {
         createInfo.enabledLayerCount =
             static_cast<uint32_t>(validataionLayers.size());

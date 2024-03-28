@@ -18,8 +18,7 @@ class XRLib {
     XRLib& InitRenderBackend();
 
     std::pair<XRBackend&, RenderBackend&> GetBackend() const {
-        return std::pair<XRBackend&, RenderBackend&>(*xrBackend,
-                                                     *renderBackend);
+        return {*xrBackend, *renderBackend};
     }
 
     XRBackend& GetXRBackend() const { return *xrBackend; }

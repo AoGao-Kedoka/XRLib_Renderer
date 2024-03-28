@@ -17,6 +17,7 @@ file(DOWNLOAD
 find_package(Vulkan REQUIRED)
 find_package(OpenXR CONFIG REQUIRED)
 find_package(GLM REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/lib/external ${PROJECT_SOURCE_DIR}/example})
 
@@ -31,4 +32,9 @@ file (GLOB SRCS
     ${PROJECT_SOURCE_DIR}/example/*.cpp
 )
 add_executable(${PROJECT_NAME} ${SRCS})
-target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan OpenXR::headers OpenXR::openxr_loader glm::glm)
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+	Vulkan::Vulkan
+    OpenXR::headers
+    OpenXR::openxr_loader
+    glm::glm
+    glfw)
