@@ -1,42 +1,27 @@
 #pragma once
 
+#include "Core.h"
 #include "Info.h"
 #include "Logger.h"
-#include "RenderBackend.h"
 
 class XRBackend {
    public:
-    XRBackend(Info& info, std::shared_ptr<RenderBackend> renderBackend);
+    XRBackend(Info& info, Core& core);
 
     ~XRBackend();
 
    private:
     Info* info;
-    std::shared_ptr<RenderBackend> renderBackend;
+    Core* core;
 
     void Cleanup() const;
-
-    XrInstance xrInstance{XR_NULL_HANDLE};
     void CreateXrInstance();
     void LogOpenXRRuntimeProperties() const;
-
-    XrSystemId xrSystemID;
     void GetSystemID();
 
-
-    XrGraphicsRequirementsVulkanKHR graphicsRequirements;
-    XrSession xrSession{XR_NULL_HANDLE};
-    XrSessionState xrSessionState{XR_SESSION_STATE_UNKNOWN};
     void CreateXrSession();
 
-    PFN_xrGetVulkanInstanceExtensionsKHR xrGetVulkanInstanceExtensionsKHR{
-        nullptr};
-    PFN_xrGetVulkanGraphicsDeviceKHR xrGetVulkanGraphicsDeviceKHR{nullptr};
-    PFN_xrGetVulkanDeviceExtensionsKHR xrGetVulkanDeviceExtensionsKHR{nullptr};
-    PFN_xrGetVulkanGraphicsRequirementsKHR xrGetVulkanGraphicsRequirementsKHR{
-        nullptr};
-    void LoadXRExtensionFunctions() const;
-    void GetFunctionExtensions() const;
+    void InitVulkanInstance() const;
 
     std::vector<const char*> activeAPILayers = {};
     std::vector<const char*> activeInstanceExtensions = {};

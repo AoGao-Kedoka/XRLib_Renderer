@@ -23,26 +23,27 @@ XRLib& XRLib::EnableValidationLayer() {
     return *this;
 }
 
-XRLib& XRLib::InitXRBackend() {
+XRLib& XRLib::Init() {
+    InitXRBackend();
+    InitRenderBackend();
+    renderBackend->CreateVulkanInstance();
+    renderBackend->CreatePhysicalDevice();
+    return *this;
+}
+
+void XRLib::InitXRBackend() {
     _LOGFUNC_;
     
     if (info.applicationName.empty()) {
         LOGGER(LOGGER::ERR) << "No application name specified";
-        return *this;
+        exit(-1);
     }
 
-    if (renderBackend == nullptr) {
-        LOGGER(LOGGER::ERR) << "Render backend should initialized first";
-        return *this;
-    }
-
-    XRBackend xr{info, renderBackend};
-    xrBackend = std::make_shared<XRBackend>(std::move(xr));
-
-    return *this;
+    XRBackend xr{info, core};
+    xrBackend = std::make_unique<XRBackend>(std::move(xr));
 }
 
-XRLib& XRLib::InitRenderBackend() {
+void XRLib::InitRenderBackend() {
     _LOGFUNC_;
 
     if (info.majorVersion == 0 &&
@@ -53,11 +54,9 @@ XRLib& XRLib::InitRenderBackend() {
 
     if (info.applicationName.empty()) {
         LOGGER(LOGGER::ERR) << "No application name specified";
-        return *this;
+        exit(-1);
     }
 
-    RenderBackend renderer{info};
-    renderBackend = std::make_shared<RenderBackend>(renderer);
-
-    return *this;
+    RenderBackend renderer{info, core};
+    renderBackend = std::make_unique<RenderBackend>(std::move(renderer));
 }

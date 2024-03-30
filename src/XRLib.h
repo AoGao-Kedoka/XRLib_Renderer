@@ -14,19 +14,19 @@ class XRLib {
                             unsigned int patchVersion);
     XRLib& EnableValidationLayer();
 
-    XRLib& InitXRBackend();
-    XRLib& InitRenderBackend();
+    XRLib& Init();
 
     std::pair<XRBackend&, RenderBackend&> GetBackend() const {
         return {*xrBackend, *renderBackend};
     }
 
-    XRBackend& GetXRBackend() const { return *xrBackend; }
-    RenderBackend& GetRenderBackend() const { return *renderBackend; }
-
    private:
     Info info{};
+    Core core{};
 
-    std::shared_ptr<XRBackend> xrBackend{nullptr};
-    std::shared_ptr<RenderBackend> renderBackend{nullptr};
+    void InitXRBackend();
+    void InitRenderBackend();
+
+    std::unique_ptr<XRBackend> xrBackend{nullptr};
+    std::unique_ptr<RenderBackend> renderBackend{nullptr};
 };
