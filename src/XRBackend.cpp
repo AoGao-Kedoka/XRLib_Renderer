@@ -1,6 +1,6 @@
 #include "XRBackend.h"
 #include "NMB.h"
-
+#include "Util.h"
 
 XRBackend::XRBackend(Info& info, Core& core) : info{&info}, core{&core} {
     CreateXrInstance();
@@ -11,13 +11,12 @@ XRBackend::XRBackend(Info& info, Core& core) : info{&info}, core{&core} {
 }
 
 XRBackend::~XRBackend() {
-    if (core->GetXRInstance() != XR_NULL_HANDLE) {
-        xrDestroyInstance(core->GetXRInstance());
+    if (!core || !info) {
+        return;
     }
-
-    if (core->GetXRSession()!= XR_NULL_HANDLE) {
-        xrDestroySession(core->GetXRSession());
-    }
+    
+    Util::XrSafeClean(core->GetXRInstance(), xrDestroyInstance);
+    Util::XrSafeClean(core->GetXRSession(), xrDestroySession);
 }
 
 void XRBackend::CreateXrInstance() {

@@ -1,45 +1,5 @@
 #include "RenderBackend.h"
-
-bool CheckLayerSupport(const char* layer) {
-    uint32_t layerCount;
-    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-    std::vector<VkLayerProperties> availableLayers(layerCount);
-
-    for (const auto& layerProperties : availableLayers) {
-        if (strcmp(layer, layerProperties.layerName)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-template <typename T, typename Func, typename... Args>
-void SafeClean(T variable, Func func, Args&&... args) {
-    if (variable != VK_NULL_HANDLE) {
-        func(variable, std::forward<Args>(args)...);
-    }
-}
-
-static VKAPI_ATTR VkBool32 VKAPI_CALL
-debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-              VkDebugUtilsMessageTypeFlagsEXT messageType,
-              const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-              void* pUserData) {
-    auto logLevel = LOGGER::INFO;
-    switch (messageSeverity) {
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            logLevel = LOGGER::WARNING;
-            break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-            logLevel = LOGGER::ERR;
-            break;
-        default:
-            logLevel = LOGGER::INFO;
-    }
-    LOGGER(logLevel) << "Validation layer in Rendering backend: "
-                     << pCallbackData->pMessage;
-    return VK_FALSE;
-}
+#include "Util.h"
 
 RenderBackend::RenderBackend(Info& info, Core& core)
     : info{&info}, core{&core} {
@@ -47,7 +7,7 @@ RenderBackend::RenderBackend(Info& info, Core& core)
 
     if (info.validationLayer) {
         for (const char* layer : validataionLayers) {
-            bool res = CheckLayerSupport(layer);
+            bool res = Util::VkCheckLayerSupport(layer);
 
             // disable validataion if validation layer is not supported
             if (!res) {
@@ -75,8 +35,8 @@ RenderBackend::~RenderBackend() {
                                         vkDebugMessenger, nullptr);
     }
 
-    SafeClean(core->GetRenderDevice(), vkDestroyDevice, nullptr);
-    SafeClean(core->GetRenderInstance(), vkDestroyInstance, nullptr);
+    Util::VkSafeClean(core->GetRenderDevice(), vkDestroyDevice, nullptr);
+    Util::VkSafeClean(core->GetRenderInstance(), vkDestroyInstance, nullptr);
 }
 
 void RenderBackend::CreateVulkanInstance() {
@@ -151,7 +111,7 @@ void RenderBackend::CreateVulkanInstance() {
             VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        debugCreateInfo.pfnUserCallback = debugCallback;
+        debugCreateInfo.pfnUserCallback = Util::VkDebugCallback;
 
         createInfo.enabledLayerCount =
             static_cast<uint32_t>(validataionLayers.size());

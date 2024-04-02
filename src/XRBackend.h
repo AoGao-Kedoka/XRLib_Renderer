@@ -7,14 +7,40 @@
 class XRBackend {
    public:
     XRBackend(Info& info, Core& core);
-
     ~XRBackend();
+
+    XRBackend(XRBackend&& other) noexcept
+        : info(std::exchange(other.info, nullptr)),
+          core(std::exchange(other.core, nullptr)),
+          activeAPILayers(std::move(other.activeAPILayers)),
+          activeInstanceExtensions(std::move(other.activeInstanceExtensions)),
+          apiLayers(std::move(other.apiLayers)),
+          instanceExtensions(std::move(other.instanceExtensions)),
+          xrDebugUtilsMessenger(
+              std::exchange(other.xrDebugUtilsMessenger, XR_NULL_HANDLE)) {
+        LOGGER(LOGGER::DEBUG) << "Move constructor called";
+    }
+
+    XRBackend& operator=(XRBackend&& rhs) noexcept {
+        if (this == &rhs)
+            return *this;
+        LOGGER(LOGGER::DEBUG) << "Move assignment called";
+
+        info = std::exchange(rhs.info, nullptr);
+        core = std::exchange(rhs.core, nullptr);
+        activeAPILayers = std::move(rhs.activeAPILayers);
+        activeInstanceExtensions = std::move(rhs.activeInstanceExtensions);
+        apiLayers = std::move(rhs.apiLayers);
+        instanceExtensions = std::move(rhs.instanceExtensions);
+        xrDebugUtilsMessenger =
+            std::exchange(rhs.xrDebugUtilsMessenger, XR_NULL_HANDLE);
+        return *this;
+    }
 
    private:
     Info* info;
     Core* core;
 
-    void Cleanup() const;
     void CreateXrInstance();
     void LogOpenXRRuntimeProperties() const;
     void GetSystemID();
