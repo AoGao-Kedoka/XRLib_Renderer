@@ -16,10 +16,6 @@ class XRLib {
 
     XRLib& Init();
 
-    std::pair<XRBackend&, RenderBackend&> GetBackend() const {
-        return {*xrBackend, *renderBackend};
-    }
-
    private:
     Info info{};
     Core core{};

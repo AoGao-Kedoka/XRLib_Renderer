@@ -1,15 +1,88 @@
 #include "RenderBackend.h"
 
+bool CheckLayerSupport(const char* layer) {
+    uint32_t layerCount;
+    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+    std::vector<VkLayerProperties> availableLayers(layerCount);
+
+    for (const auto& layerProperties : availableLayers) {
+        if (strcmp(layer, layerProperties.layerName)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+template <typename T, typename Func, typename... Args>
+void SafeClean(T variable, Func func, Args&&... args) {
+    if (variable != VK_NULL_HANDLE) {
+        func(variable, std::forward<Args>(args)...);
+    }
+}
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL
+debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+              VkDebugUtilsMessageTypeFlagsEXT messageType,
+              const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+              void* pUserData) {
+    auto logLevel = LOGGER::INFO;
+    switch (messageSeverity) {
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+            logLevel = LOGGER::WARNING;
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+            logLevel = LOGGER::ERR;
+            break;
+        default:
+            logLevel = LOGGER::INFO;
+    }
+    LOGGER(logLevel) << "Validation layer in Rendering backend: "
+                     << pCallbackData->pMessage;
+    return VK_FALSE;
+}
+
 RenderBackend::RenderBackend(Info& info, Core& core)
     : info{&info}, core{&core} {
     glfwInit();
+
+    if (info.validationLayer) {
+        for (const char* layer : validataionLayers) {
+            bool res = CheckLayerSupport(layer);
+
+            // disable validataion if validation layer is not supported
+            if (!res) {
+                info.validationLayer = false;
+                LOGGER(LOGGER::WARNING) << "Validation layer not available, "
+                                           "disabling validataion layer";
+            }
+        }
+    }
+
+    CreateVulkanInstance();
+    CreatePhysicalDevice();
+    CreateLogicalDevice();
 }
 
-void RenderBackend::Cleanup() {
-    glfwTerminate();
+RenderBackend::~RenderBackend() {
+    if (!core || !info)
+        return;
+    if (vkDebugMessenger != VK_NULL_HANDLE) {
+        PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT =
+            reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+                vkGetInstanceProcAddr(core->GetRenderInstance(),
+                                      "vkDestroyDebugUtilsMessengerEXT"));
+        vkDestroyDebugUtilsMessengerEXT(core->GetRenderInstance(),
+                                        vkDebugMessenger, nullptr);
+    }
+
+    SafeClean(core->GetRenderDevice(), vkDestroyDevice, nullptr);
+    SafeClean(core->GetRenderInstance(), vkDestroyInstance, nullptr);
 }
 
 void RenderBackend::CreateVulkanInstance() {
+    if (core->IsXRValid())
+        LoadXRExtensionFunctions(core->GetXRInstance());
+
     VkApplicationInfo applicationInfo{};
     applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     applicationInfo.pApplicationName = info->applicationName.c_str();
@@ -44,7 +117,6 @@ void RenderBackend::CreateVulkanInstance() {
                 &xrVulkanInstanceExtensionsCount, nullptr) != XR_SUCCESS) {
             LOGGER(LOGGER::ERR)
                 << "Failed to get vulkan instance extension count";
-            Cleanup();
             exit(-1);
         }
 
@@ -54,7 +126,6 @@ void RenderBackend::CreateVulkanInstance() {
                                              &xrVulkanInstanceExtensionsCount,
                                              buffer.data()) != XR_SUCCESS) {
             LOGGER(LOGGER::ERR) << "Failed to get vulkan instance extension";
-            Cleanup();
             exit(-1);
         }
 
@@ -62,16 +133,31 @@ void RenderBackend::CreateVulkanInstance() {
     }
 
     VkInstanceCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &applicationInfo;
     createInfo.enabledExtensionCount =
         static_cast<uint32_t>(vulkanInstanceExtensions.size());
     createInfo.ppEnabledExtensionNames = vulkanInstanceExtensions.data();
+
     if (info->validationLayer) {
+        debugCreateInfo.sType =
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        debugCreateInfo.messageSeverity =
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        debugCreateInfo.messageType =
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        debugCreateInfo.pfnUserCallback = debugCallback;
+
         createInfo.enabledLayerCount =
             static_cast<uint32_t>(validataionLayers.size());
         createInfo.ppEnabledLayerNames = validataionLayers.data();
-        //TODO populate debug messenger
+        createInfo.pNext =
+            (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
     } else {
         createInfo.enabledLayerCount = 0;
         createInfo.pNext = nullptr;
@@ -81,6 +167,18 @@ void RenderBackend::CreateVulkanInstance() {
         VK_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to create vulkan instance";
         exit(-1);
+    }
+
+    if (info->validationLayer) {
+        vkCreateDebugUtilsMessengerEXT =
+            reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+                vkGetInstanceProcAddr(this->core->GetRenderInstance(),
+                                      "vkCreateDebugUtilsMessengerEXT"));
+        if (vkCreateDebugUtilsMessengerEXT(this->core->GetRenderInstance(),
+                                           &debugCreateInfo, nullptr,
+                                           &vkDebugMessenger) != VK_SUCCESS) {
+            LOGGER(LOGGER::WARNING) << "Failed to create debug utils messenger";
+        }
     }
 }
 
@@ -150,6 +248,54 @@ void RenderBackend::CreatePhysicalDevice() {
             exit(-1);
         }
     }
+}
+
+void RenderBackend::CreateLogicalDevice() {
+    std::vector<const char*> deviceExtensions(0);
+    if (core->IsXRValid()) {
+        uint32_t deviceExtensionsCount;
+        if (xrGetVulkanDeviceExtensionsKHR(
+                core->GetXRInstance(), core->GetSystemID(), 0,
+                &deviceExtensionsCount, nullptr) != XR_SUCCESS) {
+            LOGGER(LOGGER::ERR) << "Failed to get vulkan device extensions";
+            exit(-1);
+        }
+        std::string buffer;
+        buffer.resize(deviceExtensionsCount);
+        if (xrGetVulkanDeviceExtensionsKHR(
+                core->GetXRInstance(), core->GetSystemID(),
+                deviceExtensionsCount, &deviceExtensionsCount, buffer.data())) {
+            LOGGER(LOGGER::ERR) << "Failed to get vulkan device extensions";
+            exit(-1);
+        }
+        deviceExtensions = core->UnpackExtensionString(buffer);
+    }
+
+    float queuePriority = 1;
+
+    VkDeviceQueueCreateInfo queueCreateInfo{};
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = core->GetGraphicsQueueFamilyIndex();
+    queueCreateInfo.queueCount = 1;
+    queueCreateInfo.pQueuePriorities = &queuePriority;
+
+    VkDeviceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.queueCreateInfoCount = 1;
+    createInfo.pQueueCreateInfos = &queueCreateInfo;
+    createInfo.enabledExtensionCount =
+        static_cast<uint32_t>(deviceExtensions.size());
+    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+
+    if (vkCreateDevice(core->GetRenderPhysicalDevice(), &createInfo, nullptr,
+                       &core->GetRenderDevice()) != VK_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to create vulkan device.";
+        exit(-1);
+    }
+
+    vkGetDeviceQueue(core->GetRenderDevice(),
+                     core->GetGraphicsQueueFamilyIndex(), 0,
+                     &core->GetGraphicsQueue());
 }
 
 void RenderBackend::LoadXRExtensionFunctions(XrInstance xrInstance) const {

@@ -1,6 +1,7 @@
 #include "XRBackend.h"
 #include "NMB.h"
 
+
 XRBackend::XRBackend(Info& info, Core& core) : info{&info}, core{&core} {
     CreateXrInstance();
     GetSystemID();
@@ -10,11 +11,6 @@ XRBackend::XRBackend(Info& info, Core& core) : info{&info}, core{&core} {
 }
 
 XRBackend::~XRBackend() {
-    Cleanup();
-}
-
-void XRBackend::Cleanup() const {
-
     if (core->GetXRInstance() != XR_NULL_HANDLE) {
         xrDestroyInstance(core->GetXRInstance());
     }
@@ -131,15 +127,12 @@ void XRBackend::GetSystemID() {
     }
 }
 
-void XRBackend::InitVulkanInstance() const {
-}
-
 void XRBackend::CreateXrSession() {
     XrGraphicsBindingVulkanKHR graphicsBinding;
     graphicsBinding.type = XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR;
     graphicsBinding.instance = core->GetRenderInstance();
     graphicsBinding.device = core->GetRenderDevice();
-    graphicsBinding.queueFamilyIndex = core->GetQueueFamilyIndex();
+    graphicsBinding.queueFamilyIndex = core->GetGraphicsQueueFamilyIndex();
     graphicsBinding.physicalDevice = core->GetRenderPhysicalDevice();
     graphicsBinding.queueIndex = 0;
 

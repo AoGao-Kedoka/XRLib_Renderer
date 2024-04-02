@@ -7,7 +7,9 @@ XRLib& XRLib::SetApplicationName(std::string applicationName) {
     return *this;
 }
 
-XRLib& XRLib::SetVersionNumber(unsigned int majorVersion, unsigned int minorVersion, unsigned int patchVersion) {
+XRLib& XRLib::SetVersionNumber(unsigned int majorVersion,
+                               unsigned int minorVersion,
+                               unsigned int patchVersion) {
     _LOGFUNC_;
 
     info.majorVersion = majorVersion;
@@ -24,30 +26,28 @@ XRLib& XRLib::EnableValidationLayer() {
 }
 
 XRLib& XRLib::Init() {
+    _LOGFUNC_;
+
     InitXRBackend();
     InitRenderBackend();
-    renderBackend->CreateVulkanInstance();
-    renderBackend->CreatePhysicalDevice();
     return *this;
 }
 
 void XRLib::InitXRBackend() {
     _LOGFUNC_;
-    
+
     if (info.applicationName.empty()) {
         LOGGER(LOGGER::ERR) << "No application name specified";
         exit(-1);
     }
 
-    XRBackend xr{info, core};
-    xrBackend = std::make_unique<XRBackend>(std::move(xr));
+    xrBackend = std::make_unique<XRBackend>(std::move(XRBackend{info, core}));
 }
 
 void XRLib::InitRenderBackend() {
     _LOGFUNC_;
 
-    if (info.majorVersion == 0 &&
-        info.minorVersion == 0 &&
+    if (info.majorVersion == 0 && info.minorVersion == 0 &&
         info.patchVersion == 0) {
         LOGGER(LOGGER::WARNING) << "Version number is 0";
     }
@@ -57,6 +57,6 @@ void XRLib::InitRenderBackend() {
         exit(-1);
     }
 
-    RenderBackend renderer{info, core};
-    renderBackend = std::make_unique<RenderBackend>(std::move(renderer));
+    renderBackend =
+        std::make_unique<RenderBackend>(std::move(RenderBackend{info, core}));
 }

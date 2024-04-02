@@ -21,13 +21,11 @@ class XRBackend {
 
     void CreateXrSession();
 
-    void InitVulkanInstance() const;
-
     std::vector<const char*> activeAPILayers = {};
     std::vector<const char*> activeInstanceExtensions = {};
     std::vector<std::string> apiLayers = {};
     std::vector<std::string> instanceExtensions = {
         XR_KHR_VULKAN_ENABLE_EXTENSION_NAME};
 
-    XrDebugUtilsMessengerEXT debugUtilsMessenger{XR_NULL_HANDLE};
+    XrDebugUtilsMessengerEXT xrDebugUtilsMessenger{XR_NULL_HANDLE};
 };
