@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "Core.h"
 #include "Info.h"
 #include "Logger.h"
@@ -36,6 +38,8 @@ class XRBackend {
             std::exchange(rhs.xrDebugUtilsMessenger, XR_NULL_HANDLE);
         return *this;
     }
+
+    void XrCreateSwapcahin();
 
    private:
     Info* info;

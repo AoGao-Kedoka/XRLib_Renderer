@@ -1,11 +1,13 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 #include "Info.h"
-#include "RenderBackend.h"
+#include "RenderBackendFlat.h"
 #include "XRBackend.h"
 
+namespace XRLib {
 class XRLib {
    public:
     XRLib& SetApplicationName(std::string applicationName);
@@ -14,7 +16,7 @@ class XRLib {
                             unsigned int patchVersion);
     XRLib& EnableValidationLayer();
 
-    XRLib& Init();
+    XRLib& Init(bool xr);
 
    private:
     Info info{};
@@ -24,5 +26,6 @@ class XRLib {
     void InitRenderBackend();
 
     std::unique_ptr<XRBackend> xrBackend{nullptr};
-    std::unique_ptr<RenderBackend> renderBackend{nullptr};
+    std::shared_ptr<RenderBackend> renderBackend{nullptr};
 };
+}    // namespace XRLib

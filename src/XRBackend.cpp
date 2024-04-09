@@ -15,8 +15,12 @@ XRBackend::~XRBackend() {
         return;
     }
     
-    Util::XrSafeClean(core->GetXRInstance(), xrDestroyInstance);
-    Util::XrSafeClean(core->GetXRSession(), xrDestroySession);
+    Util::XrSafeClean(xrDestroyInstance, core->GetXRInstance());
+    Util::XrSafeClean(xrDestroySession, core->GetXRSession());
+}
+
+void XRBackend::XrCreateSwapcahin() {
+    //TODO
 }
 
 void XRBackend::CreateXrInstance() {

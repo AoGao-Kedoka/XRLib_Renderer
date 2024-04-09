@@ -5,14 +5,16 @@
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
 
-#include <string>
-#include <vector>
 #include <cstring>
 #include <fstream>
 #include <sstream>
+#include <string>
+#include <vector>
 
 class Core {
    public:
+    Core() = default;
+    ~Core();
     /*
     * Vulkan
     */

@@ -1,5 +1,6 @@
 #include "XRLib.h"
 
+namespace XRLib {
 XRLib& XRLib::SetApplicationName(std::string applicationName) {
     _LOGFUNC_;
 
@@ -25,11 +26,18 @@ XRLib& XRLib::EnableValidationLayer() {
     return *this;
 }
 
-XRLib& XRLib::Init() {
+XRLib& XRLib::Init(bool xr) {
     _LOGFUNC_;
 
-    InitXRBackend();
+    if (!xr) {
+        core.SetXRValid(false);
+    }
+
+    if (xr) InitXRBackend();
     InitRenderBackend();
+
+    renderBackend->Prepare();
+    
     return *this;
 }
 
@@ -57,6 +65,13 @@ void XRLib::InitRenderBackend() {
         exit(-1);
     }
 
-    renderBackend =
-        std::make_unique<RenderBackend>(std::move(RenderBackend{info, core}));
+    if (!core.IsXRValid()) {
+        renderBackend =
+            std::make_shared<RenderBackendFlat>(std::move(RenderBackendFlat{info, core}));
+    } else {
+        renderBackend =
+            std::make_shared<RenderBackend>(std::move(RenderBackend{info, core}));
+    }
+
 }
+}    // namespace XRLib

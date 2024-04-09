@@ -17,7 +17,6 @@ RenderBackend::RenderBackend(Info& info, Core& core)
             }
         }
     }
-
     CreateVulkanInstance();
     CreatePhysicalDevice();
     CreateLogicalDevice();
@@ -34,14 +33,9 @@ RenderBackend::~RenderBackend() {
         vkDestroyDebugUtilsMessengerEXT(core->GetRenderInstance(),
                                         vkDebugMessenger, nullptr);
     }
-
-    Util::VkSafeClean(core->GetRenderDevice(), vkDestroyDevice, nullptr);
-    Util::VkSafeClean(core->GetRenderInstance(), vkDestroyInstance, nullptr);
 }
 
 void RenderBackend::CreateVulkanInstance() {
-    if (core->IsXRValid())
-        LoadXRExtensionFunctions(core->GetXRInstance());
 
     VkApplicationInfo applicationInfo{};
     applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -71,6 +65,10 @@ void RenderBackend::CreateVulkanInstance() {
     }
 
     if (core->IsXRValid()) {
+        auto xrGetVulkanInstanceExtensionsKHR =
+           Util::XrGetXRFunction<PFN_xrGetVulkanInstanceExtensionsKHR>(
+                core->GetXRInstance(), "xrGetVulkanInstanceExtensionsKHR");
+
         uint32_t xrVulkanInstanceExtensionsCount;
         if (xrGetVulkanInstanceExtensionsKHR(
                 core->GetXRInstance(), core->GetSystemID(), 0,
@@ -89,7 +87,7 @@ void RenderBackend::CreateVulkanInstance() {
             exit(-1);
         }
 
-        vulkanInstanceExtensions.push_back(buffer.c_str());
+        //vulkanInstanceExtensions.push_back(buffer.c_str());
     }
 
     VkInstanceCreateInfo createInfo{};
@@ -144,6 +142,10 @@ void RenderBackend::CreateVulkanInstance() {
 
 void RenderBackend::CreatePhysicalDevice() {
     if (core->IsXRValid()) {
+        auto xrGetVulkanGraphicsDeviceKHR =
+            Util::XrGetXRFunction<PFN_xrGetVulkanGraphicsDeviceKHR>(
+                core->GetXRInstance(), "xrGetVulkanGraphicsDeviceKHR");
+
         if (xrGetVulkanGraphicsDeviceKHR(
                 core->GetXRInstance(), core->GetSystemID(),
                 core->GetRenderInstance(),
@@ -213,6 +215,10 @@ void RenderBackend::CreatePhysicalDevice() {
 void RenderBackend::CreateLogicalDevice() {
     std::vector<const char*> deviceExtensions(0);
     if (core->IsXRValid()) {
+        auto xrGetVulkanDeviceExtensionsKHR =
+            Util::XrGetXRFunction<PFN_xrGetVulkanDeviceExtensionsKHR>(
+                core->GetXRInstance(), "xrGetVulkanDeviceExtensionsKHR");
+
         uint32_t deviceExtensionsCount;
         if (xrGetVulkanDeviceExtensionsKHR(
                 core->GetXRInstance(), core->GetSystemID(), 0,
@@ -230,6 +236,8 @@ void RenderBackend::CreateLogicalDevice() {
         }
         deviceExtensions = core->UnpackExtensionString(buffer);
     }
+
+    deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
     float queuePriority = 1;
 
@@ -256,29 +264,4 @@ void RenderBackend::CreateLogicalDevice() {
     vkGetDeviceQueue(core->GetRenderDevice(),
                      core->GetGraphicsQueueFamilyIndex(), 0,
                      &core->GetGraphicsQueue());
-}
-
-void RenderBackend::LoadXRExtensionFunctions(XrInstance xrInstance) const {
-    const std::vector<std::pair<PFN_xrVoidFunction*, std::string>>
-        functionPairs{
-            {reinterpret_cast<PFN_xrVoidFunction*>(
-                 xrGetVulkanInstanceExtensionsKHR),
-             "xrGetVulkanInstanceExtensionsKHR"},
-            {reinterpret_cast<PFN_xrVoidFunction*>(
-                 xrGetVulkanGraphicsDeviceKHR),
-             "xrGetVulkanGraphicsDeviceKHR"},
-            {reinterpret_cast<PFN_xrVoidFunction*>(
-                 xrGetVulkanDeviceExtensionsKHR),
-             "xrGetVulkanDeviceExtensionsKHR"},
-            {reinterpret_cast<PFN_xrVoidFunction*>(
-                 xrGetVulkanGraphicsRequirementsKHR),
-             "xrGetVulkanGraphicsRequirementsKHR"},
-        };
-
-    for (const auto& [fst, snd] : functionPairs) {
-        if (xrGetInstanceProcAddr(xrInstance, snd.c_str(), fst) != XR_SUCCESS) {
-            LOGGER(LOGGER::WARNING)
-                << "OpenXR extension" << snd << "not supported";
-        }
-    }
 }

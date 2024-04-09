@@ -1,7 +1,12 @@
 #pragma once
 
+#define VK_USE_PLATFORM_WIN32_KHR
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 #include <vector>
+#include <utility>
 
 #include "Core.h"
 #include "Info.h"
@@ -15,17 +20,10 @@ class RenderBackend {
     RenderBackend(RenderBackend&& src) noexcept
         : info(std::exchange(src.info, nullptr)),
           core(std::exchange(src.core, nullptr)),
+          window(std::exchange(src.window, nullptr)),
           vkDebugMessenger(std::exchange(src.vkDebugMessenger, VK_NULL_HANDLE)),
           vkCreateDebugUtilsMessengerEXT(
-              std::exchange(src.vkCreateDebugUtilsMessengerEXT, nullptr)),
-          xrGetVulkanInstanceExtensionsKHR(
-              std::exchange(src.xrGetVulkanInstanceExtensionsKHR, nullptr)),
-          xrGetVulkanGraphicsDeviceKHR(
-              std::exchange(src.xrGetVulkanGraphicsDeviceKHR, nullptr)),
-          xrGetVulkanDeviceExtensionsKHR(
-              std::exchange(src.xrGetVulkanDeviceExtensionsKHR, nullptr)),
-          xrGetVulkanGraphicsRequirementsKHR(
-              std::exchange(src.xrGetVulkanGraphicsRequirementsKHR, nullptr)) {
+              std::exchange(src.vkCreateDebugUtilsMessengerEXT, nullptr)) {
         LOGGER(LOGGER::DEBUG) << "Move constructor called";
     }
 
@@ -39,36 +37,23 @@ class RenderBackend {
         vkDebugMessenger = std::exchange(rhs.vkDebugMessenger, VK_NULL_HANDLE);
         vkCreateDebugUtilsMessengerEXT =
             std::exchange(rhs.vkCreateDebugUtilsMessengerEXT, nullptr);
-        xrGetVulkanInstanceExtensionsKHR =
-            std::exchange(rhs.xrGetVulkanInstanceExtensionsKHR, nullptr);
-        xrGetVulkanGraphicsDeviceKHR =
-            std::exchange(rhs.xrGetVulkanGraphicsDeviceKHR, nullptr);
-        xrGetVulkanDeviceExtensionsKHR =
-            std::exchange(rhs.xrGetVulkanDeviceExtensionsKHR, nullptr);
-        xrGetVulkanGraphicsRequirementsKHR =
-            std::exchange(rhs.xrGetVulkanGraphicsRequirementsKHR, nullptr);
         return *this;
     }
 
     void CreateVulkanInstance();
     void CreatePhysicalDevice();
     void CreateLogicalDevice();
+    virtual void Prepare(){};
 
-   private:
+   protected:
     Info* info;
     Core* core;
+    GLFWwindow* window;
 
     const std::vector<const char*> validataionLayers = {
         "VK_LAYER_KHRONOS_validation"};
     VkDebugUtilsMessengerEXT vkDebugMessenger{};
 
     PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT{nullptr};
-
-    PFN_xrGetVulkanInstanceExtensionsKHR xrGetVulkanInstanceExtensionsKHR{
-        nullptr};
-    PFN_xrGetVulkanGraphicsDeviceKHR xrGetVulkanGraphicsDeviceKHR{nullptr};
-    PFN_xrGetVulkanDeviceExtensionsKHR xrGetVulkanDeviceExtensionsKHR{nullptr};
-    PFN_xrGetVulkanGraphicsRequirementsKHR xrGetVulkanGraphicsRequirementsKHR{
-        nullptr};
-    void LoadXRExtensionFunctions(XrInstance xrInstance) const;
 };
+
