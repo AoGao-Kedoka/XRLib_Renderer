@@ -8,16 +8,6 @@
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
 
-#if defined(_WIN32) || defined(_WIN64)
-#include <shellapi.h>
-#include <windows.h>
-#include <filesystem>
-#endif
-
-#if defined(__linux__)
-#include <unistd.h>
-#endif
-
 #include "logger.h"
 
 class Util {
@@ -97,20 +87,5 @@ class Util {
         }
         LOGGER(LOGGER::DEBUG) << result;
         return result;
-    }
-
-    static void OpenFileWithSystemEditor(std::string file_path) {
-        LOGGER(LOGGER::DEBUG) << file_path;
-#if defined(_WIN32) || defined(_WIN64)
-        ShellExecute(NULL, NULL,
-                     std::filesystem::canonical(file_path).string().c_str(),
-                     NULL, NULL, SW_SHOW);
-#elif defined(__linux__)
-        execl("/usr/bin/xdg-open", "xdg-open", file_path.c_str(), (char*)0);
-#endif
-    }
-
-    static std::string GetFileExtension(std::string file_path) {
-        return file_path.substr(file_path.find_last_of(".") + 1);
     }
 };
