@@ -20,9 +20,10 @@ include(FetchContent)
 #----------------
 # Vulkan
 #----------------
-set(VULKAN_DEPS "Vulkan::Vulkan")
+set(VULKAN_DEPS Vulkan::Vulkan)
 find_package(Vulkan QUIET)
 if (NOT Vulkan_FOUND)
+    message("Vulkan not found")
     FetchContent_Declare(
         Vulkan-Headers
         GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers.git
@@ -42,16 +43,13 @@ endif()
 #----------------
 # OpenXR
 #----------------
-set(OpenXR_DEPS "Openxr::header OpenXR::openxr_loader")
+set(OPENXR_DEPS
+    OpenXR::headers OpenXR::openxr_loader
+)
 find_package(OpenXR CONFIG QUIET)
-if (NOT Openxr_FOUND)
-    FetchContent_Declare(
-        OpenXR
-        URL_HASH MD5=924a94a2da0b5ef8e82154c623d88644
-        URL https://github.com/KhronosGroup/OpenXR-SDK-Source/archive/refs/tags/release-1.0.34.zip
-            SOURCE_DIR
-            openxr
-    )
+if (NOT OpenXR_FOUND)
+    message("OpenXR not found")
+
     set(BUILD_TESTS
         OFF
         CACHE INTERNAL "Build tests"
@@ -60,8 +58,16 @@ if (NOT Openxr_FOUND)
         ON
         CACHE INTERNAL "Use OpenXR layers"
     )
+
+    FetchContent_Declare(
+        OpenXR
+        URL_HASH MD5=924a94a2da0b5ef8e82154c623d88644
+        URL https://github.com/KhronosGroup/OpenXR-SDK-Source/archive/refs/tags/release-1.0.34.zip
+            SOURCE_DIR
+            openxr
+    )
     FetchContent_MakeAvailable(OpenXR)
-    set(OpenXR_DEPS "OpenXR::openxr_loader")
+    set(OPENXR_DEPS openxr_loader)
 endif()
 
 #----------------
@@ -69,6 +75,7 @@ endif()
 #----------------
 find_package(GLM QUIET)
 if (NOT GLM_FOUND)
+    message("glm not found")
     FetchContent_Declare(
         glm
         GIT_REPOSITORY https://github.com/g-truc/glm.git
@@ -78,10 +85,11 @@ if (NOT GLM_FOUND)
 endif()
 
 #----------------
-# GLM 
+# GLFW
 #----------------
 find_package(glfw3 CONFIG QUIET)
 if (NOT glfw3_FOUND)
+    message("GLFW not found")
     FetchContent_Declare(
         glfw
         GIT_REPOSITORY https://github.com/glfw/glfw.git
@@ -102,6 +110,8 @@ include_directories(${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/lib ${PROJEC
 file (GLOB SRCS
     ${PROJECT_SOURCE_DIR}/src/*.h
     ${PROJECT_SOURCE_DIR}/src/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/Graphics/*.h
+    ${PROJECT_SOURCE_DIR}/src/Graphics/*.cpp
     ${PROJECT_SOURCE_DIR}/lib/*.h
     ${PROJECT_SOURCE_DIR}/lib/*.cpp
     ${PROJECT_SOURCE_DIR}/lib/external/*.h
@@ -113,6 +123,6 @@ add_executable(${PROJECT_NAME} ${SRCS})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE 
     ${VULKAN_DEPS}
-    ${OpenXR_DEPS}
+    ${OPENXR_DEPS}
     glm::glm
     glfw)
