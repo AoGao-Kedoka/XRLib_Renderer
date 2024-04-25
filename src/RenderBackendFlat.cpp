@@ -19,6 +19,16 @@ void RenderBackendFlat::Prepare() {
     CreateFlatSwapChain();
 }
 
+void RenderBackendFlat::CreateRenderPass(std::string vertexShaderPath,
+                                         std::string fragmentShaderPath) {
+    Shader vertexShader{this->core, vertexShaderPath};
+    Shader fragmentShader{this->core, fragmentShaderPath};
+    VkRenderPass pass;
+    //TODO Create the render pass
+    GraphicsRenderPass graphicsPass{pass, vertexShader, fragmentShader};
+    renderPasses.push_back(graphicsPass);
+}
+
 void RenderBackendFlat::CreateFlatSwapChain() {
     VkSurfaceFormatKHR swapChainSurfaceFormat;
     VkPresentModeKHR swapChainPresentMode;

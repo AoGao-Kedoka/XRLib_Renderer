@@ -8,5 +8,6 @@ int main() {
         .SetApplicationName("Demo Application")
         .Init(false);
 
+    xrLib.SetRenderPassShader("./vertex.spv", "./fragment.spv");
     return 0;
 }

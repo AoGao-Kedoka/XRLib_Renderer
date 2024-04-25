@@ -4,7 +4,6 @@
 
 #include "RenderBackend.h"
 
-
 class RenderBackendFlat : public RenderBackend {
    public:
     RenderBackendFlat(Info& info, Core& core) : RenderBackend(info, core) {}
@@ -26,6 +25,8 @@ class RenderBackendFlat : public RenderBackend {
     }
 
     void Prepare() override;
+    void CreateRenderPass(std::string vertexShaderPath,
+                          std::string fragmentShaderPath) override;
 
    private:
     void CreateFlatSwapChain();

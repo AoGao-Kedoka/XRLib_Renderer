@@ -41,6 +41,16 @@ XRLib& XRLib::Init(bool xr) {
     return *this;
 }
 
+XRLib& XRLib::SetRenderPassShader(std::string vertexShaderPath,
+                                  std::string fragmentShaderPath) {
+    if (!initialized) {
+        LOGGER(LOGGER::ERR) << "Not initialized";
+        exit(-1);
+    }
+
+    return *this;
+}
+
 void XRLib::InitXRBackend() {
     _LOGFUNC_;
 

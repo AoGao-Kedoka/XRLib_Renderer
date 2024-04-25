@@ -15,9 +15,9 @@ class XRLib {
                             unsigned int minorVersion,
                             unsigned int patchVersion);
     XRLib& EnableValidationLayer();
-
     XRLib& Init(bool xr);
 
+    XRLib& SetRenderPassShader(std::string vertexShaderPath, std::string fragmentShaderPath);
    private:
     Info info{};
     Core core{};
@@ -27,5 +27,7 @@ class XRLib {
 
     std::unique_ptr<XRBackend> xrBackend{nullptr};
     std::shared_ptr<RenderBackend> renderBackend{nullptr};
+
+    bool initialized = false;
 };
 }    // namespace XRLib

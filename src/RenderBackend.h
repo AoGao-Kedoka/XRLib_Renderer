@@ -5,10 +5,11 @@
 #include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "Core.h"
+#include "Graphics/Shader.h"
 #include "Info.h"
 #include "Logger.h"
 
@@ -43,17 +44,27 @@ class RenderBackend {
     void CreateVulkanInstance();
     void CreatePhysicalDevice();
     void CreateLogicalDevice();
+
     virtual void Prepare(){};
+    virtual void CreateRenderPass(std::string vertexShaderPath,
+                                  std::string fragmentShaderPath){};
 
    protected:
     Info* info;
     Core* core;
     GLFWwindow* window;
 
+    struct GraphicsRenderPass {
+        VkRenderPass renderPass{VK_NULL_HANDLE};
+        Shader vertexShader;
+        Shader fragmentShader;
+    };
+    std::vector<GraphicsRenderPass> renderPasses;
+
+   private:
     const std::vector<const char*> validataionLayers = {
         "VK_LAYER_KHRONOS_validation"};
     VkDebugUtilsMessengerEXT vkDebugMessenger{};
 
     PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT{nullptr};
 };
-
