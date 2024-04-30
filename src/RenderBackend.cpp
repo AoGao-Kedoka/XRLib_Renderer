@@ -33,6 +33,13 @@ RenderBackend::~RenderBackend() {
         vkDestroyDebugUtilsMessengerEXT(core->GetRenderInstance(),
                                         vkDebugMessenger, nullptr);
     }
+
+    for (auto& renderpass : renderPasses) {
+        Util::VkSafeClean(vkDestroyPipelineLayout, core->GetRenderDevice(), renderpass.pipelineLayout,
+                          nullptr);
+        Util::VkSafeClean(vkDestroyRenderPass, core->GetRenderDevice(),
+                          renderpass.renderPass, nullptr);
+    }
 }
 
 void RenderBackend::CreateVulkanInstance() {

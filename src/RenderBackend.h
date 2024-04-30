@@ -56,6 +56,7 @@ class RenderBackend {
 
     struct GraphicsRenderPass {
         VkRenderPass renderPass{VK_NULL_HANDLE};
+        VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
         Shader vertexShader;
         Shader fragmentShader;
     };
