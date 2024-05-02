@@ -37,7 +37,8 @@ XRLib& XRLib::Init(bool xr) {
     InitRenderBackend();
 
     renderBackend->Prepare();
-    
+
+    initialized = true;
     return *this;
 }
 

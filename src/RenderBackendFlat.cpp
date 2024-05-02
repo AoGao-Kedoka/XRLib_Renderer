@@ -21,8 +21,9 @@ void RenderBackendFlat::Prepare() {
 
 void RenderBackendFlat::CreateRenderPass(std::string vertexShaderPath,
                                          std::string fragmentShaderPath) {
-    Shader vertexShader{this->core, vertexShaderPath};
-    Shader fragmentShader{this->core, fragmentShaderPath};
+    Shader vertexShader{this->core, vertexShaderPath, Shader::VERTEX_SHADER};
+    Shader fragmentShader{this->core, fragmentShaderPath, Shader::FRAGMENT_SHADER};
+
     VkRenderPass pass{VK_NULL_HANDLE};
     VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
 
