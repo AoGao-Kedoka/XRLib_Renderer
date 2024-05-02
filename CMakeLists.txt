@@ -29,15 +29,17 @@ if (NOT Vulkan_FOUND)
         GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers.git
         GIT_TAG v1.3.278
     )
-    FetchContent_MakeAvailable(Vulkan-Headers)
 
     FetchContent_Declare(
         Vulkan-Loader
         GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Loader.git
         GIT_TAG v1.3.278
     )
+
+    FetchContent_MakeAvailable(Vulkan-Headers)
     FetchContent_MakeAvailable(Vulkan-Loader)
-    set(VULKAN_DEPS "Vulkan::Headers vulkan")
+
+    set(VULKAN_DEPS Vulkan::Headers Vulkan::Loader)
 endif()
 
 #----------------
@@ -97,11 +99,6 @@ if (NOT glfw3_FOUND)
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
     )
-    set(GLFW_INSTALL OFF)
-    set(BUILD_SHARED_LIBS ON)
-    set(GLFW_BUILD_DOCS OFF)
-    set(GLFW_BUILD_COCOA OFF)
-    set(GLFW_BUILD_WAYLAND OFF)
     FetchContent_MakeAvailable(glfw)
 endif()
 
