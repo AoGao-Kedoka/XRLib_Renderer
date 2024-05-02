@@ -14,7 +14,8 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=<path_to_vcpkg>/scripts/buildsystems/vcpkg.cmake
 cmake --build .
 ```
 ### Without dependencies installed (longer build time)
-Vulkan with FetchContent still doesn't work yet. Please install vulkan-sdk.
+Validataion layer with this approach is not fully working. Please install the Vulkan-SDK if validation layer needed.
+
 ```
 mkdir build
 cmake ..
