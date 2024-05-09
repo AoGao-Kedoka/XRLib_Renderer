@@ -24,9 +24,6 @@ void RenderBackendFlat::CreateRenderPass(std::string vertexShaderPath,
     Shader vertexShader{this->core, vertexShaderPath, Shader::VERTEX_SHADER};
     Shader fragmentShader{this->core, fragmentShaderPath, Shader::FRAGMENT_SHADER};
 
-    VkRenderPass pass{VK_NULL_HANDLE};
-    VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
-
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = swapChainImageFormat;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -53,13 +50,16 @@ void RenderBackendFlat::CreateRenderPass(std::string vertexShaderPath,
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
 
+    VkRenderPass pass{VK_NULL_HANDLE};
     if (vkCreateRenderPass(core->GetRenderDevice(), &renderPassInfo, nullptr,
                            &pass) != VK_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to create render pass";
         exit(-1);
     }
 
-    GraphicsRenderPass graphicsPass{pass,pipelineLayout, vertexShader, fragmentShader};
+    Pipeline pipeline{this->core, vertexShader, fragmentShader, swapChainExtent, pass};
+
+    GraphicsRenderPass graphicsPass{pass,vertexShader, fragmentShader, pipeline};
     renderPasses.push_back(graphicsPass);
 }
 
