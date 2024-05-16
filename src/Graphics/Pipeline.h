@@ -8,7 +8,8 @@ class Pipeline {
    public:
     // TODO: compute pipeline
     Pipeline() = default;
-    Pipeline(Core* core, Shader vertexShader, Shader fragmentShader, VkExtent2D swapChainExtend, VkRenderPass renderPass);
+    Pipeline(Core* core, Shader vertexShader, Shader fragmentShader,
+             VkRenderPass renderPass);
     ~Pipeline();
 
    private:

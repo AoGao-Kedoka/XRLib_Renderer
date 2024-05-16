@@ -1,7 +1,8 @@
 #include "Pipeline.h"
 
 Pipeline::Pipeline(Core* core, Shader vertexShader, Shader fragmentShader,
-                   VkExtent2D swapChainExtent, VkRenderPass renderPass) {
+                   VkRenderPass renderPass) {
+
     std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,
                                                  VK_DYNAMIC_STATE_SCISSOR};
     LOGGER(LOGGER::DEBUG) << "Pipeline constructor called";
@@ -29,14 +30,14 @@ Pipeline::Pipeline(Core* core, Shader vertexShader, Shader fragmentShader,
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swapChainExtent.width;
-    viewport.height = (float)swapChainExtent.height;
+    viewport.width = (float)core->GetFlatSwapchainExtent2D().width;
+    viewport.height = (float)core->GetFlatSwapchainExtent2D().height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = swapChainExtent;
+    scissor.extent = core->GetFlatSwapchainExtent2D();
 
     VkPipelineViewportStateCreateInfo viewportState{};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -129,8 +130,7 @@ Pipeline::Pipeline(Core* core, Shader vertexShader, Shader fragmentShader,
     depthStencil.maxDepthBounds = 1.0f;    // Optional
 
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages = {
-        vertexShader.GetShaderStageInfo(), fragmentShader.GetShaderStageInfo()
-    };
+        vertexShader.GetShaderStageInfo(), fragmentShader.GetShaderStageInfo()};
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -150,7 +150,8 @@ Pipeline::Pipeline(Core* core, Shader vertexShader, Shader fragmentShader,
     pipelineInfo.pDepthStencilState = &depthStencil;
 
     if (vkCreateGraphicsPipelines(core->GetRenderDevice(), VK_NULL_HANDLE, 1,
-        &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+                                  &pipelineInfo, nullptr,
+                                  &pipeline) != VK_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to create graphics pipeline";
         exit(-1);
     }

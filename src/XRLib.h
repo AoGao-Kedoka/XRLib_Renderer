@@ -17,7 +17,7 @@ class XRLib {
     XRLib& EnableValidationLayer();
     XRLib& Init(bool xr);
 
-    XRLib& SetRenderPassShader(std::string vertexShaderPath, std::string fragmentShaderPath);
+    XRLib& AddRenderPass(std::string vertexShaderPath, std::string fragmentShaderPath);
    private:
     Info info{};
     Core core{};

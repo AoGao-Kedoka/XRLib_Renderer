@@ -42,13 +42,16 @@ XRLib& XRLib::Init(bool xr) {
     return *this;
 }
 
-XRLib& XRLib::SetRenderPassShader(std::string vertexShaderPath,
+XRLib& XRLib::AddRenderPass(std::string vertexShaderPath,
                                   std::string fragmentShaderPath) {
     if (!initialized) {
         LOGGER(LOGGER::ERR) << "Not initialized";
         exit(-1);
     }
 
+    renderBackend->renderPasses.push_back(
+        {&core, vertexShaderPath, fragmentShaderPath});
+    
     return *this;
 }
 

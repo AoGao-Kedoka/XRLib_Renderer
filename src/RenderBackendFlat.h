@@ -10,17 +10,11 @@ class RenderBackendFlat : public RenderBackend {
     ~RenderBackendFlat();
 
     RenderBackendFlat(RenderBackendFlat&& other) noexcept
-        : RenderBackend(std::move(other)),
-          surface(std::exchange(other.surface, VK_NULL_HANDLE)) {
+        : RenderBackend(std::move(other)) {
         LOGGER(LOGGER::DEBUG) << "RenderBackendFlat move constructor called";
     }
 
     RenderBackendFlat& operator=(RenderBackendFlat&& rhs) noexcept {
-        if (this != &rhs) {
-            LOGGER(LOGGER::DEBUG) << "RenderBackendFlat move assignment called";
-            RenderBackend::operator=(std::move(rhs));
-            surface = std::exchange(rhs.surface, VK_NULL_HANDLE);
-        }
         return *this;
     }
 
@@ -32,10 +26,4 @@ class RenderBackendFlat : public RenderBackend {
     void CreateFlatSwapChain();
     void PrepareFlatWindow();
 
-    VkSurfaceKHR surface{VK_NULL_HANDLE};
-    VkSwapchainKHR swapChain{VK_NULL_HANDLE};
-    std::vector<VkImage> swapChainImages;
-    VkFormat swapChainImageFormat{VK_FORMAT_UNDEFINED};
-    VkExtent2D swapChainExtent{0, 0};
-    std::vector<VkImageView> swapChainImageViews;
 };
