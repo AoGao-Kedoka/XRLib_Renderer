@@ -2,6 +2,9 @@
 
 Shader::Shader(Core* core, const std::string& file_path, ShaderStage shaderStage) : core{core} {
     auto code = Util::ReadFile(file_path);
+    if (code == "") {
+        exit(-1);
+    }
 
     //create shader module
     VkShaderModuleCreateInfo createInfo{};

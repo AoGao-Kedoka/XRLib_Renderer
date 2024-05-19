@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "Logger.h"
+
 class Core {
    public:
     Core() = default;
@@ -38,11 +40,29 @@ class Core {
         this->swapChainImageFormat = format;
     }
     VkExtent2D& GetFlatSwapchainExtent2D() { return swapChainExtentFlat; }
-    void SetFlatSwapchainExtent2D(VkExtent2D extent){
+    void SetFlatSwapchainExtent2D(VkExtent2D extent) {
         this->swapChainExtentFlat = extent;
     }
     std::vector<VkImageView>& GetSwapchainImageViewsFlat() {
         return swapChainImageViewsFlat;
+    }
+
+    std::vector<VkFramebuffer>& GetSwapchainFrameBufferFlat() {
+        return swapChainFrameBuffers;
+    }
+
+    VkCommandPool& GetCommandPool() {
+        if (commandPool == VK_NULL_HANDLE) {
+            CreateCommandPool();
+        }
+        return commandPool;
+    }
+
+    VkCommandBuffer& GetCommandBuffer() {
+        if (commandBuffer == VK_NULL_HANDLE) {
+            CreateCommandBuffer();
+        }
+        return commandBuffer;
     }
 
     /*
@@ -88,6 +108,11 @@ class Core {
     VkFormat swapChainImageFormat{VK_FORMAT_UNDEFINED};
     VkExtent2D swapChainExtentFlat{0, 0};
     std::vector<VkImageView> swapChainImageViewsFlat;
+    std::vector<VkFramebuffer> swapChainFrameBuffers;
+
+    // commands
+    VkCommandPool commandPool{VK_NULL_HANDLE};
+    VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
 
     bool xrValid = true;
 
@@ -106,6 +131,33 @@ class Core {
                 graphicsQueueIndex = i;
                 break;
             }
+        }
+    }
+
+    void CreateCommandPool() {
+        auto graphicsFamilyIndex = GetGraphicsQueueFamilyIndex();
+        VkCommandPoolCreateInfo poolInfo{};
+        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        poolInfo.queueFamilyIndex = graphicsFamilyIndex;
+        if (vkCreateCommandPool(GetRenderDevice(), &poolInfo, nullptr,
+                                &commandPool) != VK_SUCCESS) {
+            LOGGER(LOGGER::ERR) << "failed to create command pool!";
+            exit(-1);
+        }
+    }
+
+    void CreateCommandBuffer() {
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.commandPool = GetCommandPool();
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandBufferCount = 1;
+
+        if (vkAllocateCommandBuffers(GetRenderDevice(), &allocInfo,
+                                     &commandBuffer) != VK_SUCCESS) {
+            LOGGER(LOGGER::ERR)<< "failed to allocate command buffers!";
+            exit(-1);
         }
     }
 };

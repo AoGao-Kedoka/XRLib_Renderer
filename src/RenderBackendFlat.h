@@ -18,12 +18,12 @@ class RenderBackendFlat : public RenderBackend {
         return *this;
     }
 
-    void Prepare() override;
-    void CreateRenderPass(std::string vertexShaderPath,
-                          std::string fragmentShaderPath) override;
+    void Prepare(
+        std::vector<std::pair<std::string, std::string>> passesToAdd) override;
+
 
    private:
     void CreateFlatSwapChain();
     void PrepareFlatWindow();
-
+    void CreateFrameBuffer();
 };

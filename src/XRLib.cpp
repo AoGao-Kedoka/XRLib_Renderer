@@ -36,21 +36,20 @@ XRLib& XRLib::Init(bool xr) {
     if (xr) InitXRBackend();
     InitRenderBackend();
 
-    renderBackend->Prepare();
+    renderBackend->Prepare(passesToAdd);
 
     initialized = true;
     return *this;
 }
 
+XRLib& XRLib::Run() {
+
+    return *this;
+}
+
 XRLib& XRLib::AddRenderPass(std::string vertexShaderPath,
                                   std::string fragmentShaderPath) {
-    if (!initialized) {
-        LOGGER(LOGGER::ERR) << "Not initialized";
-        exit(-1);
-    }
-
-    renderBackend->renderPasses.push_back(
-        {&core, vertexShaderPath, fragmentShaderPath});
+    passesToAdd.push_back({vertexShaderPath, fragmentShaderPath});
     
     return *this;
 }

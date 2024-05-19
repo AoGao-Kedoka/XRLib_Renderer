@@ -18,6 +18,7 @@ class XRLib {
     XRLib& Init(bool xr);
 
     XRLib& AddRenderPass(std::string vertexShaderPath, std::string fragmentShaderPath);
+    XRLib& Run();
    private:
     Info info{};
     Core core{};
@@ -28,6 +29,7 @@ class XRLib {
     std::unique_ptr<XRBackend> xrBackend{nullptr};
     std::shared_ptr<RenderBackend> renderBackend{nullptr};
 
+    std::vector<std::pair<std::string, std::string>> passesToAdd;
     bool initialized = false;
 };
 }    // namespace XRLib

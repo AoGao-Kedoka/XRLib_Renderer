@@ -1,7 +1,7 @@
 #include "Pipeline.h"
 
 Pipeline::Pipeline(Core* core, Shader vertexShader, Shader fragmentShader,
-                   VkRenderPass renderPass) {
+                   RenderPass renderPass) {
 
     std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,
                                                  VK_DYNAMIC_STATE_SCISSOR};
@@ -144,7 +144,7 @@ Pipeline::Pipeline(Core* core, Shader vertexShader, Shader fragmentShader,
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = pipelineLayout;
-    pipelineInfo.renderPass = renderPass;
+    pipelineInfo.renderPass = renderPass.GetRenderPass();
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.pDepthStencilState = &depthStencil;
@@ -155,6 +155,8 @@ Pipeline::Pipeline(Core* core, Shader vertexShader, Shader fragmentShader,
         LOGGER(LOGGER::ERR) << "Failed to create graphics pipeline";
         exit(-1);
     }
+
+    renderPass.SetGraphicPipeline(this->pipeline);
 }
 
 Pipeline::~Pipeline() {

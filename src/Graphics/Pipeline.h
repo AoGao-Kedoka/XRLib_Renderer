@@ -2,6 +2,7 @@
 
 #include "Core.h"
 #include "Shader.h"
+#include "RenderPass.h"
 #include "Util.h"
 
 class Pipeline {
@@ -9,7 +10,7 @@ class Pipeline {
     // TODO: compute pipeline
     Pipeline() = default;
     Pipeline(Core* core, Shader vertexShader, Shader fragmentShader,
-             VkRenderPass renderPass);
+             RenderPass pass);
     ~Pipeline();
 
    private:
