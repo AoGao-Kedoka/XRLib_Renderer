@@ -57,13 +57,12 @@ if (NOT unofficial-shaderc_FOUND)
     )
     message("Path is ${CMAKE_BINARY_DIR}")
     set(SHADERC_INIT_SCRIPT "${CMAKE_BINARY_DIR}/_deps/shaderc-src/utils/git-sync-deps")
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E sleep 5
 
-    )
+	FetchContent_Populate(shaderc)
     execute_process(
         COMMAND python ${SHADERC_INIT_SCRIPT}
     )
+
     FetchContent_MakeAvailable(shaderc)
     set(SHADERC_DEPS shaderc_combined)
 endif()
