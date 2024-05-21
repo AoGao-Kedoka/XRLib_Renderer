@@ -88,4 +88,23 @@ class Util {
         LOGGER(LOGGER::DEBUG) << result;
         return result;
     }
+
+    static std::vector<const char*> SplitStringToCharPtr(
+        const std::string& input) {
+        static std::vector<std::string> managed_strings;
+        managed_strings.clear();
+        std::vector<const char*> out;
+        std::istringstream stream(input);
+        std::string extension;
+
+        while (getline(stream, extension, ' ')) {
+            managed_strings.push_back(extension);
+        }
+
+        for (const auto& str : managed_strings) {
+            out.push_back(str.c_str());
+        }
+
+        return out;
+    }
 };

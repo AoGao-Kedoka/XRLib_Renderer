@@ -80,14 +80,18 @@ void RenderBackend::CreateVulkanInstance() {
 
         std::string buffer(xrVulkanInstanceExtensionsCount, ' ');
         if (xrGetVulkanInstanceExtensionsKHR(core->GetXRInstance(),
-                                             core->GetSystemID(), 0,
+                                             core->GetSystemID(), xrVulkanInstanceExtensionsCount,
                                              &xrVulkanInstanceExtensionsCount,
                                              buffer.data()) != XR_SUCCESS) {
             LOGGER(LOGGER::ERR) << "Failed to get vulkan instance extension";
             exit(-1);
         }
 
-        //vulkanInstanceExtensions.push_back(buffer.c_str());
+        std::vector<const char*> xrInstanceExtensions = Util::SplitStringToCharPtr(buffer);
+        for (auto extension : xrInstanceExtensions) {
+            vulkanInstanceExtensions.push_back(extension);
+        }
+
     }
 
     VkInstanceCreateInfo createInfo{};
@@ -226,15 +230,14 @@ void RenderBackend::CreateLogicalDevice() {
             LOGGER(LOGGER::ERR) << "Failed to get vulkan device extensions";
             exit(-1);
         }
-        std::string buffer;
-        buffer.resize(deviceExtensionsCount);
+        std::string buffer(deviceExtensionsCount, ' ');
         if (xrGetVulkanDeviceExtensionsKHR(
                 core->GetXRInstance(), core->GetSystemID(),
                 deviceExtensionsCount, &deviceExtensionsCount, buffer.data())) {
             LOGGER(LOGGER::ERR) << "Failed to get vulkan device extensions";
             exit(-1);
         }
-        deviceExtensions = core->UnpackExtensionString(buffer);
+        deviceExtensions = Util::SplitStringToCharPtr(buffer);
     }
 
     deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);

@@ -74,20 +74,6 @@ class Core {
     XrSession& GetXRSession() { return xrSession; }
     XrSystemId& GetSystemID() { return xrSystemID; }
 
-    std::vector<const char*> UnpackExtensionString(const std::string& string) {
-        std::vector<const char*> out;
-        std::istringstream stream{string};
-        std::string extension;
-        while (getline(stream, extension, ' ')) {
-            const size_t len = extension.size() + 1u;
-            char* str = new char[len];
-            memcpy(str, extension.c_str(), len);
-            out.push_back(str);
-        }
-
-        return out;
-    }
-
    private:
     VkInstance vkInstance{VK_NULL_HANDLE};
     VkPhysicalDevice vkPhysicalDevice{VK_NULL_HANDLE};
