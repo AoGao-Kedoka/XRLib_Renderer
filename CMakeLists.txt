@@ -47,7 +47,7 @@ endif()
 # shaderc
 #----------------
 set(SHADERC_DEPS unofficial::shaderc::shaderc)
-find_package(unofficial-shaderch CONFIG QUIET)
+find_package(unofficial-shaderc CONFIG QUIET)
 if (NOT unofficial-shaderc_FOUND)
     message("shaderc not found")
     FetchContent_Declare(
