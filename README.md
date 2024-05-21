@@ -14,8 +14,9 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=<path_to_vcpkg>/scripts/buildsystems/vcpkg.cmake
 cmake --build .
 ```
 
-### Without dependencies installed (longer build time and inconsistent)
-Validataion layer with this approach is not fully working. Please install the Vulkan-SDK if validation layer needed.
+### Without dependencies installed
+- longer build time and inconsistent, might need to perform cmake twice
+- Validataion layer with this approach is not fully working. Please install the Vulkan-SDK if validation layer needed.
 
 ```
 mkdir build

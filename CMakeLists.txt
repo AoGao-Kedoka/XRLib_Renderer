@@ -47,7 +47,7 @@ endif()
 # shaderc
 #----------------
 set(SHADERC_DEPS unofficial::shaderc::shaderc)
-find_package(unofficial-shaderc CONFIG QUIET)
+find_package(unofficial-shaderch CONFIG QUIET)
 if (NOT unofficial-shaderc_FOUND)
     message("shaderc not found")
     FetchContent_Declare(
@@ -58,7 +58,6 @@ if (NOT unofficial-shaderc_FOUND)
     message("Path is ${CMAKE_BINARY_DIR}")
     set(SHADERC_INIT_SCRIPT "${CMAKE_BINARY_DIR}/_deps/shaderc-src/utils/git-sync-deps")
 
-	FetchContent_Populate(shaderc)
     execute_process(
         COMMAND python ${SHADERC_INIT_SCRIPT}
     )
