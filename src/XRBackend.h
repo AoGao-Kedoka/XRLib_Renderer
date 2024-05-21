@@ -47,6 +47,7 @@ class XRBackend {
 
     void CreateXrInstance();
     void LogOpenXRRuntimeProperties() const;
+    void LogOpenXRSystemProperties() const;
     void GetSystemID();
 
     void CreateXrSession();

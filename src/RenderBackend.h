@@ -10,8 +10,8 @@
 
 #include "Core.h"
 #include "Graphics/Pipeline.h"
-#include "Graphics/Shader.h"
 #include "Graphics/RenderPass.h"
+#include "Graphics/Shader.h"
 #include "Info.h"
 #include "Logger.h"
 
@@ -47,27 +47,31 @@ class RenderBackend {
     void CreatePhysicalDevice();
     void CreateLogicalDevice();
 
-    virtual void Prepare(std::vector<std::pair<std::string, std::string>> passesToAdd){};
+    virtual void Prepare(
+        std::vector<std::pair<std::string, std::string>> passesToAdd){};
 
     struct GraphicsRenderPass {
         GraphicsRenderPass(Core* core, std::string vertexShaderPath,
                            std::string fragmentShaderPath)
-            : core{core},
-              vertexShader{core, vertexShaderPath, Shader::VERTEX_SHADER},
-              fragmentShader{core, fragmentShaderPath,
-                             Shader::FRAGMENT_SHADER} {
+            : core{core} {
+            //TODO: Change back to normal vertex and fragment shader
+            Shader vertexShader{core, Shader::VERTEX_SHADER};
+            Shader fragmentShader{core, Shader::FRAGMENT_SHADER};
+            RenderPass tRenderPass{core};
 
-            renderPass = RenderPass{core};
-            pipeline = Pipeline{core, vertexShader, fragmentShader, renderPass};
+            renderPass = &tRenderPass;
+
+            Pipeline tPipeline{core, std::move(vertexShader),
+                               std::move(fragmentShader), renderPass};
+            pipeline = &tPipeline;
         }
 
         Core* core;
-        Shader vertexShader;
-        Shader fragmentShader;
-        RenderPass renderPass;
-        Pipeline pipeline;
+        RenderPass* renderPass{nullptr};
+        Pipeline* pipeline{nullptr};
     };
-    std::vector<GraphicsRenderPass> renderPasses;
+
+    std::vector<GraphicsRenderPass*> renderPasses;
 
    protected:
     Info* info;

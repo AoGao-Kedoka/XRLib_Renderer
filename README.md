@@ -4,7 +4,7 @@ A library to create XR application without an engine. Build with Vulkan and Open
 ### Vcpkg (Recommended)
 Install the dependencies:
 ```
-vcpkg install openxr vulkan glm glfw
+vcpkg install openxr-loader vulkan glm glfw3 shaderc
 ```
 
 Build the project:
@@ -13,7 +13,8 @@ mkdir build
 cmake .. -DCMAKE_TOOLCHAIN_FILE=<path_to_vcpkg>/scripts/buildsystems/vcpkg.cmakek
 cmake --build .
 ```
-### Without dependencies installed (longer build time)
+
+### Without dependencies installed (longer build time and inconsistent)
 Validataion layer with this approach is not fully working. Please install the Vulkan-SDK if validation layer needed.
 
 ```

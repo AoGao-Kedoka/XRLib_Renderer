@@ -35,6 +35,9 @@ RenderPass::RenderPass(Core* core) : core{core} {
 }
 
 RenderPass::~RenderPass() {
+    LOGGER(LOGGER::DEBUG) << "render pass destructor called";
+    if (!core)
+        return;
     Util::VkSafeClean(vkDestroyRenderPass, core->GetRenderDevice(), pass,
                       nullptr);
 }
@@ -71,7 +74,7 @@ void RenderPass::Record(uint32_t imageIndex) {
                          VK_SUBPASS_CONTENTS_INLINE);
 
     vkCmdBindPipeline(core->GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                      graphicsPipeline);
+                      *graphicsPipeline);
 
     VkViewport viewport{};
     viewport.x = 0.0f;

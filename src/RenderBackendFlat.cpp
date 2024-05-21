@@ -21,10 +21,14 @@ void RenderBackendFlat::Prepare(
 
     // prepare shader
     for (auto& pass : passesToAdd) {
-        renderPasses.push_back({core, pass.first, pass.second});
+        //TODO: destructors are called here, why?
+        GraphicsRenderPass graphicsRenderPass{core, pass.first, pass.second};
+        renderPasses.push_back(&graphicsRenderPass);
     }
 
     CreateFrameBuffer();
+
+    LOGGER(LOGGER::INFO) << "Initialization done.";
 }
 
 void RenderBackendFlat::CreateFrameBuffer() {
@@ -38,7 +42,7 @@ void RenderBackendFlat::CreateFrameBuffer() {
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass =
             renderPasses[renderPasses.size() - 1]
-                .renderPass.GetRenderPass();    //TODO: this should setted to the final pass
+                ->renderPass->GetRenderPass();    //TODO: this should setted to the final pass
         framebufferInfo.attachmentCount = 1;
         framebufferInfo.pAttachments = attachments;
         framebufferInfo.width = core->GetFlatSwapchainExtent2D().width;

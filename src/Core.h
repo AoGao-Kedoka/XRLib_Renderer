@@ -73,8 +73,14 @@ class Core {
     void SetXRValid(bool value) { xrValid = value; }
     XrSession& GetXRSession() { return xrSession; }
     XrSystemId& GetSystemID() { return xrSystemID; }
+    std::vector<XrViewConfigurationView>& GetXRViewConfigurationView() {
+        return xrViewsConfiguration;
+    }
 
    private:
+    //---------------------------------------
+    //Graphics
+    //---------------------------------------
     VkInstance vkInstance{VK_NULL_HANDLE};
     VkPhysicalDevice vkPhysicalDevice{VK_NULL_HANDLE};
     VkDevice vkDevice{VK_NULL_HANDLE};
@@ -99,8 +105,6 @@ class Core {
     // commands
     VkCommandPool commandPool{VK_NULL_HANDLE};
     VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
-
-    bool xrValid = true;
 
     int32_t graphicsQueueIndex = -1;
 
@@ -142,8 +146,14 @@ class Core {
 
         if (vkAllocateCommandBuffers(GetRenderDevice(), &allocInfo,
                                      &commandBuffer) != VK_SUCCESS) {
-            LOGGER(LOGGER::ERR)<< "failed to allocate command buffers!";
+            LOGGER(LOGGER::ERR) << "failed to allocate command buffers!";
             exit(-1);
         }
     }
+
+    //---------------------------------------
+    //XR
+    //---------------------------------------
+    bool xrValid = true;
+    std::vector<XrViewConfigurationView> xrViewsConfiguration;
 };

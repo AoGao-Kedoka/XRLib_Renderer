@@ -42,6 +42,32 @@ if (NOT Vulkan_FOUND)
     set(VULKAN_DEPS Vulkan::Headers Vulkan::Loader)
 endif()
 
+
+#----------------
+# shaderc
+#----------------
+set(SHADERC_DEPS unofficial::shaderc::shaderc)
+find_package(unofficial-shaderc CONFIG QUIET)
+if (NOT unofficial-shaderc_FOUND)
+    message("shaderc not found")
+    FetchContent_Declare(
+        shaderc
+        GIT_REPOSITORY https://github.com/google/shaderc.git
+        GIT_TAG v2024.1
+    )
+    message("Path is ${CMAKE_BINARY_DIR}")
+    set(SHADERC_INIT_SCRIPT "${CMAKE_BINARY_DIR}/_deps/shaderc-src/utils/git-sync-deps")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E sleep 5
+
+    )
+    execute_process(
+        COMMAND python ${SHADERC_INIT_SCRIPT}
+    )
+    FetchContent_MakeAvailable(shaderc)
+    set(SHADERC_DEPS shaderc_combined)
+endif()
+
 #----------------
 # OpenXR
 #----------------
@@ -121,5 +147,6 @@ add_executable(${PROJECT_NAME} ${SRCS})
 target_link_libraries(${PROJECT_NAME} PRIVATE 
     ${VULKAN_DEPS}
     ${OPENXR_DEPS}
+    ${SHADERC_DEPS}
     glm::glm
     glfw)

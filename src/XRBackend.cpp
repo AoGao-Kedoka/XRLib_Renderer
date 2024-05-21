@@ -14,12 +14,44 @@ XRBackend::~XRBackend() {
     if (!core || !info) {
         return;
     }
-    
+
     Util::XrSafeClean(xrDestroyInstance, core->GetXRInstance());
     Util::XrSafeClean(xrDestroySession, core->GetXRSession());
 }
 
 void XRBackend::XrCreateSwapcahin() {
+    uint32_t swapchainFormatCount;
+    if (xrEnumerateSwapchainFormats(core->GetXRSession(), 0,
+                                    &swapchainFormatCount,
+                                    nullptr) != XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to get swapchain formats";
+        exit(-1);
+    }
+    std::vector<int64_t> swpchainFormats(swapchainFormatCount);
+    if (xrEnumerateSwapchainFormats(core->GetXRSession(), swapchainFormatCount,
+                                    &swapchainFormatCount,
+                                    swpchainFormats.data()) != XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to get swapchain formats";
+        exit(-1);
+    }
+
+    uint32_t viewCount;
+    if (xrEnumerateViewConfigurationViews(
+            core->GetXRInstance(), core->GetSystemID(),
+            XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &viewCount,
+            nullptr) != XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to get view configuration views";
+        exit(-1);
+    }
+
+    core->GetXRViewConfigurationView().resize(viewCount);
+    if (xrEnumerateViewConfigurationViews(
+            core->GetXRInstance(), core->GetSystemID(),
+            XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, viewCount, &viewCount,
+            core->GetXRViewConfigurationView().data()) != XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to get view configuration views";
+        exit(-1);
+    }
     //TODO
 }
 
@@ -56,14 +88,14 @@ void XRBackend::CreateXrInstance() {
     uint32_t extensionCount = 0;
     std::vector<XrExtensionProperties> extensionProperties;
     if (xrEnumerateInstanceExtensionProperties(nullptr, 0, &extensionCount,
-                                               nullptr)) {
+                                               nullptr) != XR_SUCCESS) {
         LOGGER(LOGGER::ERR)
             << "Failed to enumerate InstanceExtensionProperties.";
     }
     extensionProperties.resize(extensionCount, {XR_TYPE_EXTENSION_PROPERTIES});
-    if (xrEnumerateInstanceExtensionProperties(nullptr, extensionCount,
-                                               &extensionCount,
-                                               extensionProperties.data())) {
+    if (xrEnumerateInstanceExtensionProperties(
+            nullptr, extensionCount, &extensionCount,
+            extensionProperties.data()) != XR_SUCCESS) {
         LOGGER(LOGGER::ERR)
             << "Failed to enumerate InstanceExtensionProperties.";
     }
@@ -105,7 +137,8 @@ void XRBackend::CreateXrInstance() {
         static_cast<uint32_t>(activeInstanceExtensions.size());
     instanceCreateInfo.enabledExtensionNames = activeInstanceExtensions.data();
 
-    XrResult result = xrCreateInstance(&instanceCreateInfo, &core->GetXRInstance());
+    XrResult result =
+        xrCreateInstance(&instanceCreateInfo, &core->GetXRInstance());
 
     if (result != XR_SUCCESS) {
         std::string message{
@@ -120,10 +153,12 @@ void XRBackend::GetSystemID() {
     XrSystemGetInfo systemGetInfo{};
     systemGetInfo.type = XR_TYPE_SYSTEM_GET_INFO;
     systemGetInfo.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
-    XrResult result =
-        xrGetSystem(core->GetXRInstance(), &systemGetInfo, &core->GetSystemID());
+    XrResult result = xrGetSystem(core->GetXRInstance(), &systemGetInfo,
+                                  &core->GetSystemID());
     if (result != XR_SUCCESS) {
-        std::string message{"Failed to get system id, HMD may not connected. Fall back to normal rendering mode"};
+        std::string message{
+            "Failed to get system id, HMD may not connected. Fall back to "
+            "normal rendering mode"};
         LOGGER(LOGGER::WARNING) << message;
         NMB::show("Error", message.c_str(), NMB::Icon::ICON_ERROR);
         core->SetXRValid(false);
@@ -144,8 +179,7 @@ void XRBackend::CreateXrSession() {
     sessionCreateInfo.systemId = core->GetSystemID();
     sessionCreateInfo.next = &graphicsBinding;
     if (xrCreateSession(core->GetXRInstance(), &sessionCreateInfo,
-                        &core->GetXRSession()) !=
-        XR_SUCCESS) {
+                        &core->GetXRSession()) != XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to create session";
         exit(-1);
     }
@@ -158,10 +192,24 @@ void XRBackend::LogOpenXRRuntimeProperties() const {
     }
 
     XrInstanceProperties instanceProperties{XR_TYPE_INSTANCE_PROPERTIES};
-    xrGetInstanceProperties(core->GetXRInstance(), &instanceProperties);
-    LOGGER(LOGGER::INFO) << "Using OpenXR Runtime: "
-                         << instanceProperties.runtimeName << " - "
-                         << XR_VERSION_MAJOR(instanceProperties.runtimeVersion)
-                         << XR_VERSION_MINOR(instanceProperties.runtimeVersion)
-                         << XR_VERSION_PATCH(instanceProperties.runtimeVersion);
+    if (xrGetInstanceProperties(core->GetXRInstance(), &instanceProperties) !=
+        XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to get instance properties";
+    } else {
+        LOGGER(LOGGER::INFO)
+            << "Using OpenXR Runtime: " << instanceProperties.runtimeName
+            << " - " << XR_VERSION_MAJOR(instanceProperties.runtimeVersion)
+            << XR_VERSION_MINOR(instanceProperties.runtimeVersion)
+            << XR_VERSION_PATCH(instanceProperties.runtimeVersion);
+    }
+}
+
+void XRBackend::LogOpenXRSystemProperties() const {
+    XrSystemProperties systemProperties{XR_TYPE_SYSTEM_PROPERTIES};
+    if (xrGetSystemProperties(core->GetXRInstance(), core->GetSystemID(),
+                              &systemProperties) != XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to get system properties";
+    } else {
+        //TODO
+    }
 }

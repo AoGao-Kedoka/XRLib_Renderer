@@ -10,8 +10,22 @@ class Pipeline {
     // TODO: compute pipeline
     Pipeline() = default;
     Pipeline(Core* core, Shader vertexShader, Shader fragmentShader,
-             RenderPass pass);
+             RenderPass* pass);
     ~Pipeline();
+
+     Pipeline(Pipeline&& other) noexcept
+        : core(std::exchange(other.core, nullptr)),
+          pipeline(std::exchange(other.pipeline, VK_NULL_HANDLE)),
+          pipelineLayout(std::exchange(other.pipelineLayout, VK_NULL_HANDLE)) {}
+
+    Pipeline& operator=(Pipeline&& other) noexcept {
+        if (this != &other) {
+            core = std::exchange(other.core, nullptr);
+            pipeline = std::exchange(other.pipeline, VK_NULL_HANDLE);
+            pipelineLayout = std::exchange(other.pipelineLayout, VK_NULL_HANDLE);
+        }
+        return *this;
+    }
 
    private:
     Core* core = nullptr;
