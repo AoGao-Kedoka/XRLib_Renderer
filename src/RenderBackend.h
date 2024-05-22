@@ -43,10 +43,6 @@ class RenderBackend {
         return *this;
     }
 
-    void CreateVulkanInstance();
-    void CreatePhysicalDevice();
-    void CreateLogicalDevice();
-
     virtual void Prepare(
         std::vector<std::pair<std::string, std::string>> passesToAdd){};
 
@@ -76,6 +72,15 @@ class RenderBackend {
     GLFWwindow* window;
 
    private:
+    void InitVulkan() {
+        CreateVulkanInstance();
+        CreatePhysicalDevice();
+        CreateLogicalDevice();
+    }
+    void CreateVulkanInstance();
+    void CreatePhysicalDevice();
+    void CreateLogicalDevice();
+
     const std::vector<const char*> validataionLayers = {
         "VK_LAYER_KHRONOS_validation"};
     VkDebugUtilsMessengerEXT vkDebugMessenger{};

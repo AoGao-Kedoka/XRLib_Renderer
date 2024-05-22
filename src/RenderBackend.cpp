@@ -17,9 +17,7 @@ RenderBackend::RenderBackend(Info& info, Core& core)
             }
         }
     }
-    CreateVulkanInstance();
-    CreatePhysicalDevice();
-    CreateLogicalDevice();
+    InitVulkan();
 }
 
 RenderBackend::~RenderBackend() {
