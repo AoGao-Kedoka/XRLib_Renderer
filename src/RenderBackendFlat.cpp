@@ -21,17 +21,12 @@ void RenderBackendFlat::Prepare(
 
     // prepare shader
     for (auto& pass : passesToAdd) {
-        //TODO: destructors are called here, why?
-        GraphicsRenderPass graphicsRenderPass{core, pass.first, pass.second};
-        renderPasses.push_back(&graphicsRenderPass);
+        auto graphicsRenderPass =
+            std::make_unique<GraphicsRenderPass>(core, pass.first, pass.second);
+        renderPasses.push_back(std::move(graphicsRenderPass));
     }
 
-    CreateFrameBuffer();
-
-    LOGGER(LOGGER::INFO) << "Initialization done.";
-}
-
-void RenderBackendFlat::CreateFrameBuffer() {
+    // create frame buffer
     core->GetSwapchainFrameBufferFlat().resize(
         core->GetSwapchainImageViewsFlat().size());
 
@@ -41,8 +36,7 @@ void RenderBackendFlat::CreateFrameBuffer() {
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass =
-            renderPasses[renderPasses.size() - 1]
-                ->renderPass->GetRenderPass();    //TODO: this should setted to the final pass
+            renderPasses[renderPasses.size() - 1]->renderPass.GetRenderPass();
         framebufferInfo.attachmentCount = 1;
         framebufferInfo.pAttachments = attachments;
         framebufferInfo.width = core->GetFlatSwapchainExtent2D().width;
@@ -52,7 +46,7 @@ void RenderBackendFlat::CreateFrameBuffer() {
         if (vkCreateFramebuffer(
                 core->GetRenderDevice(), &framebufferInfo, nullptr,
                 &core->GetSwapchainFrameBufferFlat()[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create framebuffer!");
+            LOGGER(LOGGER::ERR) << "Failed to create frame buffer";
         }
     }
 }
@@ -171,6 +165,8 @@ void RenderBackendFlat::CreateFlatSwapChain() {
             LOGGER(LOGGER::ERR) << "Failed to create image view";
         }
     }
+
+    LOGGER(LOGGER::DEBUG) << "Flat Swapchain created";
 }
 
 void RenderBackendFlat::PrepareFlatWindow() {
@@ -193,4 +189,6 @@ void RenderBackendFlat::PrepareFlatWindow() {
             << "Graphics queue doesn't have present support";
         //TODO: graphics queue normaly have present support
     }
+
+    LOGGER(LOGGER::DEBUG) << "Window created";
 }

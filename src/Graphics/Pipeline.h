@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Core.h"
-#include "Shader.h"
 #include "RenderPass.h"
+#include "Shader.h"
 #include "Util.h"
 
 class Pipeline {
@@ -13,7 +13,7 @@ class Pipeline {
              RenderPass* pass);
     ~Pipeline();
 
-     Pipeline(Pipeline&& other) noexcept
+    Pipeline(Pipeline&& other) noexcept
         : core(std::exchange(other.core, nullptr)),
           pipeline(std::exchange(other.pipeline, VK_NULL_HANDLE)),
           pipelineLayout(std::exchange(other.pipelineLayout, VK_NULL_HANDLE)) {}
@@ -22,7 +22,8 @@ class Pipeline {
         if (this != &other) {
             core = std::exchange(other.core, nullptr);
             pipeline = std::exchange(other.pipeline, VK_NULL_HANDLE);
-            pipelineLayout = std::exchange(other.pipelineLayout, VK_NULL_HANDLE);
+            pipelineLayout =
+                std::exchange(other.pipelineLayout, VK_NULL_HANDLE);
         }
         return *this;
     }

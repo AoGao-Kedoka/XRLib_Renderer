@@ -26,7 +26,6 @@ class Shader {
           shaderModule(std::exchange(other.shaderModule, VK_NULL_HANDLE)),
           shaderStageInfo(std::exchange(other.shaderStageInfo, {})) {}
 
-    // Move assignment operator
     Shader& operator=(Shader&& other) noexcept {
         if (this != &other) {
             core = std::exchange(other.core, nullptr);
