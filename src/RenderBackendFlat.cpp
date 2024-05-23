@@ -20,10 +20,16 @@ void RenderBackendFlat::Prepare(
     CreateFlatSwapChain();
 
     // prepare shader
-    for (auto& pass : passesToAdd) {
+    if (passesToAdd.empty()) {
         auto graphicsRenderPass =
-            std::make_unique<GraphicsRenderPass>(core, pass.first, pass.second);
+            std::make_unique<GraphicsRenderPass>(core);
         renderPasses.push_back(std::move(graphicsRenderPass));
+    } else {
+        for (auto& pass : passesToAdd) {
+            auto graphicsRenderPass =
+                std::make_unique<GraphicsRenderPass>(core, pass.first, pass.second);
+            renderPasses.push_back(std::move(graphicsRenderPass));
+        }
     }
 
     // create frame buffer

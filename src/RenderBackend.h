@@ -50,7 +50,16 @@ class RenderBackend {
         GraphicsRenderPass(Core* core, std::string vertexShaderPath,
                            std::string fragmentShaderPath)
             : core{core} {
-            //TODO: Change back to normal vertex and fragment shader
+            Shader vertexShader{core, vertexShaderPath, Shader::VERTEX_SHADER};
+            Shader fragmentShader{core, fragmentShaderPath,
+                                  Shader::FRAGMENT_SHADER};
+            renderPass = RenderPass{core};
+
+            pipeline = Pipeline{core, std::move(vertexShader),
+                                std::move(fragmentShader), &renderPass};
+        }
+
+        GraphicsRenderPass(Core* core) : core{ core } {
             Shader vertexShader{core, Shader::VERTEX_SHADER};
             Shader fragmentShader{core, Shader::FRAGMENT_SHADER};
             renderPass = RenderPass{core};

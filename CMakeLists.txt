@@ -110,6 +110,7 @@ if (NOT unofficial-shaderc_FOUND)
     set(SHADERC_ENABLE_WERROR_COMPILE OFF)
     set(SHADERC_ENABLE_SHARED_CRT ON)
     FetchContent_MakeAvailable(shaderc)
+    set(SHADERC_DEPS shaderc)
 endif()
 
 #----------------
@@ -191,6 +192,6 @@ add_executable(${PROJECT_NAME} ${SRCS})
 target_link_libraries(${PROJECT_NAME} PRIVATE 
     ${VULKAN_DEPS}
     ${OPENXR_DEPS}
-	shaderc
+    ${SHADERC_DEPS}
     glm::glm
     glfw)
