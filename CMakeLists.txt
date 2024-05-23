@@ -49,24 +49,67 @@ endif()
 set(SHADERC_DEPS unofficial::shaderc::shaderc)
 find_package(unofficial-shaderc CONFIG QUIET)
 if (NOT unofficial-shaderc_FOUND)
-    message("shaderc not found")
-    FetchContent_Declare(
-        shaderc
+	FetchContent_Declare(SPIRV-Cross
+        GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Cross.git
+        GIT_TAG vulkan-sdk-1.3.275.0
+        UPDATE_DISCONNECTED TRUE
+        GIT_PROGRESS TRUE
+        )
+
+    set(SPIRV_CROSS_CLI OFF)
+    set(SPIRV_CROSS_ENABLE_TESTS OFF)
+    FetchContent_MakeAvailable(SPIRV-Cross)
+
+    FetchContent_Declare(SPIRV-Headers
+        GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Headers.git
+        GIT_TAG vulkan-sdk-1.3.275.0
+        UPDATE_DISCONNECTED TRUE
+        GIT_PROGRESS TRUE
+        )
+    set(SPIRV_HEADERS_SKIP_EXAMPLES ON)
+    set(SPIRV_HEADERS_SKIP_INSTALL ON)
+    FetchContent_MakeAvailable(SPIRV-Headers)
+
+    FetchContent_Declare(SPIRV-Tools
+        GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Tools.git
+        GIT_TAG vulkan-sdk-1.3.275.0
+        UPDATE_DISCONNECTED TRUE
+        GIT_PROGRESS TRUE
+        )
+    set(SKIP_SPIRV_TOOLS_INSTALL ON)
+    set(SPIRV_SKIP_EXECUTABLES ON)
+    set(SPIRV_SKIP_TESTS ON)
+    FetchContent_MakeAvailable(SPIRV-Tools)
+
+    FetchContent_Declare(glslang
+        GIT_REPOSITORY https://github.com/KhronosGroup/glslang.git
+        GIT_TAG d73712b8f6c9047b09e99614e20d456d5ada2390
+        UPDATE_DISCONNECTED TRUE
+        GIT_PROGRESS TRUE
+        )
+    set(SKIP_GLSLANG_INSTALL ON)
+    set(ENABLE_SPVREMAPPER OFF)
+    set(ENABLE_GLSLANG_BINARIES OFF)
+    set(ENABLE_GLSLANG_JS OFF)
+    set(ENABLE_GLSLANG_BINARIES OFF)
+    FetchContent_MakeAvailable(glslang)
+
+
+    FetchContent_Declare(shaderc
         GIT_REPOSITORY https://github.com/google/shaderc.git
-        GIT_TAG v2024.1
-    )
-    message("Path is ${CMAKE_BINARY_DIR}")
-    set(SHADERC_INIT_SCRIPT "${shaderc_SOURCE_DIR}/utils/git-sync-deps")
-
-    execute_process(
-        COMMAND python ${SHADERC_INIT_SCRIPT}
-    )
-
-	set(SHADERC_SKIP_TESTS ON CACHE BOOL "")
-
+        GIT_TAG v2024.0
+        UPDATE_DISCONNECTED TRUE
+        GIT_PROGRESS TRUE
+        )
+    set(SHADERC_ENABLE_WGSL_OUTPUT OFF)
+    set(SHADERC_SKIP_INSTALL ON)
+    set(SHADERC_SKIP_TESTS ON)
+    set(SHADERC_SKIP_EXAMPLES ON)
+    set(SHADERC_SKIP_COPYRIGHT_CHECK ON)
+    set(SHADERC_SKIP_COPYRIGHT_CHECK ON)
+    set(SHADERC_ENABLE_WERROR_COMPILE OFF)
+    set(SHADERC_ENABLE_SHARED_CRT ON)
     FetchContent_MakeAvailable(shaderc)
-    set(SHADERC_DEPS shaderc_combined)
-	include_directories(${shaderc_SOURCE_DIR}/libshaderc/include)
 endif()
 
 #----------------
@@ -148,6 +191,6 @@ add_executable(${PROJECT_NAME} ${SRCS})
 target_link_libraries(${PROJECT_NAME} PRIVATE 
     ${VULKAN_DEPS}
     ${OPENXR_DEPS}
-	${SHADERC_DEPS}
+	shaderc
     glm::glm
     glfw)

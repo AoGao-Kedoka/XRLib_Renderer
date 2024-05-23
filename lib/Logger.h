@@ -35,8 +35,10 @@ class LOGGER {
     }
 
     ~LOGGER() {
-        std::cout << '\n';
-        _outfile << '\n';
+        if (_log_level >= _program_log_level) {
+			std::cout << '\n';
+			_outfile << '\n';
+		}
         _outfile.close();
     }
 
@@ -48,7 +50,7 @@ class LOGGER {
                      << "]: " << location.function_name();
             std::cout << "[" << get_current_time() << "] ["
                       << convert_log_level(_log_level)
-                      << "]: " << location.function_name() << std::endl;
+                      << "]: " << location.function_name();
         }
     }
 

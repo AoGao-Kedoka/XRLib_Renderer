@@ -10,18 +10,19 @@ vcpkg install openxr-loader vulkan glm glfw3 shaderc
 Build the project:
 ```
 mkdir build
+cd build
 cmake .. -DCMAKE_TOOLCHAIN_FILE=<path_to_vcpkg>/scripts/buildsystems/vcpkg.cmakek
 cmake --build .
 ```
 
 ### Without dependencies installed
-- longer build time and inconsistent, might need to perform cmake twice (shaderc not fully working yet)
+- longer build time and inconsistent
 - Validataion layer with this approach is not fully working. Please install the Vulkan-SDK if validation layer needed.
 
 ```
 mkdir build
-cmake ..
-cmake --build.
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --config=Release
 ```
 ## References
 - https://openxr-tutorial.com//windows/vulkan/index.html
