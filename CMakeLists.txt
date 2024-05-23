@@ -56,14 +56,17 @@ if (NOT unofficial-shaderc_FOUND)
         GIT_TAG v2024.1
     )
     message("Path is ${CMAKE_BINARY_DIR}")
-    set(SHADERC_INIT_SCRIPT "${CMAKE_BINARY_DIR}/_deps/shaderc-src/utils/git-sync-deps")
+    set(SHADERC_INIT_SCRIPT "${shaderc_SOURCE_DIR}/utils/git-sync-deps")
 
     execute_process(
         COMMAND python ${SHADERC_INIT_SCRIPT}
     )
 
+	set(SHADERC_SKIP_TESTS ON CACHE BOOL "")
+
     FetchContent_MakeAvailable(shaderc)
     set(SHADERC_DEPS shaderc_combined)
+	include_directories(${shaderc_SOURCE_DIR}/libshaderc/include)
 endif()
 
 #----------------
@@ -126,7 +129,7 @@ if (NOT glfw3_FOUND)
     FetchContent_MakeAvailable(glfw)
 endif()
 
-include_directories(${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/lib/external ${PROJECT_SOURCE_DIR}/example})
+include_directories(${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/lib/external ${PROJECT_SOURCE_DIR}/example)
 
 file (GLOB SRCS
     ${PROJECT_SOURCE_DIR}/src/*.h
@@ -145,6 +148,6 @@ add_executable(${PROJECT_NAME} ${SRCS})
 target_link_libraries(${PROJECT_NAME} PRIVATE 
     ${VULKAN_DEPS}
     ${OPENXR_DEPS}
-    ${SHADERC_DEPS}
+	${SHADERC_DEPS}
     glm::glm
     glfw)

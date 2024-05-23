@@ -15,7 +15,7 @@ cmake --build .
 ```
 
 ### Without dependencies installed
-- longer build time and inconsistent, might need to perform cmake twice
+- longer build time and inconsistent, might need to perform cmake twice (shaderc not fully working yet)
 - Validataion layer with this approach is not fully working. Please install the Vulkan-SDK if validation layer needed.
 
 ```
