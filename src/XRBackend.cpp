@@ -2,33 +2,34 @@
 #include "NMB.h"
 #include "Util.h"
 
-XRBackend::XRBackend(Info& info, Core& core) : info{&info}, core{&core} {
+XRBackend::XRBackend(Info& info, VkCore& vkCore, XrCore& xrCore)
+    : info{&info}, vkCore{&vkCore}, xrCore{&xrCore} {
     CreateXrInstance();
     GetSystemID();
-    if (core.IsXRValid()) {
+    if (xrCore.IsXRValid()) {
         LogOpenXRRuntimeProperties();
     }
 }
 
 XRBackend::~XRBackend() {
-    if (!core || !info) {
+    if (!xrCore|| !info) {
         return;
     }
 
-    Util::XrSafeClean(xrDestroyInstance, core->GetXRInstance());
-    Util::XrSafeClean(xrDestroySession, core->GetXRSession());
+    Util::XrSafeClean(xrDestroyInstance, xrCore->GetXRInstance());
+    Util::XrSafeClean(xrDestroySession, xrCore->GetXRSession());
 }
 
 void XRBackend::XrCreateSwapcahin() {
     uint32_t swapchainFormatCount;
-    if (xrEnumerateSwapchainFormats(core->GetXRSession(), 0,
+    if (xrEnumerateSwapchainFormats(xrCore->GetXRSession(), 0,
                                     &swapchainFormatCount,
                                     nullptr) != XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to get swapchain formats";
         exit(-1);
     }
     std::vector<int64_t> swpchainFormats(swapchainFormatCount);
-    if (xrEnumerateSwapchainFormats(core->GetXRSession(), swapchainFormatCount,
+    if (xrEnumerateSwapchainFormats(xrCore->GetXRSession(), swapchainFormatCount,
                                     &swapchainFormatCount,
                                     swpchainFormats.data()) != XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to get swapchain formats";
@@ -37,18 +38,18 @@ void XRBackend::XrCreateSwapcahin() {
 
     uint32_t viewCount;
     if (xrEnumerateViewConfigurationViews(
-            core->GetXRInstance(), core->GetSystemID(),
+            xrCore->GetXRInstance(), xrCore->GetSystemID(),
             XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &viewCount,
             nullptr) != XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to get view configuration views";
         exit(-1);
     }
 
-    core->GetXRViewConfigurationView().resize(viewCount);
+    xrCore->GetXRViewConfigurationView().resize(viewCount);
     if (xrEnumerateViewConfigurationViews(
-            core->GetXRInstance(), core->GetSystemID(),
+            xrCore->GetXRInstance(), xrCore->GetSystemID(),
             XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, viewCount, &viewCount,
-            core->GetXRViewConfigurationView().data()) != XR_SUCCESS) {
+            xrCore->GetXRViewConfigurationView().data()) != XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to get view configuration views";
         exit(-1);
     }
@@ -138,7 +139,7 @@ void XRBackend::CreateXrInstance() {
     instanceCreateInfo.enabledExtensionNames = activeInstanceExtensions.data();
 
     XrResult result =
-        xrCreateInstance(&instanceCreateInfo, &core->GetXRInstance());
+        xrCreateInstance(&instanceCreateInfo, &xrCore->GetXRInstance());
 
     if (result != XR_SUCCESS) {
         std::string message{
@@ -153,33 +154,33 @@ void XRBackend::GetSystemID() {
     XrSystemGetInfo systemGetInfo{};
     systemGetInfo.type = XR_TYPE_SYSTEM_GET_INFO;
     systemGetInfo.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
-    XrResult result = xrGetSystem(core->GetXRInstance(), &systemGetInfo,
-                                  &core->GetSystemID());
+    XrResult result = xrGetSystem(xrCore->GetXRInstance(), &systemGetInfo,
+                                  &xrCore->GetSystemID());
     if (result != XR_SUCCESS) {
         std::string message{
             "Failed to get system id, HMD may not connected. Fall back to "
             "normal rendering mode"};
         LOGGER(LOGGER::WARNING) << message;
         NMB::show("Error", message.c_str(), NMB::Icon::ICON_ERROR);
-        core->SetXRValid(false);
+        xrCore->SetXRValid(false);
     }
 }
 
 void XRBackend::CreateXrSession() {
     XrGraphicsBindingVulkanKHR graphicsBinding;
     graphicsBinding.type = XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR;
-    graphicsBinding.instance = core->GetRenderInstance();
-    graphicsBinding.device = core->GetRenderDevice();
-    graphicsBinding.queueFamilyIndex = core->GetGraphicsQueueFamilyIndex();
-    graphicsBinding.physicalDevice = core->GetRenderPhysicalDevice();
+    graphicsBinding.instance = vkCore->GetRenderInstance();
+    graphicsBinding.device = vkCore->GetRenderDevice();
+    graphicsBinding.queueFamilyIndex = vkCore->GetGraphicsQueueFamilyIndex();
+    graphicsBinding.physicalDevice = vkCore->GetRenderPhysicalDevice();
     graphicsBinding.queueIndex = 0;
 
     XrSessionCreateInfo sessionCreateInfo{};
     sessionCreateInfo.createFlags = XR_TYPE_SESSION_CREATE_INFO;
-    sessionCreateInfo.systemId = core->GetSystemID();
+    sessionCreateInfo.systemId = xrCore->GetSystemID();
     sessionCreateInfo.next = &graphicsBinding;
-    if (xrCreateSession(core->GetXRInstance(), &sessionCreateInfo,
-                        &core->GetXRSession()) != XR_SUCCESS) {
+    if (xrCreateSession(xrCore->GetXRInstance(), &sessionCreateInfo,
+                        &xrCore->GetXRSession()) != XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to create session";
         exit(-1);
     }
@@ -187,12 +188,12 @@ void XRBackend::CreateXrSession() {
 
 void XRBackend::LogOpenXRRuntimeProperties() const {
 
-    if (core->GetXRInstance() == XR_NULL_HANDLE) {
+    if (xrCore->GetXRInstance() == XR_NULL_HANDLE) {
         LOGGER(LOGGER::ERR) << "XR Instance is null";
     }
 
     XrInstanceProperties instanceProperties{XR_TYPE_INSTANCE_PROPERTIES};
-    if (xrGetInstanceProperties(core->GetXRInstance(), &instanceProperties) !=
+    if (xrGetInstanceProperties(xrCore->GetXRInstance(), &instanceProperties) !=
         XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to get instance properties";
     } else {
@@ -206,7 +207,7 @@ void XRBackend::LogOpenXRRuntimeProperties() const {
 
 void XRBackend::LogOpenXRSystemProperties() const {
     XrSystemProperties systemProperties{XR_TYPE_SYSTEM_PROPERTIES};
-    if (xrGetSystemProperties(core->GetXRInstance(), core->GetSystemID(),
+    if (xrGetSystemProperties(xrCore->GetXRInstance(), xrCore->GetSystemID(),
                               &systemProperties) != XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to get system properties";
     } else {

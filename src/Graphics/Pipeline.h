@@ -1,15 +1,15 @@
 #pragma once
 
-#include "Core.h"
 #include "RenderPass.h"
 #include "Shader.h"
 #include "Util.h"
+#include "VkCore.h"
 
 class Pipeline {
    public:
     // TODO: compute pipeline
     Pipeline() = default;
-    Pipeline(Core* core, Shader vertexShader, Shader fragmentShader,
+    Pipeline(VkCore* core, Shader vertexShader, Shader fragmentShader,
              RenderPass* pass);
     ~Pipeline();
 
@@ -29,7 +29,7 @@ class Pipeline {
     }
 
    private:
-    Core* core = nullptr;
+    VkCore* core = nullptr;
     VkPipeline pipeline{VK_NULL_HANDLE};
     VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
 };

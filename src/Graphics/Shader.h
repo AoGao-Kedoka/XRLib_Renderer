@@ -3,10 +3,10 @@
 #include <filesystem>
 #include <shaderc/shaderc.hpp>
 
-#include "Core.h"
 #include "Logger.h"
 #include "Util.h"
 #include "Info.h"
+#include "VkCore.h"
 
 class Shader {
    public:
@@ -15,9 +15,9 @@ class Shader {
         FRAGMENT_SHADER = VK_SHADER_STAGE_FRAGMENT_BIT,
         // possibly more
     };
-    Shader(Core* core, const std::filesystem::path& file_path,
+    Shader(VkCore* core, const std::filesystem::path& file_path,
            ShaderStage stage);
-    Shader(Core* core, ShaderStage shaderStage);
+    Shader(VkCore* core, ShaderStage shaderStage);
     ~Shader();
 
      Shader(Shader&& other) noexcept
@@ -42,7 +42,7 @@ class Shader {
     }
 
    private:
-    Core* core = nullptr;
+    VkCore* core = nullptr;
     ShaderStage stage;
     VkShaderModule shaderModule{VK_NULL_HANDLE};
     VkPipelineShaderStageCreateInfo shaderStageInfo{};

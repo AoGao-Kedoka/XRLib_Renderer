@@ -2,18 +2,20 @@
 
 #include <utility>
 
-#include "Core.h"
 #include "Info.h"
 #include "Logger.h"
 
+#include "Graphics/VkCore.h"
+#include "XR/XrCore.h"
+
 class XRBackend {
    public:
-    XRBackend(Info& info, Core& core);
+    XRBackend(Info& info, VkCore& vkCore, XrCore& xrCore);
     ~XRBackend();
 
     XRBackend(XRBackend&& other) noexcept
         : info(std::exchange(other.info, nullptr)),
-          core(std::exchange(other.core, nullptr)),
+          xrCore(std::exchange(other.xrCore, nullptr)),
           activeAPILayers(std::move(other.activeAPILayers)),
           activeInstanceExtensions(std::move(other.activeInstanceExtensions)),
           apiLayers(std::move(other.apiLayers)),
@@ -29,7 +31,7 @@ class XRBackend {
         LOGGER(LOGGER::DEBUG) << "Move assignment called";
 
         info = std::exchange(rhs.info, nullptr);
-        core = std::exchange(rhs.core, nullptr);
+        xrCore = std::exchange(rhs.xrCore, nullptr);
         activeAPILayers = std::move(rhs.activeAPILayers);
         activeInstanceExtensions = std::move(rhs.activeInstanceExtensions);
         apiLayers = std::move(rhs.apiLayers);
@@ -43,7 +45,8 @@ class XRBackend {
 
    private:
     Info* info;
-    Core* core;
+    VkCore* vkCore;
+    XrCore* xrCore;
 
     void CreateXrInstance();
     void LogOpenXRRuntimeProperties() const;

@@ -18,10 +18,15 @@ class XRLib {
     XRLib& Init(bool xr);
 
     XRLib& AddRenderPass(std::string vertexShaderPath, std::string fragmentShaderPath);
-    XRLib& Run();
+    void Run();
+
+    bool WindowShouldClose(){ return renderBackend->WindowShouldClose(); }
+    XRLib& Fullscreen();
+
    private:
     Info info{};
-    Core core{};
+    VkCore vkCore{};
+    XrCore xrCore{};
 
     void InitXRBackend();
     void InitRenderBackend();

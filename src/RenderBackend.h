@@ -8,21 +8,23 @@
 #include <utility>
 #include <vector>
 
-#include "Core.h"
+#include "Graphics/VkCore.h"
 #include "Graphics/Pipeline.h"
 #include "Graphics/RenderPass.h"
 #include "Graphics/Shader.h"
+#include "XR/XrCore.h"
 #include "Info.h"
 #include "Logger.h"
 
 class RenderBackend {
    public:
-    RenderBackend(Info& info, Core& core);
+    RenderBackend(Info& info, VkCore& vkCore, XrCore& xrCore);
     ~RenderBackend();
 
     RenderBackend(RenderBackend&& src) noexcept
         : info(std::exchange(src.info, nullptr)),
-          core(std::exchange(src.core, nullptr)),
+          vkCore(std::exchange(src.vkCore, nullptr)),
+          xrCore(std::exchange(src.xrCore, nullptr)),
           window(std::exchange(src.window, nullptr)),
           vkDebugMessenger(std::exchange(src.vkDebugMessenger, VK_NULL_HANDLE)),
           vkCreateDebugUtilsMessengerEXT(
@@ -36,18 +38,23 @@ class RenderBackend {
 
         LOGGER(LOGGER::DEBUG) << "Move assignment called";
         info = std::exchange(rhs.info, nullptr);
-        core = std::exchange(rhs.core, nullptr);
+        vkCore = std::exchange(rhs.vkCore, nullptr);
+        xrCore = std::exchange(rhs.xrCore, nullptr);
         vkDebugMessenger = std::exchange(rhs.vkDebugMessenger, VK_NULL_HANDLE);
         vkCreateDebugUtilsMessengerEXT =
             std::exchange(rhs.vkCreateDebugUtilsMessengerEXT, nullptr);
         return *this;
     }
 
+    bool WindowShouldClose() { return glfwWindowShouldClose(window); }
+
     virtual void Prepare(
         std::vector<std::pair<std::string, std::string>> passesToAdd){};
 
+    void Run();
+
     struct GraphicsRenderPass {
-        GraphicsRenderPass(Core* core, std::string vertexShaderPath,
+        GraphicsRenderPass(VkCore* core, std::string vertexShaderPath,
                            std::string fragmentShaderPath)
             : core{core} {
             Shader vertexShader{core, vertexShaderPath, Shader::VERTEX_SHADER};
@@ -59,7 +66,7 @@ class RenderBackend {
                                 std::move(fragmentShader), &renderPass};
         }
 
-        GraphicsRenderPass(Core* core) : core{ core } {
+        GraphicsRenderPass(VkCore* core) : core{ core } {
             Shader vertexShader{core, Shader::VERTEX_SHADER};
             Shader fragmentShader{core, Shader::FRAGMENT_SHADER};
             renderPass = RenderPass{core};
@@ -68,7 +75,7 @@ class RenderBackend {
                                 std::move(fragmentShader), &renderPass};
         }
 
-        Core* core;
+        VkCore* core;
         RenderPass renderPass;
         Pipeline pipeline;
     };
@@ -77,18 +84,12 @@ class RenderBackend {
 
    protected:
     Info* info;
-    Core* core;
+    VkCore* vkCore;
+    XrCore* xrCore;
     GLFWwindow* window;
 
    private:
-    void InitVulkan() {
-        CreateVulkanInstance();
-        CreatePhysicalDevice();
-        CreateLogicalDevice();
-    }
-    void CreateVulkanInstance();
-    void CreatePhysicalDevice();
-    void CreateLogicalDevice();
+    void InitVulkan();
 
     const std::vector<const char*> validataionLayers = {
         "VK_LAYER_KHRONOS_validation"};

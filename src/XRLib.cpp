@@ -30,7 +30,7 @@ XRLib& XRLib::Init(bool xr) {
     _LOGFUNC_;
 
     if (!xr) {
-        core.SetXRValid(false);
+        xrCore.SetXRValid(false);
     }
 
     if (xr) InitXRBackend();
@@ -42,8 +42,12 @@ XRLib& XRLib::Init(bool xr) {
     return *this;
 }
 
-XRLib& XRLib::Run() {
+void XRLib::Run() {
+    renderBackend->Run();
+}
 
+XRLib& XRLib::Fullscreen() {
+    info.fullscreen = true;
     return *this;
 }
 
@@ -62,7 +66,7 @@ void XRLib::InitXRBackend() {
         exit(-1);
     }
 
-    xrBackend = std::make_unique<XRBackend>(std::move(XRBackend{info, core}));
+    xrBackend = std::make_unique<XRBackend>(std::move(XRBackend{info, vkCore, xrCore}));
 }
 
 void XRLib::InitRenderBackend() {
@@ -78,12 +82,12 @@ void XRLib::InitRenderBackend() {
         exit(-1);
     }
 
-    if (!core.IsXRValid()) {
+    if (!xrCore.IsXRValid()) {
         renderBackend =
-            std::make_shared<RenderBackendFlat>(std::move(RenderBackendFlat{info, core}));
+            std::make_shared<RenderBackendFlat>(std::move(RenderBackendFlat{info, vkCore, xrCore}));
     } else {
         renderBackend =
-            std::make_shared<RenderBackend>(std::move(RenderBackend{info, core}));
+            std::make_shared<RenderBackend>(std::move(RenderBackend{info, vkCore, xrCore}));
     }
 
 }

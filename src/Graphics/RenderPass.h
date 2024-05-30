@@ -1,12 +1,12 @@
 #pragma once
-#include "Core.h"
 #include "Logger.h"
 #include "Util.h"
+#include "VkCore.h"
 
 class RenderPass {
    public:
     RenderPass() = default;
-    RenderPass(Core* core);
+    RenderPass(VkCore* core);
     ~RenderPass();
 
     RenderPass(RenderPass&& other) noexcept
@@ -33,7 +33,7 @@ class RenderPass {
     }
 
    private:
-    Core* core;
+    VkCore* core;
     VkRenderPass pass{VK_NULL_HANDLE};
     VkPipeline* graphicsPipeline{nullptr};
 };

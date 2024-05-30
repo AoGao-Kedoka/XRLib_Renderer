@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <cstring>
 
 #include <vulkan/vulkan.h>
 #define XR_USE_GRAPHICS_API_VULKAN
@@ -49,7 +50,7 @@ class Util {
         std::vector<VkLayerProperties> availableLayers(layerCount);
 
         for (const auto& layerProperties : availableLayers) {
-            if (strcmp(layer, layerProperties.layerName)) {
+            if (std::strcmp(layer, layerProperties.layerName)) {
                 return true;
             }
         }

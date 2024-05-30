@@ -6,7 +6,7 @@
 
 class RenderBackendFlat : public RenderBackend {
    public:
-    RenderBackendFlat(Info& info, Core& core) : RenderBackend(info, core) {}
+    RenderBackendFlat(Info& info, VkCore& core, XrCore& xrCore) : RenderBackend(info, core, xrCore) {}
     ~RenderBackendFlat();
 
     RenderBackendFlat(RenderBackendFlat&& other) noexcept
@@ -25,5 +25,4 @@ class RenderBackendFlat : public RenderBackend {
    private:
     void CreateFlatSwapChain();
     void PrepareFlatWindow();
-    void CreateFrameBuffer();
 };

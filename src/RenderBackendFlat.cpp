@@ -2,16 +2,16 @@
 #include "Util.h"
 
 RenderBackendFlat::~RenderBackendFlat() {
-    if (core == nullptr || info == nullptr)
+    if (vkCore == nullptr || info == nullptr)
         return;
-    for (auto imageView : core->GetSwapchainImageViewsFlat()) {
-        Util::VkSafeClean(vkDestroyImageView, core->GetRenderDevice(),
+    for (auto imageView : vkCore->GetSwapchainImageViewsFlat()) {
+        Util::VkSafeClean(vkDestroyImageView, vkCore->GetRenderDevice(),
                           imageView, nullptr);
     }
-    Util::VkSafeClean(vkDestroySwapchainKHR, core->GetRenderDevice(),
-                      core->GetFlatSwapchain(), nullptr);
-    Util::VkSafeClean(vkDestroySurfaceKHR, core->GetRenderInstance(),
-                      core->GetFlatSurface(), nullptr);
+    Util::VkSafeClean(vkDestroySwapchainKHR, vkCore->GetRenderDevice(),
+                      vkCore->GetFlatSwapchain(), nullptr);
+    Util::VkSafeClean(vkDestroySurfaceKHR, vkCore->GetRenderInstance(),
+                      vkCore->GetFlatSurface(), nullptr);
 }
 
 void RenderBackendFlat::Prepare(
@@ -21,23 +21,22 @@ void RenderBackendFlat::Prepare(
 
     // prepare shader
     if (passesToAdd.empty()) {
-        auto graphicsRenderPass =
-            std::make_unique<GraphicsRenderPass>(core);
+        auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(vkCore);
         renderPasses.push_back(std::move(graphicsRenderPass));
     } else {
         for (auto& pass : passesToAdd) {
-            auto graphicsRenderPass =
-                std::make_unique<GraphicsRenderPass>(core, pass.first, pass.second);
+            auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(
+                vkCore, pass.first, pass.second);
             renderPasses.push_back(std::move(graphicsRenderPass));
         }
     }
 
     // create frame buffer
-    core->GetSwapchainFrameBufferFlat().resize(
-        core->GetSwapchainImageViewsFlat().size());
+    vkCore->GetSwapchainFrameBufferFlat().resize(
+        vkCore->GetSwapchainImageViewsFlat().size());
 
-    for (size_t i = 0; i < core->GetSwapchainImageViewsFlat().size(); i++) {
-        VkImageView attachments[] = {core->GetSwapchainImageViewsFlat()[i]};
+    for (size_t i = 0; i < vkCore->GetSwapchainImageViewsFlat().size(); i++) {
+        VkImageView attachments[] = {vkCore->GetSwapchainImageViewsFlat()[i]};
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -45,16 +44,19 @@ void RenderBackendFlat::Prepare(
             renderPasses[renderPasses.size() - 1]->renderPass.GetRenderPass();
         framebufferInfo.attachmentCount = 1;
         framebufferInfo.pAttachments = attachments;
-        framebufferInfo.width = core->GetFlatSwapchainExtent2D().width;
-        framebufferInfo.height = core->GetFlatSwapchainExtent2D().height;
+        framebufferInfo.width = vkCore->GetFlatSwapchainExtent2D().width;
+        framebufferInfo.height = vkCore->GetFlatSwapchainExtent2D().height;
         framebufferInfo.layers = 1;
 
         if (vkCreateFramebuffer(
-                core->GetRenderDevice(), &framebufferInfo, nullptr,
-                &core->GetSwapchainFrameBufferFlat()[i]) != VK_SUCCESS) {
+                vkCore->GetRenderDevice(), &framebufferInfo, nullptr,
+                &vkCore->GetSwapchainFrameBufferFlat()[i]) != VK_SUCCESS) {
             LOGGER(LOGGER::ERR) << "Failed to create frame buffer";
         }
     }
+
+    // show window when preparation finished
+    glfwShowWindow(window);
 }
 
 void RenderBackendFlat::CreateFlatSwapChain() {
@@ -63,12 +65,12 @@ void RenderBackendFlat::CreateFlatSwapChain() {
 
     std::vector<VkSurfaceFormatKHR> surfaceFormats;
     uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(core->GetRenderPhysicalDevice(),
-                                         core->GetFlatSurface(), &formatCount,
+    vkGetPhysicalDeviceSurfaceFormatsKHR(vkCore->GetRenderPhysicalDevice(),
+                                         vkCore->GetFlatSurface(), &formatCount,
                                          nullptr);
     surfaceFormats.resize(formatCount);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(core->GetRenderPhysicalDevice(),
-                                         core->GetFlatSurface(), &formatCount,
+    vkGetPhysicalDeviceSurfaceFormatsKHR(vkCore->GetRenderPhysicalDevice(),
+                                         vkCore->GetFlatSurface(), &formatCount,
                                          surfaceFormats.data());
     if (surfaceFormats.empty()) {
         LOGGER(LOGGER::ERR) << "Failed to get surface formats";
@@ -81,16 +83,16 @@ void RenderBackendFlat::CreateFlatSwapChain() {
             swapChainSurfaceFormat = availableFormat;
         }
     }
-    core->SetFlatSwapchainImageFormat(swapChainSurfaceFormat.format);
+    vkCore->SetFlatSwapchainImageFormat(swapChainSurfaceFormat.format);
 
     std::vector<VkPresentModeKHR> presentModes;
     uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(core->GetRenderPhysicalDevice(),
-                                              core->GetFlatSurface(),
+    vkGetPhysicalDeviceSurfacePresentModesKHR(vkCore->GetRenderPhysicalDevice(),
+                                              vkCore->GetFlatSurface(),
                                               &presentModeCount, nullptr);
     presentModes.resize(presentModeCount);
     vkGetPhysicalDeviceSurfacePresentModesKHR(
-        core->GetRenderPhysicalDevice(), core->GetFlatSurface(),
+        vkCore->GetRenderPhysicalDevice(), vkCore->GetFlatSurface(),
         &presentModeCount, presentModes.data());
     if (presentModes.empty()) {
         LOGGER(LOGGER::WARNING) << "Cannot create swapchain in flat mode";
@@ -103,11 +105,12 @@ void RenderBackendFlat::CreateFlatSwapChain() {
     }
 
     VkSurfaceCapabilitiesKHR capabilities;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-        core->GetRenderPhysicalDevice(), core->GetFlatSurface(), &capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkCore->GetRenderPhysicalDevice(),
+                                              vkCore->GetFlatSurface(),
+                                              &capabilities);
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
-    core->SetFlatSwapchainExtent2D(
+    vkCore->SetFlatSwapchainExtent2D(
         {std::clamp(static_cast<uint32_t>(width),
                     capabilities.minImageExtent.width,
                     capabilities.maxImageExtent.width),
@@ -121,11 +124,11 @@ void RenderBackendFlat::CreateFlatSwapChain() {
 
     VkSwapchainCreateInfoKHR swapchainCreateInfo{};
     swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swapchainCreateInfo.surface = core->GetFlatSurface();
+    swapchainCreateInfo.surface = vkCore->GetFlatSurface();
     swapchainCreateInfo.minImageCount = imageCount;
     swapchainCreateInfo.imageFormat = swapChainSurfaceFormat.format;
     swapchainCreateInfo.imageColorSpace = swapChainSurfaceFormat.colorSpace;
-    swapchainCreateInfo.imageExtent = core->GetFlatSwapchainExtent2D();
+    swapchainCreateInfo.imageExtent = vkCore->GetFlatSwapchainExtent2D();
     swapchainCreateInfo.imageArrayLayers = 1;
     swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -134,27 +137,28 @@ void RenderBackendFlat::CreateFlatSwapChain() {
     swapchainCreateInfo.presentMode = swapChainPresentMode;
     swapchainCreateInfo.clipped = VK_TRUE;
     swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
-    if (vkCreateSwapchainKHR(core->GetRenderDevice(), &swapchainCreateInfo,
+    if (vkCreateSwapchainKHR(vkCore->GetRenderDevice(), &swapchainCreateInfo,
                              nullptr,
-                             &core->GetFlatSwapchain()) != VK_SUCCESS) {
+                             &vkCore->GetFlatSwapchain()) != VK_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to create swapchain";
         exit(-1);
     }
 
-    vkGetSwapchainImagesKHR(core->GetRenderDevice(), core->GetFlatSwapchain(),
-                            &imageCount, nullptr);
-    core->GetFlatSwapchainImages().resize(imageCount);
-    vkGetSwapchainImagesKHR(core->GetRenderDevice(), core->GetFlatSwapchain(),
-                            &imageCount, core->GetFlatSwapchainImages().data());
+    vkGetSwapchainImagesKHR(vkCore->GetRenderDevice(),
+                            vkCore->GetFlatSwapchain(), &imageCount, nullptr);
+    vkCore->GetFlatSwapchainImages().resize(imageCount);
+    vkGetSwapchainImagesKHR(vkCore->GetRenderDevice(),
+                            vkCore->GetFlatSwapchain(), &imageCount,
+                            vkCore->GetFlatSwapchainImages().data());
 
-    core->GetSwapchainImageViewsFlat().resize(
-        core->GetFlatSwapchainImages().size());
-    for (size_t i = 0; i < core->GetFlatSwapchainImages().size(); ++i) {
+    vkCore->GetSwapchainImageViewsFlat().resize(
+        vkCore->GetFlatSwapchainImages().size());
+    for (size_t i = 0; i < vkCore->GetFlatSwapchainImages().size(); ++i) {
         VkImageViewCreateInfo imageViewCreateInfo{};
         imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        imageViewCreateInfo.image = core->GetFlatSwapchainImages()[i];
+        imageViewCreateInfo.image = vkCore->GetFlatSwapchainImages()[i];
         imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        imageViewCreateInfo.format = core->GetFlatSwapchainImageFormat();
+        imageViewCreateInfo.format = vkCore->GetFlatSwapchainImageFormat();
         imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
         imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
         imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -166,8 +170,8 @@ void RenderBackendFlat::CreateFlatSwapChain() {
         imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
         imageViewCreateInfo.subresourceRange.layerCount = 1;
         if (vkCreateImageView(
-                core->GetRenderDevice(), &imageViewCreateInfo, nullptr,
-                &core->GetSwapchainImageViewsFlat()[i]) != VK_SUCCESS) {
+                vkCore->GetRenderDevice(), &imageViewCreateInfo, nullptr,
+                &vkCore->GetSwapchainImageViewsFlat()[i]) != VK_SUCCESS) {
             LOGGER(LOGGER::ERR) << "Failed to create image view";
         }
     }
@@ -177,18 +181,23 @@ void RenderBackendFlat::CreateFlatSwapChain() {
 
 void RenderBackendFlat::PrepareFlatWindow() {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    window = glfwCreateWindow(400, 400, info->applicationName.c_str(), nullptr,
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    window = glfwCreateWindow(info->fullscreen? glfwGetVideoMode(glfwGetPrimaryMonitor())->width: 400,
+                              info->fullscreen? glfwGetVideoMode(glfwGetPrimaryMonitor())->height: 400,
+                              info->applicationName.c_str(),
+                              info->fullscreen? glfwGetPrimaryMonitor(): nullptr,
                               nullptr);
     glfwSetWindowUserPointer(window, this);
-    if (glfwCreateWindowSurface(core->GetRenderInstance(), window, nullptr,
-                                &core->GetFlatSurface()) != VK_SUCCESS) {
+    if (glfwCreateWindowSurface(vkCore->GetRenderInstance(), window, nullptr,
+                                &vkCore->GetFlatSurface()) != VK_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to create window surface";
     }
 
     VkBool32 presentSupport = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR(
-        core->GetRenderPhysicalDevice(), core->GetGraphicsQueueFamilyIndex(),
-        core->GetFlatSurface(), &presentSupport);
+    vkGetPhysicalDeviceSurfaceSupportKHR(vkCore->GetRenderPhysicalDevice(),
+                                         vkCore->GetGraphicsQueueFamilyIndex(),
+                                         vkCore->GetFlatSurface(),
+                                         &presentSupport);
 
     if (!presentSupport) {
         LOGGER(LOGGER::WARNING)

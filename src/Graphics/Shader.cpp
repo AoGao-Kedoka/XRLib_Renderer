@@ -1,6 +1,6 @@
 #include "Shader.h"
 
-Shader::Shader(Core* core, const std::filesystem::path& filePath, ShaderStage shaderStage)
+Shader::Shader(VkCore* core, const std::filesystem::path& filePath, ShaderStage shaderStage)
     : core{core}, stage{shaderStage} {
 
     auto rawCode = Util::ReadFile(filePath.generic_string());
@@ -11,7 +11,7 @@ Shader::Shader(Core* core, const std::filesystem::path& filePath, ShaderStage sh
     Init(spirv);
 }
 
-Shader::Shader(Core* core, ShaderStage shaderStage)
+Shader::Shader(VkCore* core, ShaderStage shaderStage)
     : core{core}, stage{shaderStage} {
     std::string rawCode;
     switch (stage) {

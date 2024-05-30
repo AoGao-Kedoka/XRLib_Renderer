@@ -1,6 +1,6 @@
 #include "Pipeline.h"
 
-Pipeline::Pipeline(Core* core, Shader vertexShader, Shader fragmentShader,
+Pipeline::Pipeline(VkCore* core, Shader vertexShader, Shader fragmentShader,
                    RenderPass* renderPass)
     : core{core} {
     VkPipelineShaderStageCreateInfo shaderStages[] = {

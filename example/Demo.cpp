@@ -8,5 +8,9 @@ int main() {
         .SetApplicationName("Demo Application")
         .Init(false);
 
+    while(!xrLib.WindowShouldClose()){
+        xrLib.Run();
+    }
+
     return 0;
 }
