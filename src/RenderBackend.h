@@ -73,6 +73,8 @@ class RenderBackend {
 
             pipeline = Pipeline{core, std::move(vertexShader),
                                 std::move(fragmentShader), &renderPass};
+
+            renderPass.SetGraphicPipeline(pipeline.GetVkPipeline());
         }
 
         VkCore* core;

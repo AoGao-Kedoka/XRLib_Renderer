@@ -28,6 +28,8 @@ class Pipeline {
         return *this;
     }
 
+    VkPipeline& GetVkPipeline() { return pipeline; }
+
    private:
     VkCore* core = nullptr;
     VkPipeline pipeline{VK_NULL_HANDLE};

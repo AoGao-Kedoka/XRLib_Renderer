@@ -97,8 +97,6 @@ Pipeline::Pipeline(VkCore* core, Shader vertexShader, Shader fragmentShader,
                                   &pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
-
-    renderPass->SetGraphicPipeline(this->pipeline);
 }
 
 Pipeline::~Pipeline() {

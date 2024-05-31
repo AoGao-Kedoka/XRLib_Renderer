@@ -14,10 +14,12 @@ void VkCore::CreateCommandBuffer() {
     }
 }
 
-void VkCore::CreateSemaphore(VkSemaphore& semaphore) {
+void VkCore::CreateSyncSemaphore(VkSemaphore& semaphore)
+{
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    if (vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &semaphore) !=
+    if (vkCreateSemaphore(GetRenderDevice(), &semaphoreInfo, nullptr,
+                          &semaphore) !=
         VK_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to create semaphore";
         exit(-1);

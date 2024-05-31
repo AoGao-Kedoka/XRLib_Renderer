@@ -1,16 +1,9 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
-#include <cstring>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <utility>
 #include <vector>
 
-#include "Logger.h"
 #include "Util.h"
 
 class VkCore {
@@ -72,18 +65,18 @@ class VkCore {
         return commandBuffer;
     }
 
-    VkSemaphore& GetImageAvailableSemaphore() {
-        if (imageAvailableSemaphore == VK_NULL_HANDLE) {
-            CreateSemaphore(imageAvailableSemaphore);
-        }
-        return imageAvailableSemaphore;
-    }
-
     VkSemaphore& GetRenderFinishedSemaphore() {
         if (renderFinishedSemaphore == VK_NULL_HANDLE) {
-            CreateSemaphore(renderFinishedSemaphore);
+            CreateSyncSemaphore(renderFinishedSemaphore);
         }
         return renderFinishedSemaphore;
+    }
+
+    VkSemaphore& GetImageAvailableSemaphore() {
+        if (imageAvailableSemaphore == VK_NULL_HANDLE) {
+            CreateSyncSemaphore(imageAvailableSemaphore);
+        }
+        return imageAvailableSemaphore;
     }
 
 	VkFence& GetInFlightFence(){
@@ -139,7 +132,7 @@ class VkCore {
 
     void CreateCommandBuffer();
 
-    void CreateSemaphore(VkSemaphore& semaphore);
+    void CreateSyncSemaphore(VkSemaphore& semaphore);
 	
 	void CreateFence(VkFence& fence);
 };

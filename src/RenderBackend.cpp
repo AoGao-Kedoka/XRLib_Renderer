@@ -275,8 +275,50 @@ void RenderBackend::Run() {
     vkWaitForFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence(),
                     VK_TRUE, UINT64_MAX);
     vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
+    vkResetCommandBuffer(vkCore->GetCommandBuffer(), 0);
+
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(),
-                          UINT64_MAX, vkCore->GetImageAvailableSemaphore(),
-                          VK_NULL_HANDLE, &imageIndex);
+    auto err = vkAcquireNextImageKHR(
+        vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(), UINT64_MAX,
+        vkCore->GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
+    if (err !=VK_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to acquire next image";
+        exit(-1);
+    }
+
+    renderPasses.at(0)->renderPass.Record(imageIndex);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    VkSemaphore waitSemaphores[] = {vkCore->GetImageAvailableSemaphore()};
+    VkPipelineStageFlags waitStages[] = {
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &vkCore->GetCommandBuffer();
+
+    VkSemaphore signalSemaphores[] = {vkCore->GetRenderFinishedSemaphore()};
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    if (vkQueueSubmit(vkCore->GetGraphicsQueue(), 1, &submitInfo,
+                      vkCore->GetInFlightFence()) != VK_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to submit draw command buffer";
+    }
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
+
+    VkSwapchainKHR swapChains[] = {vkCore->GetFlatSwapchain()};
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+    presentInfo.pImageIndices = &imageIndex;
+
+    vkQueuePresentKHR(vkCore->GetGraphicsQueue(), &presentInfo);
 }
