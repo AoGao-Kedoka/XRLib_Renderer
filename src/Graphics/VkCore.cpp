@@ -28,7 +28,7 @@ void VkCore::CreateSyncSemaphore(VkSemaphore& semaphore)
 
 void VkCore::CreateFence(VkFence& fence) {
     VkFenceCreateInfo info{};
-    info.sType = VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO;
+    info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
     if (vkCreateFence(GetRenderDevice(), &info, nullptr, &fence)) {
         LOGGER(LOGGER::ERR) << "Failed to create fence!";

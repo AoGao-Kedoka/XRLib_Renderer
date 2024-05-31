@@ -21,8 +21,11 @@ class RenderBackendFlat : public RenderBackend {
     void Prepare(
         std::vector<std::pair<std::string, std::string>> passesToAdd) override;
 
+    void OnWindowResized() override;
+
 
    private:
     void CreateFlatSwapChain();
+    void InitFrameBuffer();
     void PrepareFlatWindow();
 };

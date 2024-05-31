@@ -4,6 +4,7 @@
 RenderBackendFlat::~RenderBackendFlat() {
     if (vkCore == nullptr || info == nullptr)
         return;
+    vkDeviceWaitIdle(vkCore->GetRenderDevice());
     for (auto imageView : vkCore->GetSwapchainImageViewsFlat()) {
         Util::VkSafeClean(vkDestroyImageView, vkCore->GetRenderDevice(),
                           imageView, nullptr);
@@ -31,6 +32,14 @@ void RenderBackendFlat::Prepare(
         }
     }
 
+    InitFrameBuffer();
+
+    // show window when preparation finished
+    glfwShowWindow(window);
+}
+
+
+void RenderBackendFlat::InitFrameBuffer() {
     // create frame buffer
     vkCore->GetSwapchainFrameBufferFlat().resize(
         vkCore->GetSwapchainImageViewsFlat().size());
@@ -55,8 +64,6 @@ void RenderBackendFlat::Prepare(
         }
     }
 
-    // show window when preparation finished
-    glfwShowWindow(window);
 }
 
 void RenderBackendFlat::CreateFlatSwapChain() {
@@ -177,6 +184,34 @@ void RenderBackendFlat::CreateFlatSwapChain() {
     }
 
     LOGGER(LOGGER::DEBUG) << "Flat Swapchain created";
+}
+
+void RenderBackendFlat::OnWindowResized() {
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(window, &width, &height);
+    while (width == 0 || height == 0) {
+        glfwGetFramebufferSize(window, &width, &height);
+        glfwWaitEvents();
+    }
+
+    vkDeviceWaitIdle(vkCore->GetRenderDevice());
+
+    for (auto framebuffer : vkCore->GetSwapchainFrameBufferFlat()) {
+        //TODO: Change to save clean
+        vkDestroyFramebuffer(vkCore->GetRenderDevice(), framebuffer, nullptr);
+    }
+
+    for (auto imageView : vkCore->GetSwapchainImageViewsFlat()) {
+        vkDestroyImageView(vkCore->GetRenderDevice(), imageView, nullptr);
+    }
+
+    vkDestroySwapchainKHR(vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(),
+                          nullptr);
+
+    this->CreateFlatSwapChain();
+    this->InitFrameBuffer();
+
+    LOGGER(LOGGER::INFO) << "Swapchain recreated!";
 }
 
 void RenderBackendFlat::PrepareFlatWindow() {

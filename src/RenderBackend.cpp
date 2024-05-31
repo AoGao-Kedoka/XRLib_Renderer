@@ -25,6 +25,8 @@ RenderBackend::RenderBackend(Info& info, VkCore& vkCore, XrCore& xrCore)
 RenderBackend::~RenderBackend() {
     if (!vkCore || !info)
         return;
+
+    vkDeviceWaitIdle(vkCore->GetRenderDevice());
     if (vkDebugMessenger != VK_NULL_HANDLE) {
         PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT =
             reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
@@ -274,17 +276,21 @@ void RenderBackend::Run() {
     glfwPollEvents();
     vkWaitForFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence(),
                     VK_TRUE, UINT64_MAX);
-    vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
     vkResetCommandBuffer(vkCore->GetCommandBuffer(), 0);
 
     uint32_t imageIndex;
-    auto err = vkAcquireNextImageKHR(
+    auto result = vkAcquireNextImageKHR(
         vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(), UINT64_MAX,
         vkCore->GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
-    if (err !=VK_SUCCESS) {
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        OnWindowResized();
+        return;
+    } else if (result != VK_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to acquire next image";
         exit(-1);
     }
+
+    vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
 
     renderPasses.at(0)->renderPass.Record(imageIndex);
 

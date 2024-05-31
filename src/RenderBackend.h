@@ -51,6 +51,10 @@ class RenderBackend {
     virtual void Prepare(
         std::vector<std::pair<std::string, std::string>> passesToAdd){};
 
+    virtual void OnWindowResized() {
+        LOGGER(LOGGER::ERR) << "Undefined image resize";
+        exit(-1);
+    };
     void Run();
 
     struct GraphicsRenderPass {
