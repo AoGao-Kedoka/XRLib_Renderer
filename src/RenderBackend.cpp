@@ -1,5 +1,7 @@
 #include "RenderBackend.h"
 #include "Util.h"
+#include <stdint.h>
+#include <vulkan/vulkan_core.h>
 
 RenderBackend::RenderBackend(Info& info, VkCore& vkCore, XrCore& xrCore)
     : info{&info}, vkCore{&vkCore}, xrCore{&xrCore} {
@@ -89,6 +91,7 @@ void RenderBackend::InitVulkan() {
 
         std::vector<const char*> xrInstanceExtensions =
             Util::SplitStringToCharPtr(buffer);
+        Util::SplitStringToCharPtr(buffer);
         for (auto extension : xrInstanceExtensions) {
             vulkanInstanceExtensions.push_back(extension);
         }
@@ -100,7 +103,8 @@ void RenderBackend::InitVulkan() {
     instanceCreateInfo.pApplicationInfo = &applicationInfo;
     instanceCreateInfo.enabledExtensionCount =
         static_cast<uint32_t>(vulkanInstanceExtensions.size());
-    instanceCreateInfo.ppEnabledExtensionNames = vulkanInstanceExtensions.data();
+    instanceCreateInfo.ppEnabledExtensionNames =
+        vulkanInstanceExtensions.data();
 
     if (info->validationLayer) {
         debugCreateInfo.sType =
@@ -125,8 +129,8 @@ void RenderBackend::InitVulkan() {
         instanceCreateInfo.pNext = nullptr;
     }
 
-    if (vkCreateInstance(&instanceCreateInfo, nullptr, &vkCore->GetRenderInstance()) !=
-        VK_SUCCESS) {
+    if (vkCreateInstance(&instanceCreateInfo, nullptr,
+                         &vkCore->GetRenderInstance()) != VK_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to create vulkan instance";
         exit(-1);
     }
@@ -256,10 +260,9 @@ void RenderBackend::InitVulkan() {
         static_cast<uint32_t>(deviceExtensions.size());
     deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
-    if (vkCreateDevice(vkCore->GetRenderPhysicalDevice(), &deviceCreateInfo, nullptr,
-                       &vkCore->GetRenderDevice()) != VK_SUCCESS) {
+    if (vkCreateDevice(vkCore->GetRenderPhysicalDevice(), &deviceCreateInfo,
+                       nullptr, &vkCore->GetRenderDevice()) != VK_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to create vulkan device.";
-        exit(-1);
     }
 
     vkGetDeviceQueue(vkCore->GetRenderDevice(),
@@ -267,6 +270,13 @@ void RenderBackend::InitVulkan() {
                      &vkCore->GetGraphicsQueue());
 }
 
-void RenderBackend::Run(){
+void RenderBackend::Run() {
     glfwPollEvents();
+    vkWaitForFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence(),
+                    VK_TRUE, UINT64_MAX);
+    vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
+    uint32_t imageIndex;
+    vkAcquireNextImageKHR(vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(),
+                          UINT64_MAX, vkCore->GetImageAvailableSemaphore(),
+                          VK_NULL_HANDLE, &imageIndex);
 }

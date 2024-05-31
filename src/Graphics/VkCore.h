@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 #include <cstring>
 #include <fstream>
@@ -85,6 +86,13 @@ class VkCore {
         return renderFinishedSemaphore;
     }
 
+	VkFence& GetInFlightFence(){
+		if (inFlightFence == VK_NULL_HANDLE){
+			CreateFence(inFlightFence);
+		}
+		return inFlightFence;
+	}
+
    private:
     VkInstance vkInstance{VK_NULL_HANDLE};
     VkPhysicalDevice vkPhysicalDevice{VK_NULL_HANDLE};
@@ -132,4 +140,6 @@ class VkCore {
     void CreateCommandBuffer();
 
     void CreateSemaphore(VkSemaphore& semaphore);
+	
+	void CreateFence(VkFence& fence);
 };

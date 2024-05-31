@@ -17,11 +17,21 @@ void VkCore::CreateCommandBuffer() {
 void VkCore::CreateSemaphore(VkSemaphore& semaphore) {
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    if (vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr,
-                          &semaphore) != VK_SUCCESS) {
+    if (vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &semaphore) !=
+        VK_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to create semaphore";
         exit(-1);
     }
+}
+
+void VkCore::CreateFence(VkFence& fence) {
+    VkFenceCreateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO;
+    info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    if (vkCreateFence(GetRenderDevice(), &info, nullptr, &fence)) {
+        LOGGER(LOGGER::ERR) << "Failed to create fence!";
+        exit(-1);
+	}
 }
 
 void VkCore::CreateCommandPool() {
