@@ -15,7 +15,7 @@ class XRLib {
                             unsigned int minorVersion,
                             unsigned int patchVersion);
     XRLib& EnableValidationLayer();
-    XRLib& Init(bool xr);
+    XRLib& Init(bool xr = true);
 
     XRLib& AddRenderPass(std::string vertexShaderPath, std::string fragmentShaderPath);
     void Run();

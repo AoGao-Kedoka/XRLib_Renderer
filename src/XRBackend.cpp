@@ -3,10 +3,13 @@
 
 XRBackend::XRBackend(Info& info, VkCore& vkCore, XrCore& xrCore)
     : info{&info}, vkCore{&vkCore}, xrCore{&xrCore} {
-    CreateXrInstance();
-    GetSystemID();
-    if (xrCore.IsXRValid()) {
+    try {
+        CreateXrInstance();
+        GetSystemID();
         LogOpenXRRuntimeProperties();
+    } catch (const std::runtime_error& e) {
+        LOGGER(LOGGER::WARNING) << "Falling back to normal mode";
+        xrCore.SetXRValid(false);
     }
 }
 
@@ -27,13 +30,16 @@ void XRBackend::XrCreateSwapcahin() {
         LOGGER(LOGGER::ERR) << "Failed to get swapchain formats";
         exit(-1);
     }
-    std::vector<int64_t> swpchainFormats(swapchainFormatCount);
-    if (xrEnumerateSwapchainFormats(xrCore->GetXRSession(), swapchainFormatCount,
-                                    &swapchainFormatCount,
-                                    swpchainFormats.data()) != XR_SUCCESS) {
+    std::vector<int64_t> swapchainFormats(swapchainFormatCount);
+    if (xrEnumerateSwapchainFormats(xrCore->GetXRSession(),
+                                    swapchainFormatCount, &swapchainFormatCount,
+                                    swapchainFormats.data()) != XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to get swapchain formats";
         exit(-1);
     }
+
+    vkCore->SetStereoSwapchainImageFormat(
+        static_cast<VkFormat>(swapchainFormats.at(0)));
 
     uint32_t viewCount;
     if (xrEnumerateViewConfigurationViews(
@@ -52,7 +58,89 @@ void XRBackend::XrCreateSwapcahin() {
         LOGGER(LOGGER::ERR) << "Failed to get view configuration views";
         exit(-1);
     }
-    //TODO
+
+    // resize all the required vectors for swapchains
+    xrCore->GetXrSwapchains().resize(viewCount);
+    xrCore->GetXrSwapchainImages().resize(viewCount);
+    vkCore->GetStereoSwapchainImages().resize(viewCount);
+    vkCore->GetStereoSwapchainImageViews().resize(viewCount);
+
+    for (uint8_t i = 0; i < viewCount; ++i) {
+        XrSwapchain currentSwapchain = xrCore->GetXrSwapchains()[i];
+        XrSwapchainCreateInfo swapchainCreateInfo{};
+        swapchainCreateInfo.type = XR_TYPE_SWAPCHAIN_CREATE_INFO;
+        swapchainCreateInfo.usageFlags =
+            XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
+        swapchainCreateInfo.format =
+            static_cast<uint32_t>(vkCore->GetStereoSwapchainImageFormat());
+        swapchainCreateInfo.width =
+            xrCore->GetXRViewConfigurationView()[i].recommendedImageRectWidth;
+        swapchainCreateInfo.height =
+            xrCore->GetXRViewConfigurationView()[i].recommendedImageRectHeight;
+        swapchainCreateInfo.faceCount = 1;
+        swapchainCreateInfo.arraySize = 1;
+        swapchainCreateInfo.mipCount = 1;
+        if (xrCreateSwapchain(xrCore->GetXRSession(), &swapchainCreateInfo,
+                              &currentSwapchain) != XR_SUCCESS) {
+            LOGGER(LOGGER::ERR) << "Failed to create xr swapchains";
+            exit(-1);
+        }
+
+        std::vector<XrSwapchainImageVulkanKHR> currentSwapchainImages =
+            xrCore->GetXrSwapchainImages()[i];
+        uint32_t swapchainImageCount;
+        if (xrEnumerateSwapchainImages(currentSwapchain, 0,
+                                       &swapchainImageCount,
+                                       nullptr) != XR_SUCCESS) {
+            LOGGER(LOGGER::ERR) << "Failed to get swapchain images";
+            exit(-1);
+        }
+        currentSwapchainImages.resize(swapchainImageCount);
+        XrSwapchainImageBaseHeader* data =
+            reinterpret_cast<XrSwapchainImageBaseHeader*>(
+                currentSwapchainImages.data());
+
+        if (xrEnumerateSwapchainImages(currentSwapchain, 0,
+                                       &swapchainImageCount,
+                                       data) != XR_SUCCESS) {
+            LOGGER(LOGGER::ERR) << "Failed to get swapchain images";
+            exit(-1);
+        }
+
+        // assign the xr swapchain images to vk images
+        std::vector<VkImage> vkSwapchainImages =
+            vkCore->GetStereoSwapchainImages()[i];
+        vkSwapchainImages.resize(swapchainImageCount);
+        std::vector<VkImageView> vkSwapchainImageViews =
+            vkCore->GetStereoSwapchainImageViews()[i];
+        vkSwapchainImageViews.resize(swapchainImageCount);
+
+        for (uint32_t j = 0; j < swapchainImageCount; ++j) {
+            vkSwapchainImages[j] = currentSwapchainImages.at(j).image;
+            VkImageViewCreateInfo imageViewCreateInfo{};
+            imageViewCreateInfo.sType =
+                VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            imageViewCreateInfo.image = vkSwapchainImages[j];
+            imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            imageViewCreateInfo.format =
+                vkCore->GetStereoSwapchainImageFormat();
+            imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+            imageViewCreateInfo.subresourceRange.aspectMask =
+                VK_IMAGE_ASPECT_COLOR_BIT;
+            imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+            imageViewCreateInfo.subresourceRange.levelCount = 1;
+            imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+            imageViewCreateInfo.subresourceRange.layerCount = 1;
+            if (vkCreateImageView(vkCore->GetRenderDevice(),
+                                  &imageViewCreateInfo, nullptr,
+                                  &vkSwapchainImageViews[j]) != VK_SUCCESS) {
+                LOGGER(LOGGER::ERR) << "Failed to create image view";
+            }
+        }
+    }
 }
 
 void XRBackend::CreateXrInstance() {
@@ -118,15 +206,23 @@ void XRBackend::CreateXrInstance() {
         }
     }
 
+    if (std::strlen(info->applicationName.c_str()) >
+        XR_MAX_APPLICATION_NAME_SIZE) {
+        LOGGER(LOGGER::WARNING)
+            << "Application name longer than the size allowed";
+    }
+
     XrInstanceCreateInfo instanceCreateInfo{};
     instanceCreateInfo.type = XR_TYPE_INSTANCE_CREATE_INFO;
     instanceCreateInfo.createFlags = 0;
-    strcpy(instanceCreateInfo.applicationInfo.applicationName,
-           info->applicationName.c_str());
+    std::memcpy(instanceCreateInfo.applicationInfo.applicationName,
+                info->applicationName.c_str(),
+                XR_MAX_APPLICATION_NAME_SIZE - 1);
     instanceCreateInfo.applicationInfo.applicationVersion = XR_MAKE_VERSION(
         info->majorVersion, info->minorVersion, info->patchVersion);
-    strcpy(instanceCreateInfo.applicationInfo.engineName,
-           info->applicationName.c_str());
+    std::memcpy(instanceCreateInfo.applicationInfo.engineName,
+                info->applicationName.c_str(),
+                XR_MAX_APPLICATION_NAME_SIZE - 1);
     instanceCreateInfo.applicationInfo.engineVersion = XR_MAKE_VERSION(
         info->majorVersion, info->minorVersion, info->patchVersion);
     instanceCreateInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
@@ -145,7 +241,7 @@ void XRBackend::CreateXrInstance() {
             "Failed to create XR instance, no OpenXR runtime set."};
         LOGGER(LOGGER::ERR) << message;
         NMB::show("Error", message.c_str(), NMB::Icon::ICON_ERROR);
-        exit(-1);
+        throw std::runtime_error(message.c_str());
     }
 }
 
@@ -156,12 +252,10 @@ void XRBackend::GetSystemID() {
     XrResult result = xrGetSystem(xrCore->GetXRInstance(), &systemGetInfo,
                                   &xrCore->GetSystemID());
     if (result != XR_SUCCESS) {
-        std::string message{
-            "Failed to get system id, HMD may not connected. Fall back to "
-            "normal rendering mode"};
+        std::string message{"Failed to get system id, HMD may not connected."};
         LOGGER(LOGGER::WARNING) << message;
         NMB::show("Error", message.c_str(), NMB::Icon::ICON_ERROR);
-        xrCore->SetXRValid(false);
+        throw std::runtime_error(message.c_str());
     }
 }
 
@@ -180,8 +274,10 @@ void XRBackend::CreateXrSession() {
     sessionCreateInfo.next = &graphicsBinding;
     if (xrCreateSession(xrCore->GetXRInstance(), &sessionCreateInfo,
                         &xrCore->GetXRSession()) != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to create session";
-        exit(-1);
+        std::string message{"Failed to create session!"};
+        LOGGER(LOGGER::ERR) << message;
+        NMB::show("Error", message.c_str(), NMB::Icon::ICON_ERROR);
+        throw std::runtime_error(message.c_str());
     }
 }
 

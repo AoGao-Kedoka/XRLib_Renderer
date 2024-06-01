@@ -31,6 +31,7 @@ class VkCore {
         return graphicsQueueIndex;
     }
 
+    // flat renderer
     VkSurfaceKHR& GetFlatSurface() { return surfaceFlat; }
     VkSwapchainKHR& GetFlatSwapchain() { return swapChainFlat; }
     std::vector<VkImage>& GetFlatSwapchainImages() {
@@ -52,6 +53,21 @@ class VkCore {
         return swapChainFrameBuffers;
     }
 
+    // steoreo
+    VkFormat GetStereoSwapchainImageFormat() {
+        return stereoSwapchainImageFormat;
+    }
+    void SetStereoSwapchainImageFormat(VkFormat format) {
+        this->stereoSwapchainImageFormat = format;
+    }
+    std::vector<std::vector<VkImage>>& GetStereoSwapchainImages() {
+        return stereoSwapchainImages;
+    }
+    std::vector<std::vector<VkImageView>>& GetStereoSwapchainImageViews() {
+        return stereoSwapchainImageViews;
+    }
+
+    // render loop
     VkCommandPool& GetCommandPool() {
         if (commandPool == VK_NULL_HANDLE) {
             CreateCommandPool();
@@ -102,6 +118,11 @@ class VkCore {
     std::vector<VkImageView> swapChainImageViewsFlat;
     std::vector<VkFramebuffer> swapChainFrameBuffers;
 
+    //stereo swapchain
+    VkFormat stereoSwapchainImageFormat{VK_FORMAT_UNDEFINED};
+    std::vector<std::vector<VkImage>> stereoSwapchainImages;
+    std::vector<std::vector<VkImageView>> stereoSwapchainImageViews;
+
     // commands
     VkCommandPool commandPool{VK_NULL_HANDLE};
     VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
@@ -113,6 +134,7 @@ class VkCore {
 
     int32_t graphicsQueueIndex = -1;
 
+   private:
     void ParseGraphicsQueueFamilyIndex() {
         uint32_t queueFamilyCount;
         vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice,
@@ -130,10 +152,7 @@ class VkCore {
     }
 
     void CreateCommandPool();
-
     void CreateCommandBuffer();
-
     void CreateSyncSemaphore(VkSemaphore& semaphore);
-	
 	void CreateFence(VkFence& fence);
 };
