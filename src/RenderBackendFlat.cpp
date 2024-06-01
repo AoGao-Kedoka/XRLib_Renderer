@@ -1,5 +1,4 @@
 #include "RenderBackendFlat.h"
-#include "Util.h"
 
 RenderBackendFlat::~RenderBackendFlat() {
     if (vkCore == nullptr || info == nullptr)

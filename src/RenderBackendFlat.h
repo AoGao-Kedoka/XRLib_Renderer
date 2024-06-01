@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "RenderBackend.h"
+#include "Util.h"
 
 class RenderBackendFlat : public RenderBackend {
    public:

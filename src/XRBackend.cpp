@@ -1,6 +1,5 @@
 #include "XRBackend.h"
 #include "NMB.h"
-#include "Util.h"
 
 XRBackend::XRBackend(Info& info, VkCore& vkCore, XrCore& xrCore)
     : info{&info}, vkCore{&vkCore}, xrCore{&xrCore} {

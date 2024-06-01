@@ -1,7 +1,5 @@
 #include "RenderBackend.h"
 #include "Util.h"
-#include <stdint.h>
-#include <vulkan/vulkan_core.h>
 
 RenderBackend::RenderBackend(Info& info, VkCore& vkCore, XrCore& xrCore)
     : info{&info}, vkCore{&vkCore}, xrCore{&xrCore} {

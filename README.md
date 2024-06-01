@@ -1,6 +1,8 @@
 # XRLib
 A library to create XR application without an engine. Build with Vulkan and OpenXR.
-## Build
+
+## Build (Windows)
+Only windows is tested currently.
 ### Vcpkg (Recommended)
 Install the dependencies:
 ```

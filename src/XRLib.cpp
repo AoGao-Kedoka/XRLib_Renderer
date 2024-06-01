@@ -83,11 +83,11 @@ void XRLib::InitRenderBackend() {
     }
 
     if (!xrCore.IsXRValid()) {
-        renderBackend =
-            std::make_shared<RenderBackendFlat>(std::move(RenderBackendFlat{info, vkCore, xrCore}));
+        renderBackend = std::make_unique<RenderBackendFlat>(
+            std::move(RenderBackendFlat{info, vkCore, xrCore}));
     } else {
-        renderBackend =
-            std::make_shared<RenderBackend>(std::move(RenderBackend{info, vkCore, xrCore}));
+        renderBackend = std::make_unique<RenderBackend>(
+            std::move(RenderBackend{info, vkCore, xrCore}));
     }
 
 }

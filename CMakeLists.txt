@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(XRLib_Example)
+project(IG_XRLib_Example)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
@@ -180,6 +180,8 @@ file (GLOB SRCS
     ${PROJECT_SOURCE_DIR}/src/*.cpp
     ${PROJECT_SOURCE_DIR}/src/Graphics/*.h
     ${PROJECT_SOURCE_DIR}/src/Graphics/*.cpp
+	${PROJECT_SOURCE_DIR}/src/XR/*.h
+	${PROJECT_SOURCE_DIR}/src/XR/*.cpp
     ${PROJECT_SOURCE_DIR}/lib/*.h
     ${PROJECT_SOURCE_DIR}/lib/*.cpp
     ${PROJECT_SOURCE_DIR}/lib/external/*.h

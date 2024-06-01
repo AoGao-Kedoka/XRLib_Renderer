@@ -2,10 +2,10 @@
 
 #include <utility>
 
+#include "Graphics/VkCore.h"
 #include "Info.h"
 #include "Logger.h"
-
-#include "Graphics/VkCore.h"
+#include "Util.h"
 #include "XR/XrCore.h"
 
 class XRBackend {

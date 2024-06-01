@@ -32,7 +32,7 @@ class XRLib {
     void InitRenderBackend();
 
     std::unique_ptr<XRBackend> xrBackend{nullptr};
-    std::shared_ptr<RenderBackend> renderBackend{nullptr};
+    std::unique_ptr<RenderBackend> renderBackend{nullptr};
 
     std::vector<std::pair<std::string, std::string>> passesToAdd;
     bool initialized = false;
