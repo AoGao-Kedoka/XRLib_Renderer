@@ -36,6 +36,8 @@ XRLib& XRLib::Init(bool xr) {
     if (xr) InitXRBackend();
     InitRenderBackend();
 
+    if (xrCore.IsXRValid())
+        xrBackend->Prepare();
     renderBackend->Prepare(passesToAdd);
 
     initialized = true;

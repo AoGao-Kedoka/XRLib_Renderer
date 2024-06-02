@@ -48,6 +48,7 @@ class Util {
         uint32_t layerCount;
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
         std::vector<VkLayerProperties> availableLayers(layerCount);
+        vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
         for (const auto& layerProperties : availableLayers) {
             if (std::strcmp(layer, layerProperties.layerName)) {
@@ -55,6 +56,21 @@ class Util {
             }
         }
         return false;
+    }
+
+    static bool XrCheckLayerSupport(const char* layer) {
+        uint32_t layerCount;
+        xrEnumerateApiLayerProperties(0, &layerCount, nullptr);
+        std::vector<XrApiLayerProperties> availableLayers{
+            layerCount, {XR_TYPE_API_LAYER_PROPERTIES}};
+        xrEnumerateApiLayerProperties(layerCount, &layerCount,
+                                      availableLayers.data());
+        for (const auto& layerProperties : availableLayers) {
+            if (std::strcmp(layer, layerProperties.layerName)) {
+                return true;
+            }
+        }
+        return true;
     }
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL
@@ -75,6 +91,27 @@ class Util {
         }
         LOGGER(logLevel) << "Validation layer in Rendering backend: "
                          << pCallbackData->pMessage;
+        return VK_FALSE;
+    }
+
+    static XRAPI_ATTR XrBool32 XRAPI_CALL
+    XrDebugCallback(XrDebugUtilsMessageSeverityFlagsEXT messageSeverity,
+                    XrDebugUtilsMessageTypeFlagsEXT messageTypes,
+                    const XrDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                    void* pUserData) {
+        auto logLevel = LOGGER::INFO;
+        switch (messageSeverity) {
+            case XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+                logLevel = LOGGER::WARNING;
+                break;
+            case XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+                logLevel = LOGGER::ERR;
+                break;
+            default:
+                logLevel = LOGGER::INFO;
+        }
+        LOGGER(logLevel) << "Validation layer in XR backend: "
+                         << pCallbackData->message;
         return VK_FALSE;
     }
 

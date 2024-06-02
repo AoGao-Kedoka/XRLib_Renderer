@@ -4,9 +4,17 @@
 XRBackend::XRBackend(Info& info, VkCore& vkCore, XrCore& xrCore)
     : info{&info}, vkCore{&vkCore}, xrCore{&xrCore} {
     try {
+        for (const auto layer : apiLayers) {
+            bool res = Util::XrCheckLayerSupport(layer.c_str());
+            if (res) {
+                activeAPILayers.push_back(layer.c_str());
+            }
+        }
+
         CreateXrInstance();
         GetSystemID();
         LogOpenXRRuntimeProperties();
+
     } catch (const std::runtime_error& e) {
         LOGGER(LOGGER::WARNING) << "Falling back to normal mode";
         xrCore.SetXRValid(false);
@@ -14,12 +22,21 @@ XRBackend::XRBackend(Info& info, VkCore& vkCore, XrCore& xrCore)
 }
 
 XRBackend::~XRBackend() {
-    if (!xrCore|| !info) {
+    if (!xrCore || !info) {
         return;
     }
 
-    Util::XrSafeClean(xrDestroyInstance, xrCore->GetXRInstance());
-    Util::XrSafeClean(xrDestroySession, xrCore->GetXRSession());
+    if (xrDebugUtilsMessenger != XR_NULL_HANDLE) {
+        PFN_xrDestroyDebugUtilsMessengerEXT xrDestroyDebugUtilsMessengerEXT =
+            Util::XrGetXRFunction<PFN_xrDestroyDebugUtilsMessengerEXT>(
+                xrCore->GetXRInstance(), "xrDestroyDebugUtilsMessengerEXT");
+        xrDestroyDebugUtilsMessengerEXT(xrDebugUtilsMessenger);
+    }
+}
+
+void XRBackend::Prepare() {
+    CreateXrSession();
+    XrCreateSwapcahin();
 }
 
 void XRBackend::XrCreateSwapcahin() {
@@ -51,6 +68,11 @@ void XRBackend::XrCreateSwapcahin() {
     }
 
     xrCore->GetXRViewConfigurationView().resize(viewCount);
+    for (XrViewConfigurationView& viewInfo :
+         xrCore->GetXRViewConfigurationView()) {
+        viewInfo.type = XR_TYPE_VIEW_CONFIGURATION_VIEW;
+        viewInfo.next = nullptr;
+    }
     if (xrEnumerateViewConfigurationViews(
             xrCore->GetXRInstance(), xrCore->GetSystemID(),
             XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, viewCount, &viewCount,
@@ -96,11 +118,15 @@ void XRBackend::XrCreateSwapcahin() {
             exit(-1);
         }
         currentSwapchainImages.resize(swapchainImageCount);
+        for (XrSwapchainImageVulkanKHR& swapchainImage :
+             currentSwapchainImages) {
+            swapchainImage.type = XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR;
+        }
         XrSwapchainImageBaseHeader* data =
             reinterpret_cast<XrSwapchainImageBaseHeader*>(
                 currentSwapchainImages.data());
 
-        if (xrEnumerateSwapchainImages(currentSwapchain, 0,
+        if (xrEnumerateSwapchainImages(currentSwapchain, swapchainImageCount,
                                        &swapchainImageCount,
                                        data) != XR_SUCCESS) {
             LOGGER(LOGGER::ERR) << "Failed to get swapchain images";
@@ -232,6 +258,23 @@ void XRBackend::CreateXrInstance() {
     instanceCreateInfo.enabledExtensionCount =
         static_cast<uint32_t>(activeInstanceExtensions.size());
     instanceCreateInfo.enabledExtensionNames = activeInstanceExtensions.data();
+    XrDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfo{};
+    if (info->validationLayer) {
+        debugUtilsMessengerCreateInfo.type =
+            XR_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        debugUtilsMessengerCreateInfo.messageTypes =
+            XR_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+            XR_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+            XR_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+            XR_DEBUG_UTILS_MESSAGE_TYPE_CONFORMANCE_BIT_EXT;
+        debugUtilsMessengerCreateInfo.messageSeverities =
+            XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+            XR_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+            XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+            XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        debugUtilsMessengerCreateInfo.userCallback = Util::XrDebugCallback;
+        instanceCreateInfo.next = &debugUtilsMessengerCreateInfo;
+    }
 
     XrResult result =
         xrCreateInstance(&instanceCreateInfo, &xrCore->GetXRInstance());
@@ -242,6 +285,18 @@ void XRBackend::CreateXrInstance() {
         LOGGER(LOGGER::ERR) << message;
         NMB::show("Error", message.c_str(), NMB::Icon::ICON_ERROR);
         throw std::runtime_error(message.c_str());
+    }
+
+    if (info->validationLayer) {
+        PFN_xrCreateDebugUtilsMessengerEXT xrCreateDebugUtilsMessengerEXT =
+            Util::XrGetXRFunction<PFN_xrCreateDebugUtilsMessengerEXT>(
+                xrCore->GetXRInstance(), "xrCreateDebugUtilsMessengerEXT");
+        if (xrCreateDebugUtilsMessengerEXT(
+                xrCore->GetXRInstance(), &debugUtilsMessengerCreateInfo,
+                &xrDebugUtilsMessenger) != XR_SUCCESS) {
+            LOGGER(LOGGER::ERR) << "Failed to create debug messenger";
+            info->validationLayer = false;
+        }
     }
 }
 
@@ -260,7 +315,14 @@ void XRBackend::GetSystemID() {
 }
 
 void XRBackend::CreateXrSession() {
-    XrGraphicsBindingVulkanKHR graphicsBinding;
+    auto xrGetVulkanGraphicsRequirementsKHR =
+        Util::XrGetXRFunction<PFN_xrGetVulkanGraphicsRequirementsKHR>(
+            xrCore->GetXRInstance(), "xrGetVulkanGraphicsRequirementsKHR");
+    auto result = xrGetVulkanGraphicsRequirementsKHR(
+        xrCore->GetXRInstance(), xrCore->GetSystemID(),
+        &xrCore->GetGraphicsRequirements());
+
+    XrGraphicsBindingVulkanKHR graphicsBinding{};
     graphicsBinding.type = XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR;
     graphicsBinding.instance = vkCore->GetRenderInstance();
     graphicsBinding.device = vkCore->GetRenderDevice();
@@ -269,15 +331,13 @@ void XRBackend::CreateXrSession() {
     graphicsBinding.queueIndex = 0;
 
     XrSessionCreateInfo sessionCreateInfo{};
-    sessionCreateInfo.createFlags = XR_TYPE_SESSION_CREATE_INFO;
+    sessionCreateInfo.type = XR_TYPE_SESSION_CREATE_INFO;
     sessionCreateInfo.systemId = xrCore->GetSystemID();
     sessionCreateInfo.next = &graphicsBinding;
     if (xrCreateSession(xrCore->GetXRInstance(), &sessionCreateInfo,
                         &xrCore->GetXRSession()) != XR_SUCCESS) {
-        std::string message{"Failed to create session!"};
-        LOGGER(LOGGER::ERR) << message;
-        NMB::show("Error", message.c_str(), NMB::Icon::ICON_ERROR);
-        throw std::runtime_error(message.c_str());
+        LOGGER(LOGGER::ERR) << "Failed to create session";
+        exit(-1);
     }
 }
 

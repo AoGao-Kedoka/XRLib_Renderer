@@ -18,6 +18,7 @@ class XRBackend {
     XRBackend(XRBackend&& other) noexcept
         : info(std::exchange(other.info, nullptr)),
           xrCore(std::exchange(other.xrCore, nullptr)),
+          vkCore(std::exchange(other.vkCore, nullptr)),
           activeAPILayers(std::move(other.activeAPILayers)),
           activeInstanceExtensions(std::move(other.activeInstanceExtensions)),
           apiLayers(std::move(other.apiLayers)),
@@ -34,6 +35,7 @@ class XRBackend {
 
         info = std::exchange(rhs.info, nullptr);
         xrCore = std::exchange(rhs.xrCore, nullptr);
+        vkCore = std::exchange(rhs.vkCore, nullptr);
         activeAPILayers = std::move(rhs.activeAPILayers);
         activeInstanceExtensions = std::move(rhs.activeInstanceExtensions);
         apiLayers = std::move(rhs.apiLayers);
@@ -43,6 +45,15 @@ class XRBackend {
         return *this;
     }
 
+    void Prepare();
+
+   private:
+    void CreateXrInstance();
+    void LogOpenXRRuntimeProperties() const;
+    void LogOpenXRSystemProperties() const;
+    void GetSystemID();
+
+    void CreateXrSession();
     void XrCreateSwapcahin();
 
    private:
@@ -50,16 +61,10 @@ class XRBackend {
     VkCore* vkCore;
     XrCore* xrCore;
 
-    void CreateXrInstance();
-    void LogOpenXRRuntimeProperties() const;
-    void LogOpenXRSystemProperties() const;
-    void GetSystemID();
-
-    void CreateXrSession();
-
     std::vector<const char*> activeAPILayers = {};
     std::vector<const char*> activeInstanceExtensions = {};
     std::vector<std::string> apiLayers = {};
+
     std::vector<std::string> instanceExtensions = {
         XR_KHR_VULKAN_ENABLE_EXTENSION_NAME};
 

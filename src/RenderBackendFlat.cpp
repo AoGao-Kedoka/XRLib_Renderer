@@ -210,7 +210,7 @@ void RenderBackendFlat::OnWindowResized() {
     this->CreateFlatSwapChain();
     this->InitFrameBuffer();
 
-    LOGGER(LOGGER::INFO) << "Swapchain recreated!";
+    LOGGER(LOGGER::DEBUG) << "Swapchain recreated!";
 }
 
 void RenderBackendFlat::PrepareFlatWindow() {

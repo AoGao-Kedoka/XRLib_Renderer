@@ -91,7 +91,6 @@ void RenderBackend::InitVulkan() {
 
         std::vector<const char*> xrInstanceExtensions =
             Util::SplitStringToCharPtr(buffer);
-        Util::SplitStringToCharPtr(buffer);
         for (auto extension : xrInstanceExtensions) {
             vulkanInstanceExtensions.push_back(extension);
         }
@@ -135,7 +134,6 @@ void RenderBackend::InitVulkan() {
         exit(-1);
     }
 
-    // select physical device
     if (info->validationLayer) {
         vkCreateDebugUtilsMessengerEXT =
             reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
@@ -147,6 +145,18 @@ void RenderBackend::InitVulkan() {
             LOGGER(LOGGER::WARNING) << "Failed to create debug utils messenger";
         }
     }
+
+    // select physical device
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(vkCore->GetRenderInstance(), &deviceCount, 0);
+    if (deviceCount == 0) {
+        LOGGER(LOGGER::ERR) << "Failed to find GPUs with Vulkan support";
+        exit(-1);
+    }
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(vkCore->GetRenderInstance(), &deviceCount,
+                               devices.data());
+
     if (xrCore->IsXRValid()) {
         auto xrGetVulkanGraphicsDeviceKHR =
             Util::XrGetXRFunction<PFN_xrGetVulkanGraphicsDeviceKHR>(
@@ -160,16 +170,6 @@ void RenderBackend::InitVulkan() {
             exit(-1);
         }
     } else {
-        uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(vkCore->GetRenderInstance(), &deviceCount,
-                                   0);
-        if (deviceCount == 0) {
-            LOGGER(LOGGER::ERR) << "Failed to find GPUs with Vulkan support";
-            exit(-1);
-        }
-        std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(vkCore->GetRenderInstance(), &deviceCount,
-                                   devices.data());
         std::vector<std::pair<VkPhysicalDevice, uint8_t>> suitableDevices;
 
         auto isDeviceSuitable = [](VkPhysicalDevice device) -> bool {

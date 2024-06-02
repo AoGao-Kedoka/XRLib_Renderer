@@ -1,5 +1,5 @@
 /*
-* Author: Ao Gao
+* Author: AoGao-Kedoka
 */
 
 #pragma once
@@ -20,16 +20,16 @@ class LOGGER {
         ERR = 3,
     };
 
-    LOGGER(LOG_LEVEL level)
+    LOGGER(LOG_LEVEL level, const std::source_location& location =
+                                std::source_location::current())
         : _outfile(_logger_file_path, std::ios_base::app), _log_level(level) {
         if (_log_level >= _program_log_level) {
             _outfile << "[" << get_current_time() << "] ["
                      << convert_log_level(_log_level) << "] ["
-                     << std::source_location::current().function_name()
-                     << "]: ";
+                     << location.function_name() << "]: ";
             std::cout << log_color(level, true) << "[" << get_current_time()
                       << "] [" << convert_log_level(_log_level) << "] ["
-                      << std::source_location::current().function_name()
+                      << location.function_name()
                       << "]: " << log_color(level, false);
         }
     }
@@ -45,12 +45,8 @@ class LOGGER {
     void LOGFUNC(const std::source_location& location =
                      std::source_location::current()) {
         if (_log_level >= _program_log_level) {
-            _outfile << "[" << get_current_time() << "] ["
-                     << convert_log_level(_log_level)
-                     << "]: " << location.function_name();
-            std::cout << "[" << get_current_time() << "] ["
-                      << convert_log_level(_log_level)
-                      << "]: " << location.function_name();
+            _outfile << "";
+            std::cout << "";
         }
     }
 
