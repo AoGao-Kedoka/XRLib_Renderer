@@ -42,3 +42,4 @@
 # External
 lib/external/
 .cache
+Logger.txt
