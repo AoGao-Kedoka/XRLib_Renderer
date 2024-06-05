@@ -47,7 +47,8 @@ class RenderBackend {
     bool WindowShouldClose() { return glfwWindowShouldClose(window); }
 
     virtual void
-    Prepare(std::vector<std::pair<std::string, std::string>> passesToAdd);
+    Prepare(std::vector<std::pair<const std::string&, const std::string&>>
+                passesToAdd) {}
 
     virtual void InitFrameBuffer();
 

@@ -21,8 +21,8 @@ class RenderBackendFlat : public RenderBackend {
         return *this;
     }
 
-    void Prepare(
-        std::vector<std::pair<std::string, std::string>> passesToAdd) override;
+    void Prepare(std::vector<std::pair<const std::string&, const std::string&>>
+                     passesToAdd) override;
 
     void OnWindowResized() override;
 

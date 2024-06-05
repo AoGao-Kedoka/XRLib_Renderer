@@ -17,7 +17,8 @@ class XRLib {
     XRLib& EnableValidationLayer();
     XRLib& Init(bool xr = true);
 
-    XRLib& AddRenderPass(std::string vertexShaderPath, std::string fragmentShaderPath);
+    XRLib& AddRenderPass(const std::string& vertexShaderPath,
+                         const std::string& fragmentShaderPath);
     void Run();
 
     bool WindowShouldClose(){ return renderBackend->WindowShouldClose(); }
@@ -34,7 +35,7 @@ class XRLib {
     std::unique_ptr<XRBackend> xrBackend{nullptr};
     std::unique_ptr<RenderBackend> renderBackend{nullptr};
 
-    std::vector<std::pair<std::string, std::string>> passesToAdd;
+    std::vector<std::pair<const std::string&, const std::string&>> passesToAdd;
     bool initialized = false;
 };
 }    // namespace XRLib

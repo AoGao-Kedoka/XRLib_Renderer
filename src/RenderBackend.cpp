@@ -272,12 +272,8 @@ void RenderBackend::InitVulkan() {
                      &vkCore->GetGraphicsQueue());
 }
 
-void RenderBackend::Prepare(
-    std::vector<std::pair<std::string, std::string>> passesToAdd) {
-    //TODO Create multi-view render pass to write to the stereo swapchain
-}
-
 void RenderBackend::InitFrameBuffer() {}
+
 void RenderBackend::Run() {
     glfwPollEvents();
     vkWaitForFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence(),

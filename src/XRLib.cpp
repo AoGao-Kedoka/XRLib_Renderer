@@ -53,8 +53,8 @@ XRLib& XRLib::Fullscreen() {
     return *this;
 }
 
-XRLib& XRLib::AddRenderPass(std::string vertexShaderPath,
-                                  std::string fragmentShaderPath) {
+XRLib& XRLib::AddRenderPass(const std::string& vertexShaderPath,
+                            const std::string& fragmentShaderPath) {
     passesToAdd.push_back({vertexShaderPath, fragmentShaderPath});
     
     return *this;

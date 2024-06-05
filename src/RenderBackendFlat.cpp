@@ -15,7 +15,8 @@ RenderBackendFlat::~RenderBackendFlat() {
 }
 
 void RenderBackendFlat::Prepare(
-    std::vector<std::pair<std::string, std::string>> passesToAdd) {
+    std::vector<std::pair<const std::string&, const std::string&>>
+        passesToAdd) {
     PrepareFlatWindow();
     CreateFlatSwapChain();
 
@@ -36,7 +37,6 @@ void RenderBackendFlat::Prepare(
     // show window when preparation finished
     glfwShowWindow(window);
 }
-
 
 void RenderBackendFlat::InitFrameBuffer() {
     // create frame buffer
