@@ -9,8 +9,8 @@ class Pipeline {
    public:
     // TODO: compute pipeline
     Pipeline() = default;
-    Pipeline(VkCore* core, Shader vertexShader, Shader fragmentShader,
-             RenderPass* pass);
+    Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
+             Shader fragmentShader, std::shared_ptr<RenderPass> pass);
     ~Pipeline();
 
     Pipeline(Pipeline&& other) noexcept
@@ -31,7 +31,7 @@ class Pipeline {
     VkPipeline& GetVkPipeline() { return pipeline; }
 
    private:
-    VkCore* core = nullptr;
+    std::shared_ptr<VkCore> core{nullptr};
     VkPipeline pipeline{VK_NULL_HANDLE};
     VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
 };

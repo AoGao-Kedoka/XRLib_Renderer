@@ -6,7 +6,7 @@
 class RenderPass {
    public:
     RenderPass() = default;
-    RenderPass(VkCore* core);
+    RenderPass(std::shared_ptr<VkCore> core);
     ~RenderPass();
 
     RenderPass(RenderPass&& other) noexcept
@@ -28,12 +28,12 @@ class RenderPass {
 
     VkRenderPass& GetRenderPass() { return pass; }
     void Record(uint32_t imageIndex);
-    void SetGraphicPipeline(VkPipeline& pipeline) {
-        graphicsPipeline = &pipeline;
+    void SetGraphicPipeline(VkPipeline* pipeline) {
+        graphicsPipeline = pipeline;
     }
 
    private:
-    VkCore* core;
+    std::shared_ptr<VkCore> core{nullptr};
     VkRenderPass pass{VK_NULL_HANDLE};
     VkPipeline* graphicsPipeline{nullptr};
 };

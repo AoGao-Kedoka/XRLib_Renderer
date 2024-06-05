@@ -1,8 +1,9 @@
 #include "XRBackend.h"
 #include "NMB.h"
 
-XRBackend::XRBackend(Info& info, VkCore& vkCore, XrCore& xrCore)
-    : info{&info}, vkCore{&vkCore}, xrCore{&xrCore} {
+XRBackend::XRBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
+                     std::shared_ptr<XrCore> xrCore)
+    : info{info}, vkCore{core}, xrCore{xrCore} {
     try {
         for (const auto layer : apiLayers) {
             bool res = Util::XrCheckLayerSupport(layer.c_str());
@@ -17,7 +18,7 @@ XRBackend::XRBackend(Info& info, VkCore& vkCore, XrCore& xrCore)
 
     } catch (const std::runtime_error& e) {
         LOGGER(LOGGER::WARNING) << "Falling back to normal mode";
-        xrCore.SetXRValid(false);
+        xrCore->SetXRValid(false);
     }
 }
 

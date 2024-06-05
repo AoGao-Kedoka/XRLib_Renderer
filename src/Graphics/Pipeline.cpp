@@ -1,7 +1,8 @@
 #include "Pipeline.h"
 
-Pipeline::Pipeline(VkCore* core, Shader vertexShader, Shader fragmentShader,
-                   RenderPass* renderPass)
+Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
+                   Shader fragmentShader,
+                   std::shared_ptr<RenderPass> renderPass)
     : core{core} {
     VkPipelineShaderStageCreateInfo shaderStages[] = {
         vertexShader.GetShaderStageInfo(), fragmentShader.GetShaderStageInfo()};
@@ -97,6 +98,8 @@ Pipeline::Pipeline(VkCore* core, Shader vertexShader, Shader fragmentShader,
                                   &pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
+
+    renderPass->SetGraphicPipeline(&this->pipeline);
 }
 
 Pipeline::~Pipeline() {

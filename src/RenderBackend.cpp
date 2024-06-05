@@ -1,17 +1,19 @@
 #include "RenderBackend.h"
 #include "Util.h"
 
-RenderBackend::RenderBackend(Info& info, VkCore& vkCore, XrCore& xrCore)
-    : info{&info}, vkCore{&vkCore}, xrCore{&xrCore} {
+RenderBackend::RenderBackend(std::shared_ptr<Info> info,
+                             std::shared_ptr<VkCore> vkCore,
+                             std::shared_ptr<XrCore> xrCore)
+    : info{info}, vkCore{vkCore}, xrCore{xrCore} {
     glfwInit();
 
-    if (info.validationLayer) {
+    if (info->validationLayer) {
         for (const char* layer : validataionLayers) {
             bool res = Util::VkCheckLayerSupport(layer);
 
             // disable validataion if validation layer is not supported
             if (!res) {
-                info.validationLayer = false;
+                info->validationLayer = false;
                 LOGGER(LOGGER::WARNING) << "Validation layer not available, "
                                            "disabling validataion layer";
             }
@@ -270,6 +272,12 @@ void RenderBackend::InitVulkan() {
                      &vkCore->GetGraphicsQueue());
 }
 
+void RenderBackend::Prepare(
+    std::vector<std::pair<std::string, std::string>> passesToAdd) {
+    //TODO Create multi-view render pass to write to the stereo swapchain
+}
+
+void RenderBackend::InitFrameBuffer() {}
 void RenderBackend::Run() {
     glfwPollEvents();
     vkWaitForFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence(),
@@ -290,7 +298,7 @@ void RenderBackend::Run() {
 
     vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
 
-    renderPasses.at(0)->renderPass.Record(imageIndex);
+    renderPasses.at(0)->renderPass->Record(imageIndex);
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

@@ -24,9 +24,9 @@ class XRLib {
     XRLib& Fullscreen();
 
    private:
-    Info info{};
-    VkCore vkCore{};
-    XrCore xrCore{};
+    std::shared_ptr<Info> info{std::make_shared<Info>()};
+    std::shared_ptr<VkCore> vkCore{std::make_shared<VkCore>()};
+    std::shared_ptr<XrCore> xrCore{std::make_shared<XrCore>()};
 
     void InitXRBackend();
     void InitRenderBackend();

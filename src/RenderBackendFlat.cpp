@@ -49,7 +49,7 @@ void RenderBackendFlat::InitFrameBuffer() {
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass =
-            renderPasses[renderPasses.size() - 1]->renderPass.GetRenderPass();
+            renderPasses[renderPasses.size() - 1]->renderPass->GetRenderPass();
         framebufferInfo.attachmentCount = 1;
         framebufferInfo.pAttachments = attachments;
         framebufferInfo.width = vkCore->GetFlatSwapchainExtent2D().width;

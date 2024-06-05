@@ -1,6 +1,6 @@
 #include "RenderPass.h"
 
-RenderPass::RenderPass(VkCore* core) : core{core} {
+RenderPass::RenderPass(std::shared_ptr<VkCore> core) : core{core} {
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = core->GetFlatSwapchainImageFormat();
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;

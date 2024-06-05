@@ -15,7 +15,8 @@
 
 class RenderBackend {
    public:
-    RenderBackend(Info& info, VkCore& vkCore, XrCore& xrCore);
+    RenderBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> vkCore,
+                  std::shared_ptr<XrCore> xrCore);
     ~RenderBackend();
 
     RenderBackend(RenderBackend&& src) noexcept
@@ -45,50 +46,44 @@ class RenderBackend {
 
     bool WindowShouldClose() { return glfwWindowShouldClose(window); }
 
-    virtual void Prepare(
-        std::vector<std::pair<std::string, std::string>> passesToAdd){};
+    virtual void
+    Prepare(std::vector<std::pair<std::string, std::string>> passesToAdd);
+
+    virtual void InitFrameBuffer();
 
     virtual void OnWindowResized() {
         LOGGER(LOGGER::ERR) << "Undefined image resize";
         exit(-1);
     };
+
     void Run();
 
     struct GraphicsRenderPass {
-        GraphicsRenderPass(VkCore* core, std::string vertexShaderPath,
-                           std::string fragmentShaderPath)
+        GraphicsRenderPass(std::shared_ptr<VkCore> core,
+                           std::string vertexShaderPath = "",
+                           std::string fragmentShaderPath = "")
             : core{core} {
             Shader vertexShader{core, vertexShaderPath, Shader::VERTEX_SHADER};
             Shader fragmentShader{core, fragmentShaderPath,
                                   Shader::FRAGMENT_SHADER};
-            renderPass = RenderPass{core};
+            renderPass = std::make_shared<RenderPass>(core);
 
-            pipeline = Pipeline{core, std::move(vertexShader),
-                                std::move(fragmentShader), &renderPass};
+            pipeline = std::make_shared<Pipeline>(core, std::move(vertexShader),
+                                                  std::move(fragmentShader),
+                                                  renderPass);
         }
 
-        GraphicsRenderPass(VkCore* core) : core{ core } {
-            Shader vertexShader{core, Shader::VERTEX_SHADER};
-            Shader fragmentShader{core, Shader::FRAGMENT_SHADER};
-            renderPass = RenderPass{core};
-
-            pipeline = Pipeline{core, std::move(vertexShader),
-                                std::move(fragmentShader), &renderPass};
-
-            renderPass.SetGraphicPipeline(pipeline.GetVkPipeline());
-        }
-
-        VkCore* core;
-        RenderPass renderPass;
-        Pipeline pipeline;
+        std::shared_ptr<VkCore> core;
+        std::shared_ptr<RenderPass> renderPass;
+        std::shared_ptr<Pipeline> pipeline;
     };
 
     std::vector<std::unique_ptr<GraphicsRenderPass>> renderPasses;
 
    protected:
-    Info* info;
-    VkCore* vkCore;
-    XrCore* xrCore;
+    std::shared_ptr<Info> info;
+    std::shared_ptr<VkCore> vkCore;
+    std::shared_ptr<XrCore> xrCore;
     GLFWwindow* window;
 
    private:

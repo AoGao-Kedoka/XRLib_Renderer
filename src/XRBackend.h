@@ -12,7 +12,8 @@
 
 class XRBackend {
    public:
-    XRBackend(Info& info, VkCore& vkCore, XrCore& xrCore);
+    XRBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
+              std::shared_ptr<XrCore> xrCore);
     ~XRBackend();
 
     XRBackend(XRBackend&& other) noexcept
@@ -57,9 +58,9 @@ class XRBackend {
     void XrCreateSwapcahin();
 
    private:
-    Info* info;
-    VkCore* vkCore;
-    XrCore* xrCore;
+    std::shared_ptr<Info> info{nullptr};
+    std::shared_ptr<VkCore> vkCore{nullptr};
+    std::shared_ptr<XrCore> xrCore{nullptr};
 
     std::vector<const char*> activeAPILayers = {};
     std::vector<const char*> activeInstanceExtensions = {};

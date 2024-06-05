@@ -7,7 +7,9 @@
 
 class RenderBackendFlat : public RenderBackend {
    public:
-    RenderBackendFlat(Info& info, VkCore& core, XrCore& xrCore) : RenderBackend(info, core, xrCore) {}
+    RenderBackendFlat(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
+                      std::shared_ptr<XrCore> xrCore)
+        : RenderBackend(info, core, xrCore) {}
     ~RenderBackendFlat();
 
     RenderBackendFlat(RenderBackendFlat&& other) noexcept
@@ -27,6 +29,6 @@ class RenderBackendFlat : public RenderBackend {
 
    private:
     void CreateFlatSwapChain();
-    void InitFrameBuffer();
+    void InitFrameBuffer() override;
     void PrepareFlatWindow();
 };

@@ -4,7 +4,7 @@ namespace XRLib {
 XRLib& XRLib::SetApplicationName(std::string applicationName) {
     _LOGFUNC_;
 
-    info.applicationName = std::move(applicationName);
+    info->applicationName = std::move(applicationName);
     return *this;
 }
 
@@ -13,16 +13,16 @@ XRLib& XRLib::SetVersionNumber(unsigned int majorVersion,
                                unsigned int patchVersion) {
     _LOGFUNC_;
 
-    info.majorVersion = majorVersion;
-    info.minorVersion = minorVersion;
-    info.patchVersion = patchVersion;
+    info->majorVersion = majorVersion;
+    info->minorVersion = minorVersion;
+    info->patchVersion = patchVersion;
     return *this;
 }
 
 XRLib& XRLib::EnableValidationLayer() {
     _LOGFUNC_;
 
-    info.validationLayer = true;
+    info->validationLayer = true;
     return *this;
 }
 
@@ -30,13 +30,13 @@ XRLib& XRLib::Init(bool xr) {
     _LOGFUNC_;
 
     if (!xr) {
-        xrCore.SetXRValid(false);
+        xrCore->SetXRValid(false);
     }
 
     if (xr) InitXRBackend();
     InitRenderBackend();
 
-    if (xrCore.IsXRValid())
+    if (xrCore->IsXRValid())
         xrBackend->Prepare();
     renderBackend->Prepare(passesToAdd);
 
@@ -49,7 +49,7 @@ void XRLib::Run() {
 }
 
 XRLib& XRLib::Fullscreen() {
-    info.fullscreen = true;
+    info->fullscreen = true;
     return *this;
 }
 
@@ -63,34 +63,32 @@ XRLib& XRLib::AddRenderPass(std::string vertexShaderPath,
 void XRLib::InitXRBackend() {
     _LOGFUNC_;
 
-    if (info.applicationName.empty()) {
+    if (info->applicationName.empty()) {
         LOGGER(LOGGER::ERR) << "No application name specified";
         exit(-1);
     }
 
-    xrBackend = std::make_unique<XRBackend>(std::move(XRBackend{info, vkCore, xrCore}));
+    xrBackend = std::make_unique<XRBackend>(info, vkCore, xrCore);
 }
 
 void XRLib::InitRenderBackend() {
     _LOGFUNC_;
 
-    if (info.majorVersion == 0 && info.minorVersion == 0 &&
-        info.patchVersion == 0) {
+    if (info->majorVersion == 0 && info->minorVersion == 0 &&
+        info->patchVersion == 0) {
         LOGGER(LOGGER::WARNING) << "Version number is 0";
     }
 
-    if (info.applicationName.empty()) {
+    if (info->applicationName.empty()) {
         LOGGER(LOGGER::ERR) << "No application name specified";
         exit(-1);
     }
 
-    if (!xrCore.IsXRValid()) {
-        renderBackend = std::make_unique<RenderBackendFlat>(
-            std::move(RenderBackendFlat{info, vkCore, xrCore}));
+    if (!xrCore->IsXRValid()) {
+        renderBackend =
+            std::make_unique<RenderBackendFlat>(info, vkCore, xrCore);
     } else {
-        renderBackend = std::make_unique<RenderBackend>(
-            std::move(RenderBackend{info, vkCore, xrCore}));
+        renderBackend = std::make_unique<RenderBackend>(info, vkCore, xrCore);
     }
-
 }
 }    // namespace XRLib

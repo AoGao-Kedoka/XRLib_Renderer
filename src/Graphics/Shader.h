@@ -15,9 +15,8 @@ class Shader {
         FRAGMENT_SHADER = VK_SHADER_STAGE_FRAGMENT_BIT,
         // possibly more
     };
-    Shader(VkCore* core, const std::filesystem::path& file_path,
+    Shader(std::shared_ptr<VkCore> core, const std::filesystem::path& file_path,
            ShaderStage stage);
-    Shader(VkCore* core, ShaderStage shaderStage);
     ~Shader();
 
      Shader(Shader&& other) noexcept
@@ -42,7 +41,7 @@ class Shader {
     }
 
    private:
-    VkCore* core = nullptr;
+    std::shared_ptr<VkCore> core{nullptr};
     ShaderStage stage;
     VkShaderModule shaderModule{VK_NULL_HANDLE};
     VkPipelineShaderStageCreateInfo shaderStageInfo{};

@@ -1,29 +1,29 @@
 #include "Shader.h"
 
-Shader::Shader(VkCore* core, const std::filesystem::path& filePath, ShaderStage shaderStage)
+Shader::Shader(std::shared_ptr<VkCore> core,
+               const std::filesystem::path& filePath, ShaderStage shaderStage)
     : core{core}, stage{shaderStage} {
+    std::string rawCode;
+    if (filePath.empty()) {
+        switch (stage) {
+            case ShaderStage::VERTEX_SHADER:
+                rawCode = Info::triangleVert;
+                break;
+            case ShaderStage::FRAGMENT_SHADER:
+                rawCode = Info::triangleFrag;
+                break;
+        }
+    } else {
+        rawCode = Util::ReadFile(filePath.generic_string());
+    }
 
-    auto rawCode = Util::ReadFile(filePath.generic_string());
     if (rawCode == "") {
         exit(-1);
     }
-    auto spirv = Compile(rawCode, filePath.filename().generic_string());
-    Init(spirv);
-}
 
-Shader::Shader(VkCore* core, ShaderStage shaderStage)
-    : core{core}, stage{shaderStage} {
-    std::string rawCode;
-    switch (stage) {
-        case ShaderStage::VERTEX_SHADER:
-            rawCode = Info::triangleVert;
-            break;
-        case ShaderStage::FRAGMENT_SHADER:
-            rawCode = Info::triangleFrag;
-            break;
-    }
-
-    auto spirv = Compile(rawCode, "main");
+    auto spirv = Compile(rawCode, filePath.empty()
+                                      ? "main"
+                                      : filePath.filename().generic_string());
     Init(spirv);
 }
 
