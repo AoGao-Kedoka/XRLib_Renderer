@@ -15,6 +15,7 @@ file(DOWNLOAD
     ${CMAKE_SOURCE_DIR}/lib/external/NMB.h
 )
 
+set(MESSAGE_BOX "---------------------------")
 include(FetchContent)
 
 #----------------
@@ -23,7 +24,7 @@ include(FetchContent)
 set(VULKAN_DEPS Vulkan::Vulkan)
 find_package(Vulkan QUIET)
 if (NOT Vulkan_FOUND)
-    message("Vulkan not found")
+	message("${MESSAGE_BOX}\nVulkan not found\n${MESSAGE_BOX}")
     FetchContent_Declare(
         Vulkan-Headers
         GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers.git
@@ -49,6 +50,7 @@ endif()
 set(SHADERC_DEPS unofficial::shaderc::shaderc)
 find_package(unofficial-shaderc CONFIG QUIET)
 if (NOT unofficial-shaderc_FOUND)
+	message("${MESSAGE_BOX}\nShaderc not found\n${MESSAGE_BOX}")
 	FetchContent_Declare(SPIRV-Cross
         GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Cross.git
         GIT_TAG vulkan-sdk-1.3.275.0
@@ -121,7 +123,7 @@ set(OPENXR_DEPS
 )
 find_package(OpenXR CONFIG QUIET)
 if (NOT OpenXR_FOUND)
-    message("OpenXR not found")
+	message("${MESSAGE_BOX}\nOpenXR not found\n${MESSAGE_BOX}")
 
     set(BUILD_TESTS
         OFF
@@ -148,7 +150,7 @@ endif()
 #----------------
 find_package(GLM QUIET)
 if (NOT GLM_FOUND)
-    message("glm not found")
+	message("${MESSAGE_BOX}\nglm not found\n${MESSAGE_BOX}")
     FetchContent_Declare(
         glm
         GIT_REPOSITORY https://github.com/g-truc/glm.git
@@ -162,7 +164,7 @@ endif()
 #----------------
 find_package(glfw3 CONFIG QUIET)
 if (NOT glfw3_FOUND)
-    message("GLFW not found")
+	message("${MESSAGE_BOX}\nGLFW not found\n${MESSAGE_BOX}")
     FetchContent_Declare(
         glfw
         GIT_REPOSITORY https://github.com/glfw/glfw.git
