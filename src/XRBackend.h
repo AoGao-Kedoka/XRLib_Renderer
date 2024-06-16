@@ -1,13 +1,11 @@
 #pragma once
 
 #include <cstring>
-#include <stdexcept>
 #include <utility>
 
 #include "Graphics/VkCore.h"
 #include "Info.h"
 #include "Logger.h"
-#include "Util.h"
 #include "XR/XrCore.h"
 
 class XRBackend {
@@ -47,6 +45,7 @@ class XRBackend {
     }
 
     void Prepare();
+    void Run();
 
    private:
     void CreateXrInstance();
@@ -56,6 +55,8 @@ class XRBackend {
 
     void CreateXrSession();
     void XrCreateSwapcahin();
+
+    void PollXREvents();
 
    private:
     std::shared_ptr<Info> info{nullptr};

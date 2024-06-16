@@ -40,6 +40,35 @@ void XRBackend::Prepare() {
     XrCreateSwapcahin();
 }
 
+void XRBackend::Run() {
+    PollXREvents();
+
+    XrFrameState frameState{XR_TYPE_FRAME_STATE};
+    XrFrameWaitInfo frameWaitInfo{XR_TYPE_FRAME_WAIT_INFO};
+    xrWaitFrame(xrCore->GetXRSession(), &frameWaitInfo, &frameState);
+
+    XrFrameBeginInfo frameBeginInfo{XR_TYPE_FRAME_BEGIN_INFO};
+    if (xrBeginFrame(xrCore->GetXRSession(), &frameBeginInfo)) {
+        LOGGER(LOGGER::ERR) << "Failed to begin frame";
+        exit(-1);
+    }
+
+    uint32_t imageIndex;
+    XrSwapchainImageAcquireInfo swapchainImageAcquireInfo{
+        XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
+    if (xrAcquireSwapchainImage(xrCore->GetXrSwapchains()[0],
+                                &swapchainImageAcquireInfo,
+                                &imageIndex) != XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to get acquire swapchain";
+        exit(-1);
+    }
+}
+
+void XRBackend::PollXREvents() {
+    XrEventDataBuffer buffer{XR_TYPE_EVENT_DATA_BUFFER};
+    //TODO
+}
+
 void XRBackend::XrCreateSwapcahin() {
     uint32_t swapchainFormatCount;
     if (xrEnumerateSwapchainFormats(xrCore->GetXRSession(), 0,

@@ -45,6 +45,7 @@ XRLib& XRLib::Init(bool xr) {
 }
 
 void XRLib::Run() {
+    xrBackend->Run();
     renderBackend->Run();
 }
 
