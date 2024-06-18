@@ -8,6 +8,7 @@
 #include <iostream>
 #include <source_location>
 #include <sstream>
+#include <mutex>
 
 #define _LOGFUNC_ LOGGER(LOGGER::INFO).LOGFUNC()
 
@@ -22,28 +23,32 @@ class LOGGER {
 
     LOGGER(LOG_LEVEL level, const std::source_location& location =
                                 std::source_location::current())
-        : _outfile(_logger_file_path, std::ios_base::app), _log_level(level) {
+        : _log_level(level), _location(location) {
+        std::lock_guard<std::mutex> lock(_mutex);
         if (_log_level >= _program_log_level) {
+            _outfile.open(_logger_file_path, std::ios_base::app);
             _outfile << "[" << get_current_time() << "] ["
                      << convert_log_level(_log_level) << "] ["
-                     << location.function_name() << "]: ";
+                     << _location.function_name() << "]: ";
             std::cout << log_color(level, true) << "[" << get_current_time()
                       << "] [" << convert_log_level(_log_level) << "] ["
-                      << location.function_name()
+                      << _location.function_name()
                       << "]: " << log_color(level, false);
         }
     }
 
     ~LOGGER() {
+        std::lock_guard<std::mutex> lock(_mutex);
         if (_log_level >= _program_log_level) {
-			std::cout << '\n';
-			_outfile << '\n';
-		}
-        _outfile.close();
+            std::cout << '\n';
+            _outfile << '\n';
+            _outfile.close();
+        }
     }
 
     void LOGFUNC(const std::source_location& location =
                      std::source_location::current()) {
+        std::lock_guard<std::mutex> lock(_mutex);
         if (_log_level >= _program_log_level) {
             _outfile << "";
             std::cout << "";
@@ -52,6 +57,7 @@ class LOGGER {
 
     template <class T>
     LOGGER& operator<<(const T& thing) {
+        std::lock_guard<std::mutex> lock(_mutex);
         if (_log_level >= _program_log_level) {
             _outfile << thing;
             std::cout << thing;
@@ -102,9 +108,11 @@ class LOGGER {
         return time;
     }
 
+    static inline std::mutex _mutex;
     std::string _logger_file_path{"./Logger.txt"};
     std::ofstream _outfile;
     LOG_LEVEL _log_level;
+    std::source_location _location;
 #ifdef NDEBUG
     LOG_LEVEL _program_log_level{LOGGER::INFO};
 #else

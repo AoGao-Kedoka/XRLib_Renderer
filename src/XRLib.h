@@ -4,7 +4,9 @@
 #include <memory>
 
 #include "Info.h"
+#include "RenderBackend.h"
 #include "RenderBackendFlat.h"
+#include "Scene.h"
 #include "XRBackend.h"
 
 namespace XRLib {
@@ -15,7 +17,7 @@ class XRLib {
                             unsigned int minorVersion,
                             unsigned int patchVersion);
     XRLib& EnableValidationLayer();
-    XRLib& Init(bool xr = true);
+    void Init(bool xr = true);
 
     XRLib& AddRenderPass(const std::string& vertexShaderPath,
                          const std::string& fragmentShaderPath);
@@ -24,10 +26,13 @@ class XRLib {
     bool WindowShouldClose(){ return renderBackend->WindowShouldClose(); }
     XRLib& Fullscreen();
 
+    Scene& SceneBackend() { return *scene; }
+
    private:
     std::shared_ptr<Info> info{std::make_shared<Info>()};
     std::shared_ptr<VkCore> vkCore{std::make_shared<VkCore>()};
     std::shared_ptr<XrCore> xrCore{std::make_shared<XrCore>()};
+    std::shared_ptr<Scene> scene{std::make_shared<Scene>()};
 
     void InitXRBackend();
     void InitRenderBackend();

@@ -26,7 +26,7 @@ XRLib& XRLib::EnableValidationLayer() {
     return *this;
 }
 
-XRLib& XRLib::Init(bool xr) {
+void XRLib::Init(bool xr) {
     _LOGFUNC_;
 
     if (!xr) {
@@ -41,11 +41,12 @@ XRLib& XRLib::Init(bool xr) {
     renderBackend->Prepare(passesToAdd);
 
     initialized = true;
-    return *this;
 }
 
 void XRLib::Run() {
-    xrBackend->Run();
+    if (xrCore->IsXRValid()) {
+        xrBackend->Run();
+    }
     renderBackend->Run();
 }
 
