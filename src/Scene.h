@@ -16,11 +16,6 @@
 
 class Scene {
    public:
-    Scene();
-    ~Scene();
-    Scene& LoadMeshAsync(const std::string& path);
-    void WaitForAllMeshesToLoad();
-
     struct Vertex {
         glm::vec3 position;
         glm::vec3 normal;
@@ -32,6 +27,14 @@ class Scene {
         std::vector<unsigned int> indices;
         std::string name;
     };
+
+   public:
+    Scene();
+    ~Scene();
+    Scene& LoadMeshAsync(const std::string& path);
+    void WaitForAllMeshesToLoad();
+    bool CheckTaskRunning();
+    std::vector<Mesh> Meshes() { return meshes; }
 
    private:
     void LoadMesh(const std::string& path);

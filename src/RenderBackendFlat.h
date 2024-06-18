@@ -8,8 +8,9 @@
 class RenderBackendFlat : public RenderBackend {
    public:
     RenderBackendFlat(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
-                      std::shared_ptr<XrCore> xrCore)
-        : RenderBackend(info, core, xrCore) {}
+                      std::shared_ptr<XrCore> xrCore,
+                      std::shared_ptr<Scene> scene)
+        : RenderBackend(info, core, xrCore, scene) {}
     ~RenderBackendFlat();
 
     RenderBackendFlat(RenderBackendFlat&& other) noexcept

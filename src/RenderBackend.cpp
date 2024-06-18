@@ -3,8 +3,9 @@
 
 RenderBackend::RenderBackend(std::shared_ptr<Info> info,
                              std::shared_ptr<VkCore> vkCore,
-                             std::shared_ptr<XrCore> xrCore)
-    : info{info}, vkCore{vkCore}, xrCore{xrCore} {
+                             std::shared_ptr<XrCore> xrCore,
+                             std::shared_ptr<Scene> scene)
+    : info{info}, vkCore{vkCore}, xrCore{xrCore}, scene{scene} {
     glfwInit();
 
     if (info->validationLayer) {
@@ -270,6 +271,32 @@ void RenderBackend::InitVulkan() {
     vkGetDeviceQueue(vkCore->GetRenderDevice(),
                      vkCore->GetGraphicsQueueFamilyIndex(), 0,
                      &vkCore->GetGraphicsQueue());
+}
+
+void RenderBackend::Prepare(
+    std::vector<std::pair<const std::string&, const std::string&>>
+        passesToAdd) {
+    InitVertexIndexBuffers();
+}
+
+void RenderBackend::InitVertexIndexBuffers() {
+    // init vertex buffer and index buffer
+    vertexBuffers.resize(scene->Meshes().size());
+    indexBuffers.resize(scene->Meshes().size());
+
+    for (int i = 0; i < scene->Meshes().size(); ++i) {
+        auto mesh = scene->Meshes()[i];
+        vertexBuffers.push_back(std::make_unique<Buffer>(
+            vkCore, sizeof(mesh.vertices[0]) * mesh.vertices.size(),
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+        indexBuffers.push_back(std::make_unique<Buffer>(
+            vkCore, sizeof(mesh.indices[0]) * mesh.indices.size(),
+            VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+    }
 }
 
 void RenderBackend::InitFrameBuffer() {}

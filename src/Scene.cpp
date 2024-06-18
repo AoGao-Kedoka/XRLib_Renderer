@@ -104,3 +104,14 @@ void Scene::MeshLoadingThread() {
         futures.push_back(std::move(future));
     }
 }
+
+bool Scene::CheckTaskRunning() {
+    std::lock_guard<std::mutex> lock(queueMutex);
+    for (auto& future : futures) {
+        if (future.wait_for(std::chrono::seconds(0)) !=
+            std::future_status::ready) {
+            return true;
+        }
+    }
+    return false;
+}

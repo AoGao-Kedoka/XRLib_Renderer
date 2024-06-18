@@ -5,18 +5,20 @@
 #include <utility>
 #include <vector>
 
-#include "Graphics/VkCore.h"
+#include "Graphics/Buffer.h"
 #include "Graphics/Pipeline.h"
 #include "Graphics/RenderPass.h"
 #include "Graphics/Shader.h"
-#include "XR/XrCore.h"
+#include "Graphics/VkCore.h"
 #include "Info.h"
 #include "Logger.h"
+#include "Scene.h"
+#include "XR/XrCore.h"
 
 class RenderBackend {
    public:
     RenderBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> vkCore,
-                  std::shared_ptr<XrCore> xrCore);
+                  std::shared_ptr<XrCore> xrCore, std::shared_ptr<Scene> scene);
     ~RenderBackend();
 
     RenderBackend(RenderBackend&& src) noexcept
@@ -48,14 +50,15 @@ class RenderBackend {
 
     virtual void
     Prepare(std::vector<std::pair<const std::string&, const std::string&>>
-                passesToAdd) {}
-
-    virtual void InitFrameBuffer();
+                passesToAdd);
 
     virtual void OnWindowResized() {
         LOGGER(LOGGER::ERR) << "Undefined image resize";
         exit(-1);
     };
+
+    void InitVertexIndexBuffers();
+    virtual void InitFrameBuffer();
 
     void Run();
 
@@ -85,7 +88,12 @@ class RenderBackend {
     std::shared_ptr<Info> info;
     std::shared_ptr<VkCore> vkCore;
     std::shared_ptr<XrCore> xrCore;
+    std::shared_ptr<Scene> scene;
+
     GLFWwindow* window;
+
+    std::vector<std::unique_ptr<Buffer>> vertexBuffers;
+    std::vector<std::unique_ptr<Buffer>> indexBuffers;
 
    private:
     void InitVulkan();

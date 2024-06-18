@@ -19,6 +19,7 @@ void RenderBackendFlat::Prepare(
         passesToAdd) {
     PrepareFlatWindow();
     CreateFlatSwapChain();
+    InitVertexIndexBuffers();
 
     // prepare shader
     if (passesToAdd.empty()) {

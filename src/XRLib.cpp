@@ -36,6 +36,10 @@ void XRLib::Init(bool xr) {
     if (xr) InitXRBackend();
     InitRenderBackend();
 
+    if (scene->CheckTaskRunning()) {
+        scene->WaitForAllMeshesToLoad();
+    }
+
     if (xrCore->IsXRValid())
         xrBackend->Prepare();
     renderBackend->Prepare(passesToAdd);
@@ -88,9 +92,10 @@ void XRLib::InitRenderBackend() {
 
     if (!xrCore->IsXRValid()) {
         renderBackend =
-            std::make_unique<RenderBackendFlat>(info, vkCore, xrCore);
+            std::make_unique<RenderBackendFlat>(info, vkCore, xrCore, scene);
     } else {
-        renderBackend = std::make_unique<RenderBackend>(info, vkCore, xrCore);
+        renderBackend =
+            std::make_unique<RenderBackend>(info, vkCore, xrCore, scene);
     }
 }
 }    // namespace XRLib
