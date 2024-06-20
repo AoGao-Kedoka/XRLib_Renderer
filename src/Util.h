@@ -51,7 +51,7 @@ class Util {
         vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
         for (const auto& layerProperties : availableLayers) {
-            if (std::strcmp(layer, layerProperties.layerName)) {
+            if (std::strcmp(layer, layerProperties.layerName) == 0) {
                 return true;
             }
         }
@@ -66,7 +66,7 @@ class Util {
         xrEnumerateApiLayerProperties(layerCount, &layerCount,
                                       availableLayers.data());
         for (const auto& layerProperties : availableLayers) {
-            if (std::strcmp(layer, layerProperties.layerName)) {
+            if (std::strcmp(layer, layerProperties.layerName) == 0) {
                 return true;
             }
         }
