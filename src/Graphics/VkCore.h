@@ -60,10 +60,10 @@ class VkCore {
     void SetStereoSwapchainImageFormat(VkFormat format) {
         this->stereoSwapchainImageFormat = format;
     }
-    std::vector<std::vector<VkImage>>& GetStereoSwapchainImages() {
+    std::vector<VkImage>& GetStereoSwapchainImages() {
         return stereoSwapchainImages;
     }
-    std::vector<std::vector<VkImageView>>& GetStereoSwapchainImageViews() {
+    std::vector<VkImageView>& GetStereoSwapchainImageViews() {
         return stereoSwapchainImageViews;
     }
 
@@ -120,8 +120,8 @@ class VkCore {
 
     //stereo swapchain
     VkFormat stereoSwapchainImageFormat{VK_FORMAT_UNDEFINED};
-    std::vector<std::vector<VkImage>> stereoSwapchainImages;
-    std::vector<std::vector<VkImageView>> stereoSwapchainImageViews;
+    std::vector<VkImage> stereoSwapchainImages;
+    std::vector<VkImageView> stereoSwapchainImageViews;
 
     // commands
     VkCommandPool commandPool{VK_NULL_HANDLE};

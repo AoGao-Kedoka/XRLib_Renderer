@@ -52,6 +52,7 @@ class RenderBackend {
     Prepare(std::vector<std::pair<const std::string&, const std::string&>>
                 passesToAdd);
 
+
     virtual void OnWindowResized() {
         LOGGER(LOGGER::ERR) << "Undefined image resize";
         exit(-1);
@@ -97,6 +98,7 @@ class RenderBackend {
 
    private:
     void InitVulkan();
+    void GetSwapchainInfo();
 
     const std::vector<const char*> validataionLayers = {
         "VK_LAYER_KHRONOS_validation"};

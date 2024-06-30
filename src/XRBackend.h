@@ -45,7 +45,8 @@ class XRBackend {
     }
 
     void Prepare();
-    void Run();
+    XrResult StartFrame();
+    XrResult EndFrame();
 
    private:
     void CreateXrInstance();
@@ -54,7 +55,8 @@ class XRBackend {
     void GetSystemID();
 
     void CreateXrSession();
-    void XrCreateSwapcahin();
+    void CreateXrSwapchain();
+    void PrepareXrSwapchainImages();
 
     void PollXREvents();
 

@@ -49,7 +49,7 @@ void XRLib::Init(bool xr) {
 
 void XRLib::Run() {
     if (xrCore->IsXRValid()) {
-        xrBackend->Run();
+        xrBackend->StartFrame();
     }
     renderBackend->Run();
 }

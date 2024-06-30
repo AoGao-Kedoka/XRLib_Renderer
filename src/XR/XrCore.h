@@ -26,9 +26,9 @@ class XrCore {
         return graphicsRequirements;
     }
 
-    std::vector<XrSwapchain>& GetXrSwapchains() { return xrSwapchains; }
-    std::vector<std::vector<XrSwapchainImageVulkanKHR>>&
-    GetXrSwapchainImages() {
+    XrSwapchain& GetXrSwapchain() { return xrSwapchain; }
+
+    std::vector<XrSwapchainImageVulkanKHR>& GetSwapchainImages() {
         return swapchainImages;
     }
 
@@ -56,6 +56,6 @@ class XrCore {
     bool xrValid = true;
     std::vector<XrViewConfigurationView> xrViewsConfiguration;
 
-    std::vector<XrSwapchain> xrSwapchains;
-    std::vector<std::vector<XrSwapchainImageVulkanKHR>> swapchainImages;
+    XrSwapchain xrSwapchain;
+    std::vector<XrSwapchainImageVulkanKHR> swapchainImages;
 };

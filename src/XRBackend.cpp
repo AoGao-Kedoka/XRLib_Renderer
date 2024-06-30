@@ -37,166 +37,8 @@ XRBackend::~XRBackend() {
 
 void XRBackend::Prepare() {
     CreateXrSession();
-    XrCreateSwapcahin();
-}
-
-void XRBackend::Run() {
-    PollXREvents();
-
-    XrFrameState frameState{XR_TYPE_FRAME_STATE};
-    XrFrameWaitInfo frameWaitInfo{XR_TYPE_FRAME_WAIT_INFO};
-    xrWaitFrame(xrCore->GetXRSession(), &frameWaitInfo, &frameState);
-
-    XrFrameBeginInfo frameBeginInfo{XR_TYPE_FRAME_BEGIN_INFO};
-    if (xrBeginFrame(xrCore->GetXRSession(), &frameBeginInfo)) {
-        LOGGER(LOGGER::ERR) << "Failed to begin frame";
-        exit(-1);
-    }
-
-    uint32_t imageIndex;
-    XrSwapchainImageAcquireInfo swapchainImageAcquireInfo{
-        XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
-    if (xrAcquireSwapchainImage(xrCore->GetXrSwapchains()[0],
-                                &swapchainImageAcquireInfo,
-                                &imageIndex) != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to get acquire swapchain";
-        exit(-1);
-    }
-}
-
-void XRBackend::PollXREvents() {
-    XrEventDataBuffer buffer{XR_TYPE_EVENT_DATA_BUFFER};
-    //TODO
-}
-
-void XRBackend::XrCreateSwapcahin() {
-    uint32_t swapchainFormatCount;
-    if (xrEnumerateSwapchainFormats(xrCore->GetXRSession(), 0,
-                                    &swapchainFormatCount,
-                                    nullptr) != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to get swapchain formats";
-        exit(-1);
-    }
-    std::vector<int64_t> swapchainFormats(swapchainFormatCount);
-    if (xrEnumerateSwapchainFormats(xrCore->GetXRSession(),
-                                    swapchainFormatCount, &swapchainFormatCount,
-                                    swapchainFormats.data()) != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to get swapchain formats";
-        exit(-1);
-    }
-
-    vkCore->SetStereoSwapchainImageFormat(
-        static_cast<VkFormat>(swapchainFormats.at(0)));
-
-    uint32_t viewCount;
-    if (xrEnumerateViewConfigurationViews(
-            xrCore->GetXRInstance(), xrCore->GetSystemID(),
-            XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &viewCount,
-            nullptr) != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to get view configuration views";
-        exit(-1);
-    }
-
-    xrCore->GetXRViewConfigurationView().resize(viewCount);
-    for (XrViewConfigurationView& viewInfo :
-         xrCore->GetXRViewConfigurationView()) {
-        viewInfo.type = XR_TYPE_VIEW_CONFIGURATION_VIEW;
-        viewInfo.next = nullptr;
-    }
-    if (xrEnumerateViewConfigurationViews(
-            xrCore->GetXRInstance(), xrCore->GetSystemID(),
-            XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, viewCount, &viewCount,
-            xrCore->GetXRViewConfigurationView().data()) != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to get view configuration views";
-        exit(-1);
-    }
-
-    // resize all the required vectors for swapchains
-    xrCore->GetXrSwapchains().resize(viewCount);
-    xrCore->GetXrSwapchainImages().resize(viewCount);
-    vkCore->GetStereoSwapchainImages().resize(viewCount);
-    vkCore->GetStereoSwapchainImageViews().resize(viewCount);
-
-    for (uint8_t i = 0; i < viewCount; ++i) {
-        XrSwapchain currentSwapchain = xrCore->GetXrSwapchains()[i];
-        XrSwapchainCreateInfo swapchainCreateInfo{};
-        swapchainCreateInfo.type = XR_TYPE_SWAPCHAIN_CREATE_INFO;
-        swapchainCreateInfo.usageFlags =
-            XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
-        swapchainCreateInfo.format =
-            static_cast<uint32_t>(vkCore->GetStereoSwapchainImageFormat());
-        swapchainCreateInfo.width =
-            xrCore->GetXRViewConfigurationView()[i].recommendedImageRectWidth;
-        swapchainCreateInfo.height =
-            xrCore->GetXRViewConfigurationView()[i].recommendedImageRectHeight;
-        swapchainCreateInfo.faceCount = 1;
-        swapchainCreateInfo.arraySize = 1;
-        swapchainCreateInfo.mipCount = 1;
-        if (xrCreateSwapchain(xrCore->GetXRSession(), &swapchainCreateInfo,
-                              &currentSwapchain) != XR_SUCCESS) {
-            LOGGER(LOGGER::ERR) << "Failed to create xr swapchains";
-            exit(-1);
-        }
-
-        std::vector<XrSwapchainImageVulkanKHR> currentSwapchainImages =
-            xrCore->GetXrSwapchainImages()[i];
-        uint32_t swapchainImageCount;
-        if (xrEnumerateSwapchainImages(currentSwapchain, 0,
-                                       &swapchainImageCount,
-                                       nullptr) != XR_SUCCESS) {
-            LOGGER(LOGGER::ERR) << "Failed to get swapchain images";
-            exit(-1);
-        }
-        currentSwapchainImages.resize(swapchainImageCount);
-        for (XrSwapchainImageVulkanKHR& swapchainImage :
-             currentSwapchainImages) {
-            swapchainImage.type = XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR;
-        }
-        XrSwapchainImageBaseHeader* data =
-            reinterpret_cast<XrSwapchainImageBaseHeader*>(
-                currentSwapchainImages.data());
-
-        if (xrEnumerateSwapchainImages(currentSwapchain, swapchainImageCount,
-                                       &swapchainImageCount,
-                                       data) != XR_SUCCESS) {
-            LOGGER(LOGGER::ERR) << "Failed to get swapchain images";
-            exit(-1);
-        }
-
-        // assign the xr swapchain images to vk images
-        std::vector<VkImage> vkSwapchainImages =
-            vkCore->GetStereoSwapchainImages()[i];
-        vkSwapchainImages.resize(swapchainImageCount);
-        std::vector<VkImageView> vkSwapchainImageViews =
-            vkCore->GetStereoSwapchainImageViews()[i];
-        vkSwapchainImageViews.resize(swapchainImageCount);
-
-        for (uint32_t j = 0; j < swapchainImageCount; ++j) {
-            vkSwapchainImages[j] = currentSwapchainImages.at(j).image;
-            VkImageViewCreateInfo imageViewCreateInfo{};
-            imageViewCreateInfo.sType =
-                VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            imageViewCreateInfo.image = vkSwapchainImages[j];
-            imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            imageViewCreateInfo.format =
-                vkCore->GetStereoSwapchainImageFormat();
-            imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-            imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-            imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-            imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-            imageViewCreateInfo.subresourceRange.aspectMask =
-                VK_IMAGE_ASPECT_COLOR_BIT;
-            imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-            imageViewCreateInfo.subresourceRange.levelCount = 1;
-            imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-            imageViewCreateInfo.subresourceRange.layerCount = 1;
-            if (vkCreateImageView(vkCore->GetRenderDevice(),
-                                  &imageViewCreateInfo, nullptr,
-                                  &vkSwapchainImageViews[j]) != VK_SUCCESS) {
-                LOGGER(LOGGER::ERR) << "Failed to create image view";
-            }
-        }
-    }
+    CreateXrSwapchain();
+    PrepareXrSwapchainImages();
 }
 
 void XRBackend::CreateXrInstance() {
@@ -369,6 +211,134 @@ void XRBackend::CreateXrSession() {
         LOGGER(LOGGER::ERR) << "Failed to create session";
         exit(-1);
     }
+}
+
+void XRBackend::CreateXrSwapchain() {
+    uint32_t swapchainFormatCount;
+    if (xrEnumerateSwapchainFormats(xrCore->GetXRSession(), 0,
+                                    &swapchainFormatCount,
+                                    nullptr) != XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to get swapchain formats";
+        exit(-1);
+    }
+    std::vector<int64_t> swapchainFormats(swapchainFormatCount);
+    if (xrEnumerateSwapchainFormats(xrCore->GetXRSession(),
+                                    swapchainFormatCount, &swapchainFormatCount,
+                                    swapchainFormats.data()) != XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to get swapchain formats";
+        exit(-1);
+    }
+
+    vkCore->SetStereoSwapchainImageFormat(
+        static_cast<VkFormat>(swapchainFormats.at(0)));
+
+    uint32_t viewCount;
+    if (xrEnumerateViewConfigurationViews(
+            xrCore->GetXRInstance(), xrCore->GetSystemID(),
+            XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &viewCount,
+            nullptr) != XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to get view configuration views";
+        exit(-1);
+    }
+
+    xrCore->GetXRViewConfigurationView().resize(viewCount);
+    for (XrViewConfigurationView& viewInfo :
+         xrCore->GetXRViewConfigurationView()) {
+        viewInfo.type = XR_TYPE_VIEW_CONFIGURATION_VIEW;
+        viewInfo.next = nullptr;
+    }
+    if (xrEnumerateViewConfigurationViews(
+            xrCore->GetXRInstance(), xrCore->GetSystemID(),
+            XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, viewCount, &viewCount,
+            xrCore->GetXRViewConfigurationView().data()) != XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to get view configuration views";
+        exit(-1);
+    }
+
+    XrResult result;
+    XrSwapchainCreateInfo swapchainCreateInfo{};
+    swapchainCreateInfo.type = XR_TYPE_SWAPCHAIN_CREATE_INFO;
+    swapchainCreateInfo.usageFlags = XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchainCreateInfo.format =
+        static_cast<uint32_t>(vkCore->GetStereoSwapchainImageFormat());
+    swapchainCreateInfo.width =
+        xrCore->GetXRViewConfigurationView()[0].recommendedImageRectWidth;
+    swapchainCreateInfo.height =
+        xrCore->GetXRViewConfigurationView()[0].recommendedImageRectHeight;
+    swapchainCreateInfo.faceCount = 1;
+    swapchainCreateInfo.arraySize = viewCount;
+    swapchainCreateInfo.mipCount = 1;
+    if ((result =
+             xrCreateSwapchain(xrCore->GetXRSession(), &swapchainCreateInfo,
+                               &xrCore->GetXrSwapchain())) != XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to create swapchain";
+        exit(-1);
+    }
+}
+
+void XRBackend::PrepareXrSwapchainImages() {
+    XrResult result;
+
+    uint32_t swapchainImageCount;
+    if ((result = xrEnumerateSwapchainImages(xrCore->GetXrSwapchain(), 0,
+                                             &swapchainImageCount, nullptr)) !=
+        XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to enumerate swapchain images";
+        exit(-1);
+    }
+
+    xrCore->GetSwapchainImages().resize(swapchainImageCount);
+    for (XrSwapchainImageVulkanKHR& swapchainImage :
+         xrCore->GetSwapchainImages()) {
+        swapchainImage.type = XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR;
+    }
+
+    XrSwapchainImageBaseHeader* data =
+        reinterpret_cast<XrSwapchainImageBaseHeader*>(
+            xrCore->GetSwapchainImages().data());
+    if ((result = xrEnumerateSwapchainImages(
+             xrCore->GetXrSwapchain(), xrCore->GetSwapchainImages().size(),
+             &swapchainImageCount, data)) != XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to get swapchain images";
+        exit(-1);
+    }
+}
+XrResult XRBackend::StartFrame() {
+    XrResult result;
+
+    PollXREvents();
+    XrFrameState frameState{XR_TYPE_FRAME_STATE};
+    XrFrameWaitInfo frameWaitInfo{XR_TYPE_FRAME_WAIT_INFO};
+    xrWaitFrame(xrCore->GetXRSession(), &frameWaitInfo, &frameState);
+
+    XrFrameBeginInfo frameBeginInfo{XR_TYPE_FRAME_BEGIN_INFO};
+    if ((result = xrBeginFrame(xrCore->GetXRSession(), &frameBeginInfo)) !=
+        XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to begin frame";
+        return result;
+    }
+
+    uint32_t imageIndex;
+    XrSwapchainImageAcquireInfo swapchainImageAcquireInfo{
+        XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
+    if ((result = xrAcquireSwapchainImage(xrCore->GetXrSwapchain(),
+                                          &swapchainImageAcquireInfo,
+                                          &imageIndex)) != XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to get acquire swapchain";
+        return result;
+    }
+
+    return XR_SUCCESS;
+}
+
+XrResult XRBackend::EndFrame() {
+    //TODO
+    return XR_SUCCESS;
+}
+
+void XRBackend::PollXREvents() {
+    XrEventDataBuffer buffer{XR_TYPE_EVENT_DATA_BUFFER};
+    //TODO
 }
 
 void XRBackend::LogOpenXRRuntimeProperties() const {
