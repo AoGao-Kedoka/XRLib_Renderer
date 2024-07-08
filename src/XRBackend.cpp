@@ -261,6 +261,8 @@ void XRBackend::CreateXrSwapchain() {
     swapchainCreateInfo.usageFlags = XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
     swapchainCreateInfo.format =
         static_cast<uint32_t>(vkCore->GetStereoSwapchainImageFormat());
+    swapchainCreateInfo.sampleCount =
+        xrCore->GetXRViewConfigurationView()[0].recommendedSwapchainSampleCount;
     swapchainCreateInfo.width =
         xrCore->GetXRViewConfigurationView()[0].recommendedImageRectWidth;
     swapchainCreateInfo.height =
