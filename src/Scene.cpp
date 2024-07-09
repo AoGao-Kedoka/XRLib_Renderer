@@ -78,6 +78,7 @@ void Scene::LoadMesh(const std::string& filename) {
         }
 
         {
+            newMesh.name = filename;
             std::lock_guard<std::mutex> lock(queueMutex);
             meshes.push_back(newMesh);
         }

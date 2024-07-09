@@ -15,6 +15,8 @@ file(DOWNLOAD
     ${CMAKE_SOURCE_DIR}/lib/external/NMB.h
 )
 
+file(COPY ./resources DESTINATION ${CMAKE_BINARY_DIR})
+
 set(MESSAGE_BOX "---------------------------")
 include(FetchContent)
 

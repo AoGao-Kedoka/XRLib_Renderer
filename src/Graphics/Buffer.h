@@ -23,13 +23,6 @@ class Buffer {
     void Cleanup();
 
    private:
-    void CheckValue() {
-        if (buffer == VK_NULL_HANDLE || bufferMemory == VK_NULL_HANDLE) {
-            LOGGER(LOGGER::ERR) << "Something went wrong with buffer";
-            exit(-1);
-        }
-    }
-
     uint32_t FindMemoryType(uint32_t typeFilter,
                             VkMemoryPropertyFlags properties);
 

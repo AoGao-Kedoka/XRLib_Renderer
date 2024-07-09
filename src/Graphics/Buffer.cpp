@@ -42,7 +42,6 @@ void Buffer::Cleanup() {
 
 uint32_t Buffer::FindMemoryType(uint32_t typeFilter,
                                 VkMemoryPropertyFlags properties) {
-    CheckValue();
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(core->GetRenderPhysicalDevice(),
                                         &memProperties);
