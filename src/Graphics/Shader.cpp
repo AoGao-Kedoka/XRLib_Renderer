@@ -42,8 +42,7 @@ void Shader::Init(std::vector<uint32_t> spirv) {
     createInfo.pCode = spirv.data();
     if (vkCreateShaderModule(core->GetRenderDevice(), &createInfo, nullptr,
                              &this->shaderModule)) {
-        LOGGER(LOGGER::ERR) << "Failed to create shader module";
-        exit(-1);
+        Util::ErrorPopup("Failed to create shader module");
     }
 
     // create pipeline shader stage
@@ -75,8 +74,7 @@ std::vector<uint32_t> Shader::Compile(std::string content, std::string name) {
         content, shader_kind, name.c_str(), options);
 
     if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
-        LOGGER(LOGGER::ERR) << "Failed compiling shader";
-        exit(-1);
+        Util::ErrorPopup("failed to compile shader");
     }
 
     LOGGER(LOGGER::INFO) << "Shader compiled";

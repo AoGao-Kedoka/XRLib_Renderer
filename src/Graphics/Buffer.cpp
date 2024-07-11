@@ -26,8 +26,7 @@ Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size,
 
     if (vkAllocateMemory(core->GetRenderDevice(), &allocInfo, nullptr,
                          &bufferMemory) != VK_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "failed to allocate buffer memory!";
-        exit(-1);
+        Util::ErrorPopup("Failed to allocate buffer memory!");
     }
 
     vkBindBufferMemory(core->GetRenderDevice(), buffer, bufferMemory, 0);
@@ -54,6 +53,6 @@ uint32_t Buffer::FindMemoryType(uint32_t typeFilter,
         }
     }
 
-    LOGGER(LOGGER::ERR) << "failed to find suitable memory type!";
-    exit(-1);
+    Util::ErrorPopup("Failed to find suitable memory type!");
+    return -1;
 }

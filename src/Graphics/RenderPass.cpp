@@ -1,6 +1,8 @@
 #include "RenderPass.h"
 
-RenderPass::RenderPass(std::shared_ptr<VkCore> core) : core{core} {
+RenderPass::RenderPass(std::shared_ptr<VkCore> core, bool multiview)
+    : core{core}, multiview{multiview} {
+
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = core->GetFlatSwapchainImageFormat();
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -28,7 +30,6 @@ RenderPass::RenderPass(std::shared_ptr<VkCore> core) : core{core} {
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = 1;
@@ -37,11 +38,22 @@ RenderPass::RenderPass(std::shared_ptr<VkCore> core) : core{core} {
     renderPassInfo.pSubpasses = &subpass;
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
+    if (multiview) {
+        constexpr uint32_t viewMask = 0b00000011;
+        constexpr uint32_t correlationMask = 0b00000011;
+        VkRenderPassMultiviewCreateInfo renderPassMultivewCreateInfo;
+        renderPassMultivewCreateInfo.sType =
+            VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO;
+        renderPassMultivewCreateInfo.subpassCount = 1;
+        renderPassMultivewCreateInfo.pViewMasks = &viewMask;
+        renderPassMultivewCreateInfo.correlationMaskCount = 1u;
+        renderPassMultivewCreateInfo.pCorrelationMasks = &correlationMask;
+        renderPassInfo.pNext = &renderPassMultivewCreateInfo;
+    }
 
     if (vkCreateRenderPass(core->GetRenderDevice(), &renderPassInfo, nullptr,
                            &pass) != VK_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to create render pass";
-        exit(-1);
+        Util::ErrorPopup("Failed to create render pass");
     }
 }
 
@@ -56,8 +68,7 @@ RenderPass::~RenderPass() {
 void RenderPass::Record(uint32_t imageIndex) {
 
     if (graphicsPipeline == VK_NULL_HANDLE) {
-        LOGGER(LOGGER::ERR) << "Graphics pipeline not initialized";
-        exit(-1);
+        Util::ErrorPopup("Graphics pipeline not initialized");
     }
 
     VkCommandBufferBeginInfo beginInfo{};
@@ -67,7 +78,7 @@ void RenderPass::Record(uint32_t imageIndex) {
 
     if (vkBeginCommandBuffer(core->GetCommandBuffer(), &beginInfo) !=
         VK_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to begin recording command buffer";
+        Util::ErrorPopup("Failed to begin recording command buffer");
     }
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

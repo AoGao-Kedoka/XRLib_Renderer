@@ -18,7 +18,6 @@ void XrCore::CreatePlaySpace() {
     referenceSpaceCreateInfo.poseInReferenceSpace = LAMath::Identity();
     if (xrCreateReferenceSpace(xrSession, &referenceSpaceCreateInfo,
                                &xrSceneSpace) != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to create play space";
-        exit(-1);
+        Util::ErrorPopup("Failed to create play space");
     }
 }

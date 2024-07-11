@@ -15,7 +15,7 @@ file(DOWNLOAD
     ${CMAKE_SOURCE_DIR}/lib/external/NMB.h
 )
 
-file(COPY ./resources DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY ./example/resources DESTINATION ${CMAKE_BINARY_DIR})
 
 set(MESSAGE_BOX "---------------------------")
 include(FetchContent)
@@ -35,6 +35,8 @@ file (GLOB SRCS
     ${PROJECT_SOURCE_DIR}/src/*.cpp
     ${PROJECT_SOURCE_DIR}/src/Graphics/*.h
     ${PROJECT_SOURCE_DIR}/src/Graphics/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/Utils/*.h
+    ${PROJECT_SOURCE_DIR}/src/Utils/*.cpp
 	${PROJECT_SOURCE_DIR}/src/XR/*.h
 	${PROJECT_SOURCE_DIR}/src/XR/*.cpp
     ${PROJECT_SOURCE_DIR}/lib/*.h

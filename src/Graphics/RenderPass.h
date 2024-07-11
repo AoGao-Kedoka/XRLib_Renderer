@@ -1,12 +1,12 @@
 #pragma once
 #include "Logger.h"
-#include "Util.h"
+#include "Utils/Util.h"
 #include "VkCore.h"
 
 class RenderPass {
    public:
     RenderPass() = default;
-    RenderPass(std::shared_ptr<VkCore> core);
+    RenderPass(std::shared_ptr<VkCore> core, bool multiview);
     ~RenderPass();
 
     RenderPass(RenderPass&& other) noexcept
@@ -36,4 +36,6 @@ class RenderPass {
     std::shared_ptr<VkCore> core{nullptr};
     VkRenderPass pass{VK_NULL_HANDLE};
     VkPipeline* graphicsPipeline{nullptr};
+
+    bool multiview;
 };

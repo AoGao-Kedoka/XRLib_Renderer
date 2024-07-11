@@ -1,5 +1,5 @@
 #include "RenderBackend.h"
-#include "Util.h"
+#include "Utils/Util.h"
 
 RenderBackend::RenderBackend(std::shared_ptr<Info> info,
                              std::shared_ptr<VkCore> vkCore,
@@ -56,8 +56,7 @@ void RenderBackend::InitVulkan() {
     const char** glfwExtensions =
         glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
     if (!glfwExtensions) {
-        LOGGER(LOGGER::ERR) << "Error getting glfw instance extension";
-        exit(-1);
+        Util::ErrorPopup("Error getting glfw instance extension");
     }
 
     for (uint32_t i = 0; i < requiredExtensionCount; ++i) {
@@ -77,9 +76,7 @@ void RenderBackend::InitVulkan() {
         if (xrGetVulkanInstanceExtensionsKHR(
                 xrCore->GetXRInstance(), xrCore->GetSystemID(), 0,
                 &xrVulkanInstanceExtensionsCount, nullptr) != XR_SUCCESS) {
-            LOGGER(LOGGER::ERR)
-                << "Failed to get vulkan instance extension count";
-            exit(-1);
+            Util::ErrorPopup("Failed to get vulkan instance extension count");
         }
 
         std::string buffer(xrVulkanInstanceExtensionsCount, ' ');
@@ -88,8 +85,7 @@ void RenderBackend::InitVulkan() {
                                              xrVulkanInstanceExtensionsCount,
                                              &xrVulkanInstanceExtensionsCount,
                                              buffer.data()) != XR_SUCCESS) {
-            LOGGER(LOGGER::ERR) << "Failed to get vulkan instance extension";
-            exit(-1);
+            Util::ErrorPopup("Failed to get vulkan instance extension");
         }
 
         std::vector<const char*> xrInstanceExtensions =
@@ -133,8 +129,7 @@ void RenderBackend::InitVulkan() {
 
     if (vkCreateInstance(&instanceCreateInfo, nullptr,
                          &vkCore->GetRenderInstance()) != VK_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to create vulkan instance";
-        exit(-1);
+        Util::ErrorPopup("Failed to create vulkan instance");
     }
 
     if (info->validationLayer) {
@@ -153,8 +148,7 @@ void RenderBackend::InitVulkan() {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(vkCore->GetRenderInstance(), &deviceCount, 0);
     if (deviceCount == 0) {
-        LOGGER(LOGGER::ERR) << "Failed to find GPUs with Vulkan support";
-        exit(-1);
+        Util::ErrorPopup("Failed to find GPUs with Vulkan support");
     }
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(vkCore->GetRenderInstance(), &deviceCount,
@@ -169,8 +163,7 @@ void RenderBackend::InitVulkan() {
                 xrCore->GetXRInstance(), xrCore->GetSystemID(),
                 vkCore->GetRenderInstance(),
                 &vkCore->GetRenderPhysicalDevice()) != XR_SUCCESS) {
-            LOGGER(LOGGER::ERR) << "Failed to get vulkan graphics device";
-            exit(-1);
+            Util::ErrorPopup("Failed to get vulkan graphics device");
         }
     } else {
         std::vector<std::pair<VkPhysicalDevice, uint8_t>> suitableDevices;
@@ -216,8 +209,7 @@ void RenderBackend::InitVulkan() {
         vkCore->GetRenderPhysicalDevice() = device.first;
 
         if (vkCore->GetRenderPhysicalDevice() == VK_NULL_HANDLE) {
-            LOGGER(LOGGER::ERR) << "Failed to find suitable GPU";
-            exit(-1);
+            Util::ErrorPopup("Failed to find suitable GPU");
         }
     }
 
@@ -232,15 +224,13 @@ void RenderBackend::InitVulkan() {
         if (xrGetVulkanDeviceExtensionsKHR(
                 xrCore->GetXRInstance(), xrCore->GetSystemID(), 0,
                 &deviceExtensionsCount, nullptr) != XR_SUCCESS) {
-            LOGGER(LOGGER::ERR) << "Failed to get vulkan device extensions";
-            exit(-1);
+            Util::ErrorPopup("Failed to get vulkan device extensions");
         }
         std::string buffer(deviceExtensionsCount, ' ');
         if (xrGetVulkanDeviceExtensionsKHR(
                 xrCore->GetXRInstance(), xrCore->GetSystemID(),
                 deviceExtensionsCount, &deviceExtensionsCount, buffer.data())) {
-            LOGGER(LOGGER::ERR) << "Failed to get vulkan device extensions";
-            exit(-1);
+            Util::ErrorPopup("Failed to get vulkan device extensions");
         }
         deviceExtensions = Util::SplitStringToCharPtr(buffer);
     }
@@ -265,7 +255,7 @@ void RenderBackend::InitVulkan() {
 
     if (vkCreateDevice(vkCore->GetRenderPhysicalDevice(), &deviceCreateInfo,
                        nullptr, &vkCore->GetRenderDevice()) != VK_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to create vulkan device.";
+        Util::ErrorPopup("Failed to create vulkan device.");
     }
 
     vkGetDeviceQueue(vkCore->GetRenderDevice(),
@@ -278,6 +268,18 @@ void RenderBackend::Prepare(
         passesToAdd) {
     InitVertexIndexBuffers();
     GetSwapchainInfo();
+    if (passesToAdd.empty()) {
+        auto graphicsRenderPass =
+            std::make_unique<GraphicsRenderPass>(vkCore, true);
+        renderPasses.push_back(std::move(graphicsRenderPass));
+    } else {
+        for (auto& pass : passesToAdd) {
+            auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(
+                vkCore, true, pass.first, pass.second);
+            renderPasses.push_back(std::move(graphicsRenderPass));
+        }
+    }
+    InitFrameBuffer();
 }
 
 void RenderBackend::GetSwapchainInfo() {
@@ -305,8 +307,7 @@ void RenderBackend::GetSwapchainInfo() {
         if (vkCreateImageView(
                 vkCore->GetRenderDevice(), &imageViewCreateInfo, nullptr,
                 &vkCore->GetStereoSwapchainImageViews()[i]) != VK_SUCCESS) {
-            LOGGER(LOGGER::ERR) << "Failed to create image view";
-            exit(-1);
+            Util::ErrorPopup("Failed to create image view");
         }
     }
 }
@@ -331,7 +332,31 @@ void RenderBackend::InitVertexIndexBuffers() {
     }
 }
 
-void RenderBackend::InitFrameBuffer() {}
+void RenderBackend::InitFrameBuffer() {
+    // create frame buffer
+    vkCore->GetSwapchainFrameBufferFlat().resize(
+        vkCore->GetSwapchainImageViewsFlat().size());
+
+    for (size_t i = 0; i < vkCore->GetSwapchainImageViewsFlat().size(); i++) {
+        VkImageView attachments[] = {vkCore->GetSwapchainImageViewsFlat()[i]};
+
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass =
+            renderPasses[renderPasses.size() - 1]->renderPass->GetRenderPass();
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = vkCore->GetFlatSwapchainExtent2D().width;
+        framebufferInfo.height = vkCore->GetFlatSwapchainExtent2D().height;
+        framebufferInfo.layers = 1;
+
+        if (vkCreateFramebuffer(
+                vkCore->GetRenderDevice(), &framebufferInfo, nullptr,
+                &vkCore->GetSwapchainFrameBufferFlat()[i]) != VK_SUCCESS) {
+            Util::ErrorPopup("Failed to create frame buffer");
+        }
+    }
+}
 
 void RenderBackend::Run() {
     glfwPollEvents();
@@ -347,8 +372,7 @@ void RenderBackend::Run() {
         OnWindowResized();
         return;
     } else if (result != VK_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to acquire next image";
-        exit(-1);
+        Util::ErrorPopup("Failed to acquire next image");
     }
 
     vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
@@ -374,7 +398,7 @@ void RenderBackend::Run() {
 
     if (vkQueueSubmit(vkCore->GetGraphicsQueue(), 1, &submitInfo,
                       vkCore->GetInFlightFence()) != VK_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to submit draw command buffer";
+        Util::ErrorPopup("Failed to submit draw command buffer");
     }
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

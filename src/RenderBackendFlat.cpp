@@ -23,12 +23,13 @@ void RenderBackendFlat::Prepare(
 
     // prepare shader
     if (passesToAdd.empty()) {
-        auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(vkCore);
+        auto graphicsRenderPass =
+            std::make_unique<GraphicsRenderPass>(vkCore, false);
         renderPasses.push_back(std::move(graphicsRenderPass));
     } else {
         for (auto& pass : passesToAdd) {
             auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(
-                vkCore, pass.first, pass.second);
+                vkCore, false, pass.first, pass.second);
             renderPasses.push_back(std::move(graphicsRenderPass));
         }
     }
@@ -37,33 +38,6 @@ void RenderBackendFlat::Prepare(
 
     // show window when preparation finished
     glfwShowWindow(window);
-}
-
-void RenderBackendFlat::InitFrameBuffer() {
-    // create frame buffer
-    vkCore->GetSwapchainFrameBufferFlat().resize(
-        vkCore->GetSwapchainImageViewsFlat().size());
-
-    for (size_t i = 0; i < vkCore->GetSwapchainImageViewsFlat().size(); i++) {
-        VkImageView attachments[] = {vkCore->GetSwapchainImageViewsFlat()[i]};
-
-        VkFramebufferCreateInfo framebufferInfo{};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass =
-            renderPasses[renderPasses.size() - 1]->renderPass->GetRenderPass();
-        framebufferInfo.attachmentCount = 1;
-        framebufferInfo.pAttachments = attachments;
-        framebufferInfo.width = vkCore->GetFlatSwapchainExtent2D().width;
-        framebufferInfo.height = vkCore->GetFlatSwapchainExtent2D().height;
-        framebufferInfo.layers = 1;
-
-        if (vkCreateFramebuffer(
-                vkCore->GetRenderDevice(), &framebufferInfo, nullptr,
-                &vkCore->GetSwapchainFrameBufferFlat()[i]) != VK_SUCCESS) {
-            LOGGER(LOGGER::ERR) << "Failed to create frame buffer";
-        }
-    }
-
 }
 
 void RenderBackendFlat::CreateFlatSwapChain() {
@@ -80,8 +54,7 @@ void RenderBackendFlat::CreateFlatSwapChain() {
                                          vkCore->GetFlatSurface(), &formatCount,
                                          surfaceFormats.data());
     if (surfaceFormats.empty()) {
-        LOGGER(LOGGER::ERR) << "Failed to get surface formats";
-        exit(-1);
+        Util::ErrorPopup("Failed to get surface formats");
     }
     swapChainSurfaceFormat = surfaceFormats[0];
     for (const auto& availableFormat : surfaceFormats) {
@@ -147,8 +120,7 @@ void RenderBackendFlat::CreateFlatSwapChain() {
     if (vkCreateSwapchainKHR(vkCore->GetRenderDevice(), &swapchainCreateInfo,
                              nullptr,
                              &vkCore->GetFlatSwapchain()) != VK_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to create swapchain";
-        exit(-1);
+        Util::ErrorPopup("Failed to create swapchain");
     }
 
     vkGetSwapchainImagesKHR(vkCore->GetRenderDevice(),
@@ -179,7 +151,7 @@ void RenderBackendFlat::CreateFlatSwapChain() {
         if (vkCreateImageView(
                 vkCore->GetRenderDevice(), &imageViewCreateInfo, nullptr,
                 &vkCore->GetSwapchainImageViewsFlat()[i]) != VK_SUCCESS) {
-            LOGGER(LOGGER::ERR) << "Failed to create image view";
+            Util::ErrorPopup("Failed to create image view");
         }
     }
 
@@ -217,15 +189,17 @@ void RenderBackendFlat::OnWindowResized() {
 void RenderBackendFlat::PrepareFlatWindow() {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    window = glfwCreateWindow(info->fullscreen? glfwGetVideoMode(glfwGetPrimaryMonitor())->width: 400,
-                              info->fullscreen? glfwGetVideoMode(glfwGetPrimaryMonitor())->height: 400,
-                              info->applicationName.c_str(),
-                              info->fullscreen? glfwGetPrimaryMonitor(): nullptr,
-                              nullptr);
+    window = glfwCreateWindow(
+        info->fullscreen ? glfwGetVideoMode(glfwGetPrimaryMonitor())->width
+                         : 400,
+        info->fullscreen ? glfwGetVideoMode(glfwGetPrimaryMonitor())->height
+                         : 400,
+        info->applicationName.c_str(),
+        info->fullscreen ? glfwGetPrimaryMonitor() : nullptr, nullptr);
     glfwSetWindowUserPointer(window, this);
     if (glfwCreateWindowSurface(vkCore->GetRenderInstance(), window, nullptr,
                                 &vkCore->GetFlatSurface()) != VK_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to create window surface";
+        Util::ErrorPopup("Failed to create window surface");
     }
 
     VkBool32 presentSupport = false;

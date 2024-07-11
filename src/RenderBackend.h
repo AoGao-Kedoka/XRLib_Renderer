@@ -10,7 +10,7 @@
 #include "Graphics/RenderPass.h"
 #include "Graphics/Shader.h"
 #include "Graphics/VkCore.h"
-#include "Info.h"
+#include "Utils/Info.h"
 #include "Logger.h"
 #include "Scene.h"
 #include "XR/XrCore.h"
@@ -46,7 +46,7 @@ class RenderBackend {
         return *this;
     }
 
-    bool WindowShouldClose() { return glfwWindowShouldClose(window); }
+    virtual bool WindowShouldClose() { return false; }
 
     virtual void
     Prepare(std::vector<std::pair<const std::string&, const std::string&>>
@@ -54,8 +54,7 @@ class RenderBackend {
 
 
     virtual void OnWindowResized() {
-        LOGGER(LOGGER::ERR) << "Undefined image resize";
-        exit(-1);
+        Util::ErrorPopup("Undefined image resize");
     };
 
     void InitVertexIndexBuffers();
@@ -64,14 +63,14 @@ class RenderBackend {
     void Run();
 
     struct GraphicsRenderPass {
-        GraphicsRenderPass(std::shared_ptr<VkCore> core,
+        GraphicsRenderPass(std::shared_ptr<VkCore> core, bool multiview,
                            std::string vertexShaderPath = "",
                            std::string fragmentShaderPath = "")
             : core{core} {
             Shader vertexShader{core, vertexShaderPath, Shader::VERTEX_SHADER};
             Shader fragmentShader{core, fragmentShaderPath,
                                   Shader::FRAGMENT_SHADER};
-            renderPass = std::make_shared<RenderPass>(core);
+            renderPass = std::make_shared<RenderPass>(core, multiview);
 
             pipeline = std::make_shared<Pipeline>(core, std::move(vertexShader),
                                                   std::move(fragmentShader),

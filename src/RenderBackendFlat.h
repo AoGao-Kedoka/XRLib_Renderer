@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "RenderBackend.h"
-#include "Util.h"
+#include "Utils/Util.h"
 
 class RenderBackendFlat : public RenderBackend {
    public:
@@ -26,10 +26,10 @@ class RenderBackendFlat : public RenderBackend {
                      passesToAdd) override;
 
     void OnWindowResized() override;
+    bool WindowShouldClose() override { return glfwWindowShouldClose(window); }
 
 
    private:
     void CreateFlatSwapChain();
-    void InitFrameBuffer() override;
     void PrepareFlatWindow();
 };

@@ -3,7 +3,7 @@
 #include <string>
 #include <memory>
 
-#include "Info.h"
+#include "Utils/Info.h"
 #include "RenderBackend.h"
 #include "RenderBackendFlat.h"
 #include "Scene.h"

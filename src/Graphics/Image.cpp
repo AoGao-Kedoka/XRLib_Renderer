@@ -18,6 +18,6 @@ Image::Image(VkCore* core, VkImage image, VkFormat format)
     imageViewCreateInfo.subresourceRange.layerCount = 1;
     if (vkCreateImageView(core->GetRenderDevice(), &imageViewCreateInfo,
                           nullptr, &imageView) != VK_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to create image view";
+        Util::ErrorPopup("Failed to create image view");
     }
 }

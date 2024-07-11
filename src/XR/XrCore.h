@@ -6,8 +6,8 @@
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
 
-#include "LAMath.h"
-#include "Util.h"
+#include "Utils/LAMath.h"
+#include "Utils/Util.h"
 
 class XrCore {
    public:

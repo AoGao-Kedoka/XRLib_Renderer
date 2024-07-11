@@ -9,8 +9,7 @@ void VkCore::CreateCommandBuffer() {
 
     if (vkAllocateCommandBuffers(GetRenderDevice(), &allocInfo,
                                  &commandBuffer) != VK_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "failed to allocate command buffers!";
-        exit(-1);
+        Util::ErrorPopup("failed to allocate command buffers!");
     }
 }
 
@@ -21,8 +20,8 @@ void VkCore::CreateSyncSemaphore(VkSemaphore& semaphore)
     if (vkCreateSemaphore(GetRenderDevice(), &semaphoreInfo, nullptr,
                           &semaphore) !=
         VK_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to create semaphore";
-        exit(-1);
+
+        Util::ErrorPopup("Failed to create semaphore");
     }
 }
 
@@ -31,8 +30,7 @@ void VkCore::CreateFence(VkFence& fence) {
     info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
     if (vkCreateFence(GetRenderDevice(), &info, nullptr, &fence)) {
-        LOGGER(LOGGER::ERR) << "Failed to create fence!";
-        exit(-1);
+        Util::ErrorPopup("Failed to create fence!");
 	}
 }
 
@@ -44,7 +42,6 @@ void VkCore::CreateCommandPool() {
     poolInfo.queueFamilyIndex = graphicsFamilyIndex;
     if (vkCreateCommandPool(GetRenderDevice(), &poolInfo, nullptr,
                             &commandPool) != VK_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "failed to create command pool!";
-        exit(-1);
+        Util::ErrorPopup("failed to create command pool!");
     }
 }

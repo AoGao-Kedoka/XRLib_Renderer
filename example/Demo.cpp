@@ -8,11 +8,10 @@ int main() {
          .SetApplicationName("Demo Application");
 
     Scene& sceneContex = xrLib.SceneBackend();
-    sceneContex.LoadMeshAsync("./mesh_1.obj")
-               .LoadMeshAsync("./mesh_2.obj")
+    sceneContex.LoadMeshAsync("./resources/teapot.obj")
                .WaitForAllMeshesToLoad();
 
-    xrLib.Init(false);
+    xrLib.Init();
 
     while (!xrLib.WindowShouldClose()) {
         xrLib.Run();

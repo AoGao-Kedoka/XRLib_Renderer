@@ -1,5 +1,4 @@
 #include "XRBackend.h"
-#include "NMB.h"
 
 XRBackend::XRBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
                      std::shared_ptr<XrCore> xrCore)
@@ -152,11 +151,9 @@ void XRBackend::CreateXrInstance() {
         xrCreateInstance(&instanceCreateInfo, &xrCore->GetXRInstance());
 
     if (result != XR_SUCCESS) {
-        std::string message{
-            "Failed to create XR instance, no OpenXR runtime set."};
-        LOGGER(LOGGER::ERR) << message;
-        NMB::show("Error", message.c_str(), NMB::Icon::ICON_ERROR);
-        throw std::runtime_error(message.c_str());
+
+        Util::ErrorPopup(
+            "Failed to create XR instance, no OpenXR runtime set.");
     }
 
     if (info->validationLayer) {
@@ -179,10 +176,7 @@ void XRBackend::GetSystemID() {
     XrResult result = xrGetSystem(xrCore->GetXRInstance(), &systemGetInfo,
                                   &xrCore->GetSystemID());
     if (result != XR_SUCCESS) {
-        std::string message{"Failed to get system id, HMD may not connected."};
-        LOGGER(LOGGER::WARNING) << message;
-        NMB::show("Error", message.c_str(), NMB::Icon::ICON_ERROR);
-        throw std::runtime_error(message.c_str());
+        Util::ErrorPopup("Failed to get system id, HMD may not connected.");
     }
 }
 
@@ -208,8 +202,7 @@ void XRBackend::CreateXrSession() {
     sessionCreateInfo.next = &graphicsBinding;
     if (xrCreateSession(xrCore->GetXRInstance(), &sessionCreateInfo,
                         &xrCore->GetXRSession()) != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to create session";
-        exit(-1);
+        Util::ErrorPopup("Failed to create session");
     }
 }
 
@@ -218,15 +211,13 @@ void XRBackend::CreateXrSwapchain() {
     if (xrEnumerateSwapchainFormats(xrCore->GetXRSession(), 0,
                                     &swapchainFormatCount,
                                     nullptr) != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to get swapchain formats";
-        exit(-1);
+        Util::ErrorPopup("Failed to get swapchain formats");
     }
     std::vector<int64_t> swapchainFormats(swapchainFormatCount);
     if (xrEnumerateSwapchainFormats(xrCore->GetXRSession(),
                                     swapchainFormatCount, &swapchainFormatCount,
                                     swapchainFormats.data()) != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to get swapchain formats";
-        exit(-1);
+        Util::ErrorPopup("Failed to get swapchain formats");
     }
 
     vkCore->SetStereoSwapchainImageFormat(
@@ -237,8 +228,7 @@ void XRBackend::CreateXrSwapchain() {
             xrCore->GetXRInstance(), xrCore->GetSystemID(),
             XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &viewCount,
             nullptr) != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to get view configuration views";
-        exit(-1);
+        Util::ErrorPopup("Failed to get view configuration views");
     }
 
     xrCore->GetXRViewConfigurationView().resize(viewCount);
@@ -251,8 +241,7 @@ void XRBackend::CreateXrSwapchain() {
             xrCore->GetXRInstance(), xrCore->GetSystemID(),
             XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, viewCount, &viewCount,
             xrCore->GetXRViewConfigurationView().data()) != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to get view configuration views";
-        exit(-1);
+        Util::ErrorPopup("Failed to get view configuration views");
     }
 
     XrResult result;
@@ -273,8 +262,7 @@ void XRBackend::CreateXrSwapchain() {
     if ((result =
              xrCreateSwapchain(xrCore->GetXRSession(), &swapchainCreateInfo,
                                &xrCore->GetXrSwapchain())) != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to create swapchain";
-        exit(-1);
+        Util::ErrorPopup("Failed to create swapchain");
     }
 }
 
@@ -285,8 +273,7 @@ void XRBackend::PrepareXrSwapchainImages() {
     if ((result = xrEnumerateSwapchainImages(xrCore->GetXrSwapchain(), 0,
                                              &swapchainImageCount, nullptr)) !=
         XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to enumerate swapchain images";
-        exit(-1);
+        Util::ErrorPopup("Failed to enumerate swapchain images");
     }
 
     xrCore->GetSwapchainImages().resize(swapchainImageCount);
@@ -301,8 +288,7 @@ void XRBackend::PrepareXrSwapchainImages() {
     if ((result = xrEnumerateSwapchainImages(
              xrCore->GetXrSwapchain(), xrCore->GetSwapchainImages().size(),
              &swapchainImageCount, data)) != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to get swapchain images";
-        exit(-1);
+        Util::ErrorPopup("Failed to get swapchain images");
     }
 }
 XrResult XRBackend::StartFrame() {

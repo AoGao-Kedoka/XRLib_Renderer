@@ -4,8 +4,8 @@
 #include <shaderc/shaderc.hpp>
 
 #include "Logger.h"
-#include "Util.h"
-#include "Info.h"
+#include "Utils/Util.h"
+#include "Utils/Info.h"
 #include "VkCore.h"
 
 class Shader {
