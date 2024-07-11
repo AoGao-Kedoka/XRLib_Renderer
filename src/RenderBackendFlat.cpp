@@ -108,7 +108,7 @@ void RenderBackendFlat::CreateFlatSwapChain() {
     swapchainCreateInfo.minImageCount = imageCount;
     swapchainCreateInfo.imageFormat = swapChainSurfaceFormat.format;
     swapchainCreateInfo.imageColorSpace = swapChainSurfaceFormat.colorSpace;
-    swapchainCreateInfo.imageExtent = vkCore->GetFlatSwapchainExtent2D();
+    swapchainCreateInfo.imageExtent = vkCore->GetSwapchainExtent(false);
     swapchainCreateInfo.imageArrayLayers = 1;
     swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -168,7 +168,7 @@ void RenderBackendFlat::OnWindowResized() {
 
     vkDeviceWaitIdle(vkCore->GetRenderDevice());
 
-    for (auto framebuffer : vkCore->GetSwapchainFrameBufferFlat()) {
+    for (auto framebuffer : vkCore->GetSwapchainFrameBuffer()) {
         //TODO: Change to save clean
         vkDestroyFramebuffer(vkCore->GetRenderDevice(), framebuffer, nullptr);
     }

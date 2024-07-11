@@ -45,8 +45,8 @@ class XRBackend {
     }
 
     void Prepare();
-    XrResult StartFrame();
-    XrResult EndFrame();
+    XrResult StartFrame(uint32_t& imageIndex);
+    XrResult EndFrame(uint32_t& imageIndex);
 
    private:
     void CreateXrInstance();

@@ -60,7 +60,7 @@ class RenderBackend {
     void InitVertexIndexBuffers();
     virtual void InitFrameBuffer();
 
-    void Run();
+    void Run(uint32_t& imageIndex);
 
     struct GraphicsRenderPass {
         GraphicsRenderPass(std::shared_ptr<VkCore> core, bool multiview,

@@ -290,14 +290,33 @@ void XRBackend::PrepareXrSwapchainImages() {
              &swapchainImageCount, data)) != XR_SUCCESS) {
         Util::ErrorPopup("Failed to get swapchain images");
     }
+
+    xrCore->GetCompositionLayerProjectionViews().resize(
+        xrCore->GetXRViewConfigurationView().size());
+    for (size_t i = 0; i < xrCore->GetCompositionLayerProjectionViews().size();
+        ++i) {
+        XrCompositionLayerProjectionView& projectionView =
+            xrCore->GetCompositionLayerProjectionViews()[i];
+        projectionView.type = XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW;
+        projectionView.next = nullptr;
+
+        projectionView.subImage.swapchain = xrCore->GetXrSwapchain(); 
+        projectionView.subImage.imageArrayIndex = i;
+        projectionView.subImage.imageRect.offset = {0, 0};
+        projectionView.subImage.imageRect.extent = {
+            static_cast<int32_t>(xrCore->GetXRViewConfigurationView()[i]
+                                      .recommendedImageRectWidth),
+            static_cast<int32_t>(xrCore->GetXRViewConfigurationView()[i]
+                                      .recommendedImageRectHeight),
+        };
+    }
 }
-XrResult XRBackend::StartFrame() {
+XrResult XRBackend::StartFrame(uint32_t& imageIndex) {
     XrResult result;
 
     PollXREvents();
-    XrFrameState frameState{XR_TYPE_FRAME_STATE};
     XrFrameWaitInfo frameWaitInfo{XR_TYPE_FRAME_WAIT_INFO};
-    xrWaitFrame(xrCore->GetXRSession(), &frameWaitInfo, &frameState);
+    xrWaitFrame(xrCore->GetXRSession(), &frameWaitInfo, &xrCore->GetXrFrameState());
 
     XrFrameBeginInfo frameBeginInfo{XR_TYPE_FRAME_BEGIN_INFO};
     if ((result = xrBeginFrame(xrCore->GetXRSession(), &frameBeginInfo)) !=
@@ -306,7 +325,6 @@ XrResult XRBackend::StartFrame() {
         return result;
     }
 
-    uint32_t imageIndex;
     XrSwapchainImageAcquireInfo swapchainImageAcquireInfo{
         XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
     if ((result = xrAcquireSwapchainImage(xrCore->GetXrSwapchain(),
@@ -316,11 +334,47 @@ XrResult XRBackend::StartFrame() {
         return result;
     }
 
+    XrSwapchainImageWaitInfo swapchainImageWaitInfo{
+        XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};
+    swapchainImageWaitInfo.timeout = XR_INFINITE_DURATION;
+    if ((result = xrWaitSwapchainImage(xrCore->GetXrSwapchain(),
+        &swapchainImageWaitInfo)) !=
+        XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to wait swapchain image";
+        return result;
+    }
     return XR_SUCCESS;
 }
 
-XrResult XRBackend::EndFrame() {
-    //TODO
+XrResult XRBackend::EndFrame(uint32_t& imageIndex) {
+    XrResult result;
+    XrSwapchainImageReleaseInfo swapchainImageReleaseInfo{
+        XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
+    if ((result = xrReleaseSwapchainImage(xrCore->GetXrSwapchain(),
+        &swapchainImageReleaseInfo)) !=
+        XR_SUCCESS) {
+        return result;
+    }
+    XrCompositionLayerProjection compositionLayerProjection{
+        XR_TYPE_COMPOSITION_LAYER_PROJECTION};
+    compositionLayerProjection.space = xrCore->GetXrSpace();
+    compositionLayerProjection.viewCount =
+        xrCore->GetXRViewConfigurationView().size();
+    compositionLayerProjection.views =
+        xrCore->GetCompositionLayerProjectionViews().data();
+
+    //TODO end view state
+
+    XrFrameEndInfo frameEndInfo{XR_TYPE_FRAME_END_INFO};
+    frameEndInfo.displayTime = xrCore->GetXrFrameState().predictedDisplayTime;
+    frameEndInfo.layerCount = 0;
+    frameEndInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE; 
+    if ((result = xrEndFrame(xrCore->GetXRSession(), &frameEndInfo)) !=
+        XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to end frame";
+        return result;
+    }
+
     return XR_SUCCESS;
 }
 

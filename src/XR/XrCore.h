@@ -28,6 +28,8 @@ class XrCore {
 
     XrSwapchain& GetXrSwapchain() { return xrSwapchain; }
 
+    XrFrameState& GetXrFrameState() { return frameState; }
+
     std::vector<XrSwapchainImageVulkanKHR>& GetSwapchainImages() {
         return swapchainImages;
     }
@@ -37,6 +39,11 @@ class XrCore {
             CreatePlaySpace();
         }
         return xrSceneSpace;
+    }
+
+    std::vector<XrCompositionLayerProjectionView>
+        GetCompositionLayerProjectionViews() {
+        return compositionLayerProjectionViews;
     }
 
    private:
@@ -51,6 +58,8 @@ class XrCore {
     XrSession xrSession{XR_NULL_HANDLE};
     XrSessionState xrSessionState{XR_SESSION_STATE_UNKNOWN};
 
+    XrViewState xrViewState{};
+    XrFrameState frameState{XR_TYPE_FRAME_STATE};
     XrSpace xrSceneSpace{XR_NULL_HANDLE};
 
     bool xrValid = true;
@@ -58,4 +67,8 @@ class XrCore {
 
     XrSwapchain xrSwapchain;
     std::vector<XrSwapchainImageVulkanKHR> swapchainImages;
+
+
+    std::vector<XrCompositionLayerProjectionView>
+        compositionLayerProjectionViews;
 };

@@ -48,10 +48,20 @@ void XRLib::Init(bool xr) {
 }
 
 void XRLib::Run() {
+
+    uint32_t imageIndex = 0;
     if (xrCore->IsXRValid()) {
-        xrBackend->StartFrame();
+        XrResult result = xrBackend->StartFrame(imageIndex);
+        if (result != XR_SUCCESS) {
+            return;
+        }
     }
-    renderBackend->Run();
+
+    renderBackend->Run(imageIndex);
+
+    if (xrCore->IsXRValid()) {
+        xrBackend->EndFrame(imageIndex);
+    }
 }
 
 XRLib& XRLib::Fullscreen() {

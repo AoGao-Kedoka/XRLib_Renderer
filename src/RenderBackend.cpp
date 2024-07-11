@@ -93,6 +93,9 @@ void RenderBackend::InitVulkan() {
         for (auto extension : xrInstanceExtensions) {
             vulkanInstanceExtensions.push_back(extension);
         }
+
+        vulkanInstanceExtensions.push_back(
+            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
     VkInstanceCreateInfo instanceCreateInfo{};
@@ -215,6 +218,7 @@ void RenderBackend::InitVulkan() {
 
     // create logical device
     std::vector<const char*> deviceExtensions(0);
+    VkPhysicalDeviceMultiviewFeaturesKHR physicalDeviceMultiviewFeatures{};
     if (xrCore->IsXRValid()) {
         auto xrGetVulkanDeviceExtensionsKHR =
             Util::XrGetXRFunction<PFN_xrGetVulkanDeviceExtensionsKHR>(
@@ -233,6 +237,10 @@ void RenderBackend::InitVulkan() {
             Util::ErrorPopup("Failed to get vulkan device extensions");
         }
         deviceExtensions = Util::SplitStringToCharPtr(buffer);
+
+        deviceExtensions.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        physicalDeviceMultiviewFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR;
+		physicalDeviceMultiviewFeatures.multiview = VK_TRUE;
     }
 
     deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -252,11 +260,14 @@ void RenderBackend::InitVulkan() {
     deviceCreateInfo.enabledExtensionCount =
         static_cast<uint32_t>(deviceExtensions.size());
     deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    if (xrCore->IsXRValid()) {
+        deviceCreateInfo.pNext = &physicalDeviceMultiviewFeatures;
+    }
 
     if (vkCreateDevice(vkCore->GetRenderPhysicalDevice(), &deviceCreateInfo,
                        nullptr, &vkCore->GetRenderDevice()) != VK_SUCCESS) {
         Util::ErrorPopup("Failed to create vulkan device.");
-    }
+   }
 
     vkGetDeviceQueue(vkCore->GetRenderDevice(),
                      vkCore->GetGraphicsQueueFamilyIndex(), 0,
@@ -292,7 +303,7 @@ void RenderBackend::GetSwapchainInfo() {
         VkImageViewCreateInfo imageViewCreateInfo{};
         imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         imageViewCreateInfo.image = vkCore->GetStereoSwapchainImages()[i];
-        imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
         imageViewCreateInfo.format = vkCore->GetStereoSwapchainImageFormat();
         imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
         imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -303,13 +314,17 @@ void RenderBackend::GetSwapchainInfo() {
         imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
         imageViewCreateInfo.subresourceRange.levelCount = 1;
         imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-        imageViewCreateInfo.subresourceRange.layerCount = 1;
+        imageViewCreateInfo.subresourceRange.layerCount = 2;
         if (vkCreateImageView(
                 vkCore->GetRenderDevice(), &imageViewCreateInfo, nullptr,
                 &vkCore->GetStereoSwapchainImageViews()[i]) != VK_SUCCESS) {
             Util::ErrorPopup("Failed to create image view");
         }
     }
+
+    vkCore->SetStereoSwapchainExtent2D(
+        {xrCore->GetXRViewConfigurationView()[0].recommendedImageRectWidth,
+         xrCore->GetXRViewConfigurationView()[0].recommendedImageRectHeight});
 }
 
 void RenderBackend::InitVertexIndexBuffers() {
@@ -334,45 +349,56 @@ void RenderBackend::InitVertexIndexBuffers() {
 
 void RenderBackend::InitFrameBuffer() {
     // create frame buffer
-    vkCore->GetSwapchainFrameBufferFlat().resize(
+    if (xrCore->IsXRValid()) {
+    vkCore->GetSwapchainFrameBuffer().resize(
+        vkCore->GetStereoSwapchainImageViews().size());
+    } else {
+    vkCore->GetSwapchainFrameBuffer().resize(
         vkCore->GetSwapchainImageViewsFlat().size());
+    }
 
-    for (size_t i = 0; i < vkCore->GetSwapchainImageViewsFlat().size(); i++) {
-        VkImageView attachments[] = {vkCore->GetSwapchainImageViewsFlat()[i]};
+    for (size_t i = 0; i < vkCore->GetSwapchainFrameBuffer().size(); i++) {
+        std::vector<VkImageView> attachments;
+        if (xrCore->IsXRValid()) {
+            attachments.push_back(vkCore->GetStereoSwapchainImageViews()[i]);
+        } else {
+            attachments.push_back(vkCore->GetSwapchainImageViewsFlat()[i]);
+        }
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass =
             renderPasses[renderPasses.size() - 1]->renderPass->GetRenderPass();
-        framebufferInfo.attachmentCount = 1;
-        framebufferInfo.pAttachments = attachments;
-        framebufferInfo.width = vkCore->GetFlatSwapchainExtent2D().width;
-        framebufferInfo.height = vkCore->GetFlatSwapchainExtent2D().height;
+        framebufferInfo.attachmentCount = attachments.size();
+        framebufferInfo.pAttachments = attachments.data();
+        framebufferInfo.width = vkCore->GetSwapchainExtent(xrCore->IsXRValid()).width;
+        framebufferInfo.height = vkCore->GetSwapchainExtent(xrCore->IsXRValid()).height;
         framebufferInfo.layers = 1;
 
         if (vkCreateFramebuffer(
                 vkCore->GetRenderDevice(), &framebufferInfo, nullptr,
-                &vkCore->GetSwapchainFrameBufferFlat()[i]) != VK_SUCCESS) {
+                &vkCore->GetSwapchainFrameBuffer()[i]) != VK_SUCCESS) {
             Util::ErrorPopup("Failed to create frame buffer");
         }
     }
 }
 
-void RenderBackend::Run() {
+void RenderBackend::Run(uint32_t& imageIndex) {
     glfwPollEvents();
     vkWaitForFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence(),
                     VK_TRUE, UINT64_MAX);
     vkResetCommandBuffer(vkCore->GetCommandBuffer(), 0);
 
-    uint32_t imageIndex;
-    auto result = vkAcquireNextImageKHR(
-        vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(), UINT64_MAX,
-        vkCore->GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        OnWindowResized();
-        return;
-    } else if (result != VK_SUCCESS) {
-        Util::ErrorPopup("Failed to acquire next image");
+    if (!xrCore->IsXRValid()) {
+        auto result = vkAcquireNextImageKHR(
+            vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(), UINT64_MAX,
+            vkCore->GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+            OnWindowResized();
+            return;
+        } else if (result != VK_SUCCESS) {
+            Util::ErrorPopup("Failed to acquire next image");
+        }
     }
 
     vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
@@ -400,16 +426,18 @@ void RenderBackend::Run() {
                       vkCore->GetInFlightFence()) != VK_SUCCESS) {
         Util::ErrorPopup("Failed to submit draw command buffer");
     }
-    VkPresentInfoKHR presentInfo{};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = signalSemaphores;
+    if (!xrCore->IsXRValid()) {
+        VkPresentInfoKHR presentInfo{};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-    VkSwapchainKHR swapChains[] = {vkCore->GetFlatSwapchain()};
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = swapChains;
-    presentInfo.pImageIndices = &imageIndex;
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = signalSemaphores;
+        VkSwapchainKHR swapChains[] = {vkCore->GetFlatSwapchain()};
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapChains;
+        presentInfo.pImageIndices = &imageIndex;
 
-    vkQueuePresentKHR(vkCore->GetGraphicsQueue(), &presentInfo);
+        vkQueuePresentKHR(vkCore->GetGraphicsQueue(), &presentInfo);
+    }
 }

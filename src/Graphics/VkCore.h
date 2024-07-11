@@ -41,15 +41,26 @@ class VkCore {
     void SetFlatSwapchainImageFormat(VkFormat format) {
         this->swapChainImageFormat = format;
     }
-    VkExtent2D& GetFlatSwapchainExtent2D() { return swapChainExtentFlat; }
+
+    VkExtent2D& GetSwapchainExtent(bool stereo) {
+        if (stereo) {
+            return swapchainExtentStereo;
+        } else {
+            return swapChainExtentFlat;
+        }
+    }
     void SetFlatSwapchainExtent2D(VkExtent2D extent) {
         this->swapChainExtentFlat = extent;
     }
+    void SetStereoSwapchainExtent2D(VkExtent2D extent) {
+        this->swapchainExtentStereo = extent;
+    }
+
     std::vector<VkImageView>& GetSwapchainImageViewsFlat() {
         return swapChainImageViewsFlat;
     }
 
-    std::vector<VkFramebuffer>& GetSwapchainFrameBufferFlat() {
+    std::vector<VkFramebuffer>& GetSwapchainFrameBuffer() {
         return swapChainFrameBuffers;
     }
 
@@ -122,6 +133,7 @@ class VkCore {
     VkFormat stereoSwapchainImageFormat{VK_FORMAT_UNDEFINED};
     std::vector<VkImage> stereoSwapchainImages;
     std::vector<VkImageView> stereoSwapchainImageViews;
+    VkExtent2D swapchainExtentStereo{0, 0};
 
     // commands
     VkCommandPool commandPool{VK_NULL_HANDLE};
