@@ -10,12 +10,13 @@ file(DOWNLOAD
 	https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
 	${CMAKE_SOURCE_DIR}/lib/external/stb_image.h
 )
+
+if (WIN32)
 file(DOWNLOAD
     https://raw.githubusercontent.com/thegabman/native_message_box/master/include/NMB/NMB.h
     ${CMAKE_SOURCE_DIR}/lib/external/NMB.h
 )
-
-file(COPY ./example/resources DESTINATION ${CMAKE_BINARY_DIR})
+endif()
 
 set(MESSAGE_BOX "---------------------------")
 include(FetchContent)

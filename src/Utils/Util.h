@@ -8,7 +8,7 @@
 #define XR_USE_GRAPHICS_API_VULKAN
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
-#include "logger.h"
+#include "Logger.h"
 
 class Util {
    public:
