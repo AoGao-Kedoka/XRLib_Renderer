@@ -239,8 +239,9 @@ void RenderBackend::InitVulkan() {
         deviceExtensions = Util::SplitStringToCharPtr(buffer);
 
         deviceExtensions.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        physicalDeviceMultiviewFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR;
-		physicalDeviceMultiviewFeatures.multiview = VK_TRUE;
+        physicalDeviceMultiviewFeatures.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR;
+        physicalDeviceMultiviewFeatures.multiview = VK_TRUE;
     }
 
     deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -267,7 +268,7 @@ void RenderBackend::InitVulkan() {
     if (vkCreateDevice(vkCore->GetRenderPhysicalDevice(), &deviceCreateInfo,
                        nullptr, &vkCore->GetRenderDevice()) != VK_SUCCESS) {
         Util::ErrorPopup("Failed to create vulkan device.");
-   }
+    }
 
     vkGetDeviceQueue(vkCore->GetRenderDevice(),
                      vkCore->GetGraphicsQueueFamilyIndex(), 0,
@@ -298,6 +299,7 @@ void RenderBackend::GetSwapchainInfo() {
     vkCore->GetStereoSwapchainImages().resize(swapchainImageCount);
     vkCore->GetStereoSwapchainImageViews().resize(swapchainImageCount);
     for (uint32_t i = 0; i < xrCore->GetSwapchainImages().size(); ++i) {
+        // create image view
         vkCore->GetStereoSwapchainImages()[i] =
             xrCore->GetSwapchainImages()[i].image;
         VkImageViewCreateInfo imageViewCreateInfo{};
@@ -350,11 +352,11 @@ void RenderBackend::InitVertexIndexBuffers() {
 void RenderBackend::InitFrameBuffer() {
     // create frame buffer
     if (xrCore->IsXRValid()) {
-    vkCore->GetSwapchainFrameBuffer().resize(
-        vkCore->GetStereoSwapchainImageViews().size());
+        vkCore->GetSwapchainFrameBuffer().resize(
+            vkCore->GetStereoSwapchainImageViews().size());
     } else {
-    vkCore->GetSwapchainFrameBuffer().resize(
-        vkCore->GetSwapchainImageViewsFlat().size());
+        vkCore->GetSwapchainFrameBuffer().resize(
+            vkCore->GetSwapchainImageViewsFlat().size());
     }
 
     for (size_t i = 0; i < vkCore->GetSwapchainFrameBuffer().size(); i++) {
@@ -371,8 +373,10 @@ void RenderBackend::InitFrameBuffer() {
             renderPasses[renderPasses.size() - 1]->renderPass->GetRenderPass();
         framebufferInfo.attachmentCount = attachments.size();
         framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width = vkCore->GetSwapchainExtent(xrCore->IsXRValid()).width;
-        framebufferInfo.height = vkCore->GetSwapchainExtent(xrCore->IsXRValid()).height;
+        framebufferInfo.width =
+            vkCore->GetSwapchainExtent(xrCore->IsXRValid()).width;
+        framebufferInfo.height =
+            vkCore->GetSwapchainExtent(xrCore->IsXRValid()).height;
         framebufferInfo.layers = 1;
 
         if (vkCreateFramebuffer(
@@ -411,16 +415,21 @@ void RenderBackend::Run(uint32_t& imageIndex) {
     VkSemaphore waitSemaphores[] = {vkCore->GetImageAvailableSemaphore()};
     VkPipelineStageFlags waitStages[] = {
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.waitSemaphoreCount = 0;
+    if (!xrCore->IsXRValid()) {
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask = waitStages;
+    }
 
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &vkCore->GetCommandBuffer();
 
     VkSemaphore signalSemaphores[] = {vkCore->GetRenderFinishedSemaphore()};
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
+    if (!xrCore->IsXRValid()) {
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = signalSemaphores;
+    }
 
     if (vkQueueSubmit(vkCore->GetGraphicsQueue(), 1, &submitInfo,
                       vkCore->GetInFlightFence()) != VK_SUCCESS) {

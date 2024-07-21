@@ -1,14 +1,15 @@
 #pragma once
 
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 
 #include <vulkan/vulkan.h>
 #define XR_USE_GRAPHICS_API_VULKAN
+#include "Logger.h"
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
-#include "Logger.h"
 
 class Util {
    public:
@@ -114,36 +115,11 @@ class Util {
         return VK_FALSE;
     }
 
-    static std::string ReadFile(std::string file_path) {
-        std::ifstream t(file_path);
-        std::string result = std::string((std::istreambuf_iterator<char>(t)),
-                                         (std::istreambuf_iterator<char>()));
-        if (result == "") {
-            LOGGER(LOGGER::ERR) << "FileReader: FILE IS EMPTY!!";
-            return result;
-        }
-        LOGGER(LOGGER::DEBUG) << result;
-        return result;
-    }
+    static std::string ReadFile(std::string file_path);
 
-    static std::vector<const char*>
-    SplitStringToCharPtr(const std::string& input) {
-        static std::vector<std::string> managed_strings;
-        managed_strings.clear();
-        std::vector<const char*> out;
-        std::istringstream stream(input);
-        std::string extension;
+    static std::filesystem::path ResolvePath(const std::filesystem::path& path);
 
-        while (getline(stream, extension, ' ')) {
-            managed_strings.push_back(extension);
-        }
-
-        for (const auto& str : managed_strings) {
-            out.push_back(str.c_str());
-        }
-
-        return out;
-    }
+    static std::vector<const char*> SplitStringToCharPtr(const std::string& input);
 
     static void ErrorPopup(std::string message);
 };

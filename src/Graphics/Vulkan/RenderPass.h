@@ -13,8 +13,8 @@ class RenderPass {
         : core(std::exchange(other.core, nullptr)),
           pass(std::exchange(other.pass, VK_NULL_HANDLE)),
           graphicsPipeline(
-              std::exchange(other.graphicsPipeline, VK_NULL_HANDLE)) {
-    }
+
+              std::exchange(other.graphicsPipeline, VK_NULL_HANDLE)) {}
 
     RenderPass& operator=(RenderPass&& other) noexcept {
         if (this != &other) {

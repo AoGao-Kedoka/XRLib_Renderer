@@ -26,6 +26,21 @@ XRLib& XRLib::EnableValidationLayer() {
     return *this;
 }
 
+XRLib& XRLib::SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath) {
+    auto fullPath = Util::ResolvePath(runtimePath);
+    if (!std::filesystem::is_regular_file(fullPath)) {
+        return *this;
+    }
+    fullPath = std::filesystem::canonical(fullPath);
+#ifdef _WIN32
+    _putenv_s("XR_RUNTIME_JSON", fullPath.string().c_str());
+#else
+    setenv("XR_RUNTIME_JSON", fullPath, 1);
+#endif
+    LOGGER(LOGGER::INFO) << "Set XR_RUNTIME_JSON to: " << fullPath.string();
+    return *this;
+}
+
 void XRLib::Init(bool xr) {
     _LOGFUNC_;
 
@@ -33,7 +48,8 @@ void XRLib::Init(bool xr) {
         xrCore->SetXRValid(false);
     }
 
-    if (xr) InitXRBackend();
+    if (xr)
+        InitXRBackend();
     InitRenderBackend();
 
     if (scene->CheckTaskRunning()) {
@@ -72,7 +88,7 @@ XRLib& XRLib::Fullscreen() {
 XRLib& XRLib::AddRenderPass(const std::string& vertexShaderPath,
                             const std::string& fragmentShaderPath) {
     passesToAdd.push_back({vertexShaderPath, fragmentShaderPath});
-    
+
     return *this;
 }
 

@@ -4,10 +4,10 @@
 #include <memory>
 
 #include "Utils/Info.h"
-#include "RenderBackend.h"
-#include "RenderBackendFlat.h"
+#include "Graphics/RenderBackend.h"
+#include "Graphics/RenderBackendFlat.h"
 #include "Scene.h"
-#include "XRBackend.h"
+#include "XR/XRBackend.h"
 
 namespace XRLib {
 class XRLib {
@@ -17,6 +17,7 @@ class XRLib {
                             unsigned int minorVersion,
                             unsigned int patchVersion);
     XRLib& EnableValidationLayer();
+    XRLib& SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath);
     void Init(bool xr = true);
 
     XRLib& AddRenderPass(const std::string& vertexShaderPath,

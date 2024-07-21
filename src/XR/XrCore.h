@@ -41,7 +41,7 @@ class XrCore {
         return xrSceneSpace;
     }
 
-    std::vector<XrCompositionLayerProjectionView>
+    std::vector<XrCompositionLayerProjectionView>&
         GetCompositionLayerProjectionViews() {
         return compositionLayerProjectionViews;
     }

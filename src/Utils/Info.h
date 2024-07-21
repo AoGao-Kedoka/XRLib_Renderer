@@ -16,6 +16,7 @@ class Info {
 
     inline static std::string triangleVert{
         "#version 450\n"
+        "#extension GL_EXT_multiview : enable\n"
         "\n"
         "vec2 positions[3] = vec2[](\n"
         "    vec2(0.0, -0.5),\n"

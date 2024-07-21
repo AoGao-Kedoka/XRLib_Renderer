@@ -29,13 +29,19 @@ include(cmake/glm.cmake)
 include(cmake/glfw.cmake)
 include(cmake/assimp.cmake)
 
-include_directories(${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/lib/external ${PROJECT_SOURCE_DIR}/example)
+include_directories(
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/lib
+    ${PROJECT_SOURCE_DIR}/lib/external
+    ${PROJECT_SOURCE_DIR}/example)
 
 file (GLOB SRCS
     ${PROJECT_SOURCE_DIR}/src/*.h
     ${PROJECT_SOURCE_DIR}/src/*.cpp
     ${PROJECT_SOURCE_DIR}/src/Graphics/*.h
     ${PROJECT_SOURCE_DIR}/src/Graphics/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/Graphics/Vulkan/*.h
+    ${PROJECT_SOURCE_DIR}/src/Graphics/Vulkan/*.cpp
     ${PROJECT_SOURCE_DIR}/src/Utils/*.h
     ${PROJECT_SOURCE_DIR}/src/Utils/*.cpp
 	${PROJECT_SOURCE_DIR}/src/XR/*.h
