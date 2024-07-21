@@ -1,6 +1,12 @@
 #include "XRLib.h"
 
 namespace XRLib {
+XRLib::XRLib() {
+    bool result = Util::CheckPlatformSupport();
+    if (result == false) {
+        Util::ErrorPopup("Current platform not supported");
+    }
+}
 XRLib& XRLib::SetApplicationName(std::string applicationName) {
     _LOGFUNC_;
 
@@ -32,10 +38,12 @@ XRLib& XRLib::SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath) {
         return *this;
     }
     fullPath = std::filesystem::canonical(fullPath);
-#ifdef _WIN32
-    _putenv_s("XR_RUNTIME_JSON", fullPath.string().c_str());
+#if defined(_WIN32)
+    _putenv_s("XR_RUNTIME_JSON", fullPath.c_str());
+#elif defined(__linux__)
+    setenv("XR_RUNTIME_JSON", fullPath.c_str(), 1);
 #else
-    setenv("XR_RUNTIME_JSON", fullPath, 1);
+    Util::ERR("Platform not supported")
 #endif
     LOGGER(LOGGER::INFO) << "Set XR_RUNTIME_JSON to: " << fullPath.string();
     return *this;

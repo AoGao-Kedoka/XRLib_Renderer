@@ -1,17 +1,18 @@
 #pragma once
 
-#include <string>
 #include <memory>
+#include <string>
 
-#include "Utils/Info.h"
 #include "Graphics/RenderBackend.h"
 #include "Graphics/RenderBackendFlat.h"
 #include "Scene.h"
+#include "Utils/Info.h"
 #include "XR/XRBackend.h"
 
 namespace XRLib {
 class XRLib {
    public:
+    XRLib();
     XRLib& SetApplicationName(std::string applicationName);
     XRLib& SetVersionNumber(unsigned int majorVersion,
                             unsigned int minorVersion,
@@ -24,7 +25,7 @@ class XRLib {
                          const std::string& fragmentShaderPath);
     void Run();
 
-    bool WindowShouldClose(){ return renderBackend->WindowShouldClose(); }
+    bool WindowShouldClose() { return renderBackend->WindowShouldClose(); }
     XRLib& Fullscreen();
 
     Scene& SceneBackend() { return *scene; }

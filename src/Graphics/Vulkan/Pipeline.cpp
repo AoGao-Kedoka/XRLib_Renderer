@@ -7,11 +7,17 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
     VkPipelineShaderStageCreateInfo shaderStages[] = {
         vertexShader.GetShaderStageInfo(), fragmentShader.GetShaderStageInfo()};
 
+    auto bindingDescription = VkUtil::GetVertexBindingDescription();
+    auto attributeDescription = VkUtil::GetVertexAttributeDescription();
+
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType =
         VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.vertexAttributeDescriptionCount =
+        attributeDescription.size();
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType =

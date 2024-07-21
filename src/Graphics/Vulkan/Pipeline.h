@@ -4,6 +4,7 @@
 #include "Shader.h"
 #include "Utils/Util.h"
 #include "VkCore.h"
+#include "VkUtil.h"
 
 class Pipeline {
    public:
