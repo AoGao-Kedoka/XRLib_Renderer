@@ -1,8 +1,32 @@
 #include "Buffer.h"
 
 Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size,
+               VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+               void* data)
+    : core{core}, bufferSize{size} {
+    CreateBuffer(size, usage, properties);
+    if (usage & VK_BUFFER_USAGE_TRANSFER_DST_BIT) {
+        LOGGER(LOGGER::WARNING)
+            << "You are sending a transfer destnation bit with memory mapping, "
+               "this may result error!";
+    }
+    MapMemory(data);
+}
+Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size,
                VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
-    : core{core} {
+    : core{core}, bufferSize{size} {
+    CreateBuffer(size, usage, properties);
+}
+
+Buffer::~Buffer() {
+    Util::VkSafeClean(vkDestroyBuffer, core->GetRenderDevice(), buffer,
+                      nullptr);
+    Util::VkSafeClean(vkFreeMemory, core->GetRenderDevice(), bufferMemory,
+                      nullptr);
+}
+
+void Buffer::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
+                          VkMemoryPropertyFlags properties) {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
@@ -29,14 +53,30 @@ Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size,
         Util::ErrorPopup("Failed to allocate buffer memory!");
     }
 
-    vkBindBufferMemory(core->GetRenderDevice(), buffer, bufferMemory, 0);
+    vkBindBufferMemory(this->core->GetRenderDevice(), buffer, bufferMemory, 0);
 }
 
-void Buffer::Cleanup() {
-    Util::VkSafeClean(vkDestroyBuffer, core->GetRenderDevice(), buffer,
-                      nullptr);
-    Util::VkSafeClean(vkFreeMemory, core->GetRenderDevice(), bufferMemory,
-                      nullptr);
+void Buffer::MapMemory(void* dataInput) {
+    Buffer stagingBuffer{
+        this->core,
+        bufferSize,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+    };
+    void* data;
+    vkMapMemory(core->GetRenderDevice(), stagingBuffer.GetDeviceMemory(), 0,
+                bufferSize, 0, &data);
+    std::memcpy(data, dataInput, (size_t)bufferSize);
+    vkUnmapMemory(core->GetRenderDevice(), stagingBuffer.GetDeviceMemory());
+    core->BeginSingleTimeCommands();
+
+    VkBufferCopy copyRegion{};
+    copyRegion.size = bufferSize;
+    vkCmdCopyBuffer(core->GetCommandBuffer(), stagingBuffer.GetBuffer(), buffer,
+                    1, &copyRegion);
+
+    core->EndSingleTimeCommands();
 }
 
 uint32_t Buffer::FindMemoryType(uint32_t typeFilter,
