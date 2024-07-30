@@ -5,7 +5,7 @@ XRBackend::XRBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
     : info{info}, vkCore{core}, xrCore{xrCore} {
     try {
         for (const auto layer : apiLayers) {
-            bool res = Util::XrCheckLayerSupport(layer.c_str());
+            bool res = XrUtil::XrCheckLayerSupport(layer.c_str());
             if (res) {
                 activeAPILayers.push_back(layer.c_str());
             }
@@ -31,11 +31,10 @@ XRBackend::~XRBackend() {
 
     if (xrDebugUtilsMessenger != XR_NULL_HANDLE) {
         PFN_xrDestroyDebugUtilsMessengerEXT xrDestroyDebugUtilsMessengerEXT =
-            Util::XrGetXRFunction<PFN_xrDestroyDebugUtilsMessengerEXT>(
+            XrUtil::XrGetXRFunction<PFN_xrDestroyDebugUtilsMessengerEXT>(
                 xrCore->GetXRInstance(), "xrDestroyDebugUtilsMessengerEXT");
         xrDestroyDebugUtilsMessengerEXT(xrDebugUtilsMessenger);
     }
-
 }
 
 void XRBackend::Prepare() {
@@ -148,7 +147,7 @@ void XRBackend::CreateXrInstance() {
             XR_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
             XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
             XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        debugUtilsMessengerCreateInfo.userCallback = Util::XrDebugCallback;
+        debugUtilsMessengerCreateInfo.userCallback = XrUtil::XrDebugCallback;
         instanceCreateInfo.next = &debugUtilsMessengerCreateInfo;
     }
 
@@ -163,7 +162,7 @@ void XRBackend::CreateXrInstance() {
 
     if (info->validationLayer) {
         PFN_xrCreateDebugUtilsMessengerEXT xrCreateDebugUtilsMessengerEXT =
-            Util::XrGetXRFunction<PFN_xrCreateDebugUtilsMessengerEXT>(
+            XrUtil::XrGetXRFunction<PFN_xrCreateDebugUtilsMessengerEXT>(
                 xrCore->GetXRInstance(), "xrCreateDebugUtilsMessengerEXT");
         if (xrCreateDebugUtilsMessengerEXT(
                 xrCore->GetXRInstance(), &debugUtilsMessengerCreateInfo,
@@ -187,7 +186,7 @@ void XRBackend::GetSystemID() {
 
 void XRBackend::CreateXrSession() {
     auto xrGetVulkanGraphicsRequirementsKHR =
-        Util::XrGetXRFunction<PFN_xrGetVulkanGraphicsRequirementsKHR>(
+        XrUtil::XrGetXRFunction<PFN_xrGetVulkanGraphicsRequirementsKHR>(
             xrCore->GetXRInstance(), "xrGetVulkanGraphicsRequirementsKHR");
     auto result = xrGetVulkanGraphicsRequirementsKHR(
         xrCore->GetXRInstance(), xrCore->GetSystemID(),
@@ -299,20 +298,20 @@ void XRBackend::PrepareXrSwapchainImages() {
     xrCore->GetCompositionLayerProjectionViews().resize(
         xrCore->GetXRViewConfigurationView().size());
     for (size_t i = 0; i < xrCore->GetCompositionLayerProjectionViews().size();
-        ++i) {
+         ++i) {
         XrCompositionLayerProjectionView& projectionView =
             xrCore->GetCompositionLayerProjectionViews()[i];
         projectionView.type = XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW;
         projectionView.next = nullptr;
 
-        projectionView.subImage.swapchain = xrCore->GetXrSwapchain(); 
+        projectionView.subImage.swapchain = xrCore->GetXrSwapchain();
         projectionView.subImage.imageArrayIndex = i;
         projectionView.subImage.imageRect.offset = {0, 0};
         projectionView.subImage.imageRect.extent = {
             static_cast<int32_t>(xrCore->GetXRViewConfigurationView()[i]
-                                      .recommendedImageRectWidth),
+                                     .recommendedImageRectWidth),
             static_cast<int32_t>(xrCore->GetXRViewConfigurationView()[i]
-                                      .recommendedImageRectHeight),
+                                     .recommendedImageRectHeight),
         };
     }
 }
@@ -321,7 +320,8 @@ XrResult XRBackend::StartFrame(uint32_t& imageIndex) {
 
     PollXREvents();
     XrFrameWaitInfo frameWaitInfo{XR_TYPE_FRAME_WAIT_INFO};
-    xrWaitFrame(xrCore->GetXRSession(), &frameWaitInfo, &xrCore->GetXrFrameState());
+    xrWaitFrame(xrCore->GetXRSession(), &frameWaitInfo,
+                &xrCore->GetXrFrameState());
 
     XrFrameBeginInfo frameBeginInfo{XR_TYPE_FRAME_BEGIN_INFO};
     if ((result = xrBeginFrame(xrCore->GetXRSession(), &frameBeginInfo)) !=
@@ -343,7 +343,7 @@ XrResult XRBackend::StartFrame(uint32_t& imageIndex) {
         XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};
     swapchainImageWaitInfo.timeout = XR_INFINITE_DURATION;
     if ((result = xrWaitSwapchainImage(xrCore->GetXrSwapchain(),
-        &swapchainImageWaitInfo)) !=
+                                       &swapchainImageWaitInfo)) !=
         XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to wait swapchain image";
         return result;
@@ -356,7 +356,7 @@ XrResult XRBackend::EndFrame(uint32_t& imageIndex) {
     XrSwapchainImageReleaseInfo swapchainImageReleaseInfo{
         XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
     if ((result = xrReleaseSwapchainImage(xrCore->GetXrSwapchain(),
-        &swapchainImageReleaseInfo)) !=
+                                          &swapchainImageReleaseInfo)) !=
         XR_SUCCESS) {
         return result;
     }
@@ -373,7 +373,7 @@ XrResult XRBackend::EndFrame(uint32_t& imageIndex) {
     XrFrameEndInfo frameEndInfo{XR_TYPE_FRAME_END_INFO};
     frameEndInfo.displayTime = xrCore->GetXrFrameState().predictedDisplayTime;
     frameEndInfo.layerCount = 1;
-    frameEndInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE; 
+    frameEndInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
     if ((result = xrEndFrame(xrCore->GetXRSession(), &frameEndInfo)) !=
         XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to end frame";

@@ -1,9 +1,9 @@
 #include "XrCore.h"
 
 XrCore::~XrCore() {
-    Util::XrSafeClean(xrDestroySpace, xrSceneSpace);
-    Util::XrSafeClean(xrDestroyInstance, xrInstance);
-    Util::XrSafeClean(xrDestroySession, xrSession);
+    XrUtil::XrSafeClean(xrDestroySpace, xrSceneSpace);
+    XrUtil::XrSafeClean(xrDestroyInstance, xrInstance);
+    XrUtil::XrSafeClean(xrDestroySession, xrSession);
 }
 
 void XrCore::CreatePlaySpace() {

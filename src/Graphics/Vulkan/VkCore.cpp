@@ -1,5 +1,15 @@
 #include "VkCore.h"
 
+VkCore::~VkCore() {
+    for (auto framebuffer : swapChainFrameBuffers) {
+        VkUtil::VkSafeClean(vkDestroyFramebuffer, vkDevice, framebuffer,
+                            nullptr);
+    }
+    VkUtil::VkSafeClean(vkDestroyCommandPool, vkDevice, commandPool, nullptr);
+
+    VkUtil::VkSafeClean(vkDestroyDevice, vkDevice, nullptr);
+    VkUtil::VkSafeClean(vkDestroyInstance, vkInstance, nullptr);
+}
 void VkCore::CreateCommandBuffer() {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -13,13 +23,11 @@ void VkCore::CreateCommandBuffer() {
     }
 }
 
-void VkCore::CreateSyncSemaphore(VkSemaphore& semaphore)
-{
+void VkCore::CreateSyncSemaphore(VkSemaphore& semaphore) {
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     if (vkCreateSemaphore(GetRenderDevice(), &semaphoreInfo, nullptr,
-                          &semaphore) !=
-        VK_SUCCESS) {
+                          &semaphore) != VK_SUCCESS) {
 
         Util::ErrorPopup("Failed to create semaphore");
     }
@@ -31,7 +39,7 @@ void VkCore::CreateFence(VkFence& fence) {
     info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
     if (vkCreateFence(GetRenderDevice(), &info, nullptr, &fence)) {
         Util::ErrorPopup("Failed to create fence!");
-	}
+    }
 }
 
 void VkCore::BeginSingleTimeCommands() {
@@ -52,8 +60,7 @@ void VkCore::EndSingleTimeCommands() {
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    vkQueueSubmit(GetGraphicsQueue(), 1, &submitInfo,
-                  VK_NULL_HANDLE);
+    vkQueueSubmit(GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(GetGraphicsQueue());
 }
 

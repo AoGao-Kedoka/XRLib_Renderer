@@ -8,6 +8,7 @@
 
 #include "Utils/LAMath.h"
 #include "Utils/Util.h"
+#include "XrUtil.h"
 
 class XrCore {
    public:
@@ -42,7 +43,7 @@ class XrCore {
     }
 
     std::vector<XrCompositionLayerProjectionView>&
-        GetCompositionLayerProjectionViews() {
+    GetCompositionLayerProjectionViews() {
         return compositionLayerProjectionViews;
     }
 
@@ -67,7 +68,6 @@ class XrCore {
 
     XrSwapchain xrSwapchain;
     std::vector<XrSwapchainImageVulkanKHR> swapchainImages;
-
 
     std::vector<XrCompositionLayerProjectionView>
         compositionLayerProjectionViews;

@@ -19,10 +19,10 @@ Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size,
 }
 
 Buffer::~Buffer() {
-    Util::VkSafeClean(vkDestroyBuffer, core->GetRenderDevice(), buffer,
-                      nullptr);
-    Util::VkSafeClean(vkFreeMemory, core->GetRenderDevice(), bufferMemory,
-                      nullptr);
+    VkUtil::VkSafeClean(vkDestroyBuffer, core->GetRenderDevice(), buffer,
+                        nullptr);
+    VkUtil::VkSafeClean(vkFreeMemory, core->GetRenderDevice(), bufferMemory,
+                        nullptr);
 }
 
 void Buffer::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,

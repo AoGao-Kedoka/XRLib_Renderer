@@ -10,7 +10,7 @@ RenderBackend::RenderBackend(std::shared_ptr<Info> info,
 
     if (info->validationLayer) {
         for (const char* layer : validataionLayers) {
-            bool res = Util::VkCheckLayerSupport(layer);
+            bool res = VkUtil::VkCheckLayerSupport(layer);
 
             // disable validataion if validation layer is not supported
             if (!res) {
@@ -69,7 +69,7 @@ void RenderBackend::InitVulkan() {
 
     if (xrCore->IsXRValid()) {
         auto xrGetVulkanInstanceExtensionsKHR =
-            Util::XrGetXRFunction<PFN_xrGetVulkanInstanceExtensionsKHR>(
+            XrUtil::XrGetXRFunction<PFN_xrGetVulkanInstanceExtensionsKHR>(
                 xrCore->GetXRInstance(), "xrGetVulkanInstanceExtensionsKHR");
 
         uint32_t xrVulkanInstanceExtensionsCount;
@@ -118,7 +118,7 @@ void RenderBackend::InitVulkan() {
             VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        debugCreateInfo.pfnUserCallback = Util::VkDebugCallback;
+        debugCreateInfo.pfnUserCallback = VkUtil::VkDebugCallback;
 
         instanceCreateInfo.enabledLayerCount =
             static_cast<uint32_t>(validataionLayers.size());
@@ -159,7 +159,7 @@ void RenderBackend::InitVulkan() {
 
     if (xrCore->IsXRValid()) {
         auto xrGetVulkanGraphicsDeviceKHR =
-            Util::XrGetXRFunction<PFN_xrGetVulkanGraphicsDeviceKHR>(
+            XrUtil::XrGetXRFunction<PFN_xrGetVulkanGraphicsDeviceKHR>(
                 xrCore->GetXRInstance(), "xrGetVulkanGraphicsDeviceKHR");
 
         if (xrGetVulkanGraphicsDeviceKHR(
@@ -221,7 +221,7 @@ void RenderBackend::InitVulkan() {
     VkPhysicalDeviceMultiviewFeaturesKHR physicalDeviceMultiviewFeatures{};
     if (xrCore->IsXRValid()) {
         auto xrGetVulkanDeviceExtensionsKHR =
-            Util::XrGetXRFunction<PFN_xrGetVulkanDeviceExtensionsKHR>(
+            XrUtil::XrGetXRFunction<PFN_xrGetVulkanDeviceExtensionsKHR>(
                 xrCore->GetXRInstance(), "xrGetVulkanDeviceExtensionsKHR");
 
         uint32_t deviceExtensionsCount;

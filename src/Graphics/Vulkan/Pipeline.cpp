@@ -112,8 +112,8 @@ Pipeline::~Pipeline() {
     LOGGER(LOGGER::DEBUG) << "Pipeline destructor called";
     if (!core)
         return;
-    Util::VkSafeClean(vkDestroyPipelineLayout, core->GetRenderDevice(),
-                      pipelineLayout, nullptr);
-    Util::VkSafeClean(vkDestroyPipeline, core->GetRenderDevice(), pipeline,
-                      nullptr);
+    VkUtil::VkSafeClean(vkDestroyPipelineLayout, core->GetRenderDevice(),
+                        pipelineLayout, nullptr);
+    VkUtil::VkSafeClean(vkDestroyPipeline, core->GetRenderDevice(), pipeline,
+                        nullptr);
 }

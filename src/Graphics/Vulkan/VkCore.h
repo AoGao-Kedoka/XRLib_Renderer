@@ -1,25 +1,16 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
-
 #include <utility>
 #include <vector>
+#include <vulkan/vulkan_core.h>
 
 #include "Utils/Util.h"
+#include "VkUtil.h"
 
 class VkCore {
    public:
     VkCore() = default;
-    ~VkCore() {
-        for (auto framebuffer : swapChainFrameBuffers) {
-            Util::VkSafeClean(vkDestroyFramebuffer, vkDevice, framebuffer,
-                              nullptr);
-        }
-        Util::VkSafeClean(vkDestroyCommandPool, vkDevice, commandPool, nullptr);
-
-        Util::VkSafeClean(vkDestroyDevice, vkDevice, nullptr);
-        Util::VkSafeClean(vkDestroyInstance, vkInstance, nullptr);
-    }
+    ~VkCore();
 
     VkInstance& GetRenderInstance() { return vkInstance; }
     VkPhysicalDevice& GetRenderPhysicalDevice() { return vkPhysicalDevice; }
@@ -107,12 +98,12 @@ class VkCore {
         return imageAvailableSemaphore;
     }
 
-	VkFence& GetInFlightFence(){
-		if (inFlightFence == VK_NULL_HANDLE){
-			CreateFence(inFlightFence);
-		}
-		return inFlightFence;
-	}
+    VkFence& GetInFlightFence() {
+        if (inFlightFence == VK_NULL_HANDLE) {
+            CreateFence(inFlightFence);
+        }
+        return inFlightFence;
+    }
 
     void BeginSingleTimeCommands();
     void EndSingleTimeCommands();
@@ -169,5 +160,5 @@ class VkCore {
     void CreateCommandPool();
     void CreateCommandBuffer();
     void CreateSyncSemaphore(VkSemaphore& semaphore);
-	void CreateFence(VkFence& fence);
+    void CreateFence(VkFence& fence);
 };

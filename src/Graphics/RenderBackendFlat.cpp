@@ -5,13 +5,13 @@ RenderBackendFlat::~RenderBackendFlat() {
         return;
     vkDeviceWaitIdle(vkCore->GetRenderDevice());
     for (auto imageView : vkCore->GetSwapchainImageViewsFlat()) {
-        Util::VkSafeClean(vkDestroyImageView, vkCore->GetRenderDevice(),
-                          imageView, nullptr);
+        VkUtil::VkSafeClean(vkDestroyImageView, vkCore->GetRenderDevice(),
+                            imageView, nullptr);
     }
-    Util::VkSafeClean(vkDestroySwapchainKHR, vkCore->GetRenderDevice(),
-                      vkCore->GetFlatSwapchain(), nullptr);
-    Util::VkSafeClean(vkDestroySurfaceKHR, vkCore->GetRenderInstance(),
-                      vkCore->GetFlatSurface(), nullptr);
+    VkUtil::VkSafeClean(vkDestroySwapchainKHR, vkCore->GetRenderDevice(),
+                        vkCore->GetFlatSwapchain(), nullptr);
+    VkUtil::VkSafeClean(vkDestroySurfaceKHR, vkCore->GetRenderInstance(),
+                        vkCore->GetFlatSurface(), nullptr);
 }
 
 void RenderBackendFlat::Prepare(

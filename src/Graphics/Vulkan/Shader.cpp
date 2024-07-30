@@ -30,8 +30,8 @@ Shader::Shader(std::shared_ptr<VkCore> core,
 Shader::~Shader() {
     if (!core)
         return;
-    Util::VkSafeClean(vkDestroyShaderModule, core->GetRenderDevice(),
-                      this->shaderModule, nullptr);
+    VkUtil::VkSafeClean(vkDestroyShaderModule, core->GetRenderDevice(),
+                        this->shaderModule, nullptr);
 }
 
 void Shader::Init(std::vector<uint32_t> spirv) {
@@ -52,7 +52,6 @@ void Shader::Init(std::vector<uint32_t> spirv) {
         static_cast<VkShaderStageFlagBits>(this->stage);
     this->shaderStageInfo.module = this->shaderModule;
     this->shaderStageInfo.pName = "main";
-
 }
 
 std::vector<uint32_t> Shader::Compile(std::string content, std::string name) {
@@ -70,8 +69,8 @@ std::vector<uint32_t> Shader::Compile(std::string content, std::string name) {
             shader_kind = shaderc_glsl_fragment_shader;
             break;
     }
-    shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(
-        content, shader_kind, name.c_str(), options);
+    shaderc::SpvCompilationResult module =
+        compiler.CompileGlslToSpv(content, shader_kind, name.c_str(), options);
 
     if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
         Util::ErrorPopup("failed to compile shader");
