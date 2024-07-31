@@ -6,6 +6,7 @@ if (NOT GLM_FOUND)
         GIT_REPOSITORY https://github.com/g-truc/glm.git
         GIT_TAG 1.0.1
     )
+	set(GLM_BUILD_INSTALL ON)
     FetchContent_MakeAvailable(glm)
 endif()
 

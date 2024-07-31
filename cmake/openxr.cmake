@@ -12,7 +12,6 @@ if (NOT OpenXR_FOUND)
         URL https://github.com/KhronosGroup/OpenXR-SDK-Source/archive/refs/tags/release-1.0.34.zip
         SOURCE_DIR openxr
     )
-    FetchContent_MakeAvailable(OpenXR)
     set(OPENXR_DEPS openxr_loader)
 endif()
 

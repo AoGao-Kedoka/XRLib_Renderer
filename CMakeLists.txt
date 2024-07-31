@@ -7,13 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 file(DOWNLOAD
     https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/lib/external/stb_image.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/stb_image.h
 )
 
 if (WIN32)
     file(DOWNLOAD
         https://raw.githubusercontent.com/thegabman/native_message_box/master/include/NMB/NMB.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib/external/NMB.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/lib/NMB.h
     )
 endif()
 
@@ -22,11 +22,11 @@ include(FetchContent)
 
 # Include dependency cmake files
 include(cmake/vulkan.cmake)
-include(cmake/shaderc.cmake)
 include(cmake/openxr.cmake)
 include(cmake/glm.cmake)
 include(cmake/glfw.cmake)
 include(cmake/assimp.cmake)
+include(cmake/shaderc.cmake)
 
 # Define the library target
 add_library(${PROJECT_NAME} STATIC)
@@ -43,8 +43,8 @@ file(GLOB_RECURSE XRLIB_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/lib/external/*.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/lib/external/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/*.cpp
 )
 
 target_sources(${PROJECT_NAME} PRIVATE ${XRLIB_SOURCES})
@@ -75,12 +75,6 @@ install(DIRECTORY src/ lib/
     FILES_MATCHING PATTERN "*.h"
 )
 
-install(EXPORT ${PROJECT_NAME}Targets
-    FILE ${PROJECT_NAME}Targets.cmake
-    NAMESPACE ${PROJECT_NAME}::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-)
-
 write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
     VERSION ${PROJECT_VERSION}
@@ -95,6 +89,7 @@ find_dependency(OpenXR REQUIRED)
 find_dependency(glm REQUIRED)
 find_dependency(glfw3 REQUIRED)
 find_dependency(assimp REQUIRED)
+find_dependency(shaderc REQUIRED)
 
 include(\"\${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}Targets.cmake\")
 )

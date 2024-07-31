@@ -41,6 +41,6 @@
 [Bb]uild/
 
 # External
-lib/external/
+lib/
 .cache
 Logger.txt
