@@ -15,13 +15,21 @@ Scene::~Scene() {
     }
 }
 
-Scene& Scene::LoadMeshAsync(const std::string& path) {
+Scene& Scene::LoadMeshAsync(const std::string& path, glm::mat4 transformation) {
     {
         std::lock_guard<std::mutex> lock(queueMutex);
-        meshQueue.push(path);
+        meshQueue.push({path, transformation});
     }
     cv.notify_all();
     return *this;
+}
+
+Scene& Scene::LoadMeshAsync(const std::string& path, glm::vec3 translation,
+                            glm::vec3 rotation, float rotationRadians,
+                            glm::vec3 scale) {
+    return LoadMeshAsync(
+        path, LAMath::GetTransformationMatrix(translation, rotation,
+                                              rotationRadians, scale));
 }
 
 void Scene::WaitForAllMeshesToLoad() {
@@ -35,7 +43,7 @@ void Scene::WaitForAllMeshesToLoad() {
     }
 }
 
-void Scene::LoadMesh(const std::string& filename) {
+void Scene::LoadMesh(const std::string& filename, glm::mat4 transformation) {
     Assimp::Importer importer;
 
     const aiScene* scene =
@@ -79,6 +87,7 @@ void Scene::LoadMesh(const std::string& filename) {
 
         {
             newMesh.name = filename;
+            newMesh.translation = transformation;
             std::lock_guard<std::mutex> lock(queueMutex);
             meshes.push_back(newMesh);
         }
@@ -90,18 +99,20 @@ void Scene::LoadMesh(const std::string& filename) {
 void Scene::MeshLoadingThread() {
     while (true) {
         std::string filename;
+        glm::mat4 transformation;
         {
             std::unique_lock<std::mutex> lock(queueMutex);
             cv.wait(lock, [this] { return !meshQueue.empty() || stop; });
             if (stop && meshQueue.empty()) {
                 return;
             }
-            filename = meshQueue.front();
+            filename = meshQueue.front().first;
+            transformation = meshQueue.front().second;
             meshQueue.pop();
         }
 
         std::future<void> future =
-            std::async(std::launch::async, &Scene::LoadMesh, this, filename);
+            std::async(std::launch::async, &Scene::LoadMesh, this, filename, transformation);
         futures.push_back(std::move(future));
     }
 }

@@ -6,6 +6,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec4.hpp>
 
@@ -31,5 +32,16 @@ class LAMath {
         t.orientation.w = std::cos(radians * 0.5f);
         t.position = translation;
         return t;
+    }
+
+    static glm::mat4 GetTransformationMatrix(glm::vec3 translation,
+        glm::vec3 rotation,
+        float rotationRadians,
+        glm::vec3 scale) {
+        glm::mat4 trans = glm::mat4(1.0f);
+        trans = glm::translate(trans, translation);
+        trans = glm::rotate(trans, glm::radians(rotationRadians), rotation);
+        trans = glm::scale(trans, scale);
+        return trans;
     }
 };
