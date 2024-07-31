@@ -8,7 +8,6 @@ if (NOT unofficial-shaderc_FOUND)
     )
     set(SPIRV_CROSS_CLI OFF)
     set(SPIRV_CROSS_ENABLE_TESTS OFF)
-    set(SPIRV_CROSS_SKIP_INSTALL OFF)
     FetchContent_MakeAvailable(SPIRV-Cross)
 
     FetchContent_Declare(SPIRV-Headers
@@ -16,14 +15,14 @@ if (NOT unofficial-shaderc_FOUND)
         GIT_TAG vulkan-sdk-1.3.275.0
     )
     set(SPIRV_HEADERS_SKIP_EXAMPLES ON)
-    set(SPIRV_HEADERS_SKIP_INSTALL OFF)
+    set(SPIRV_HEADERS_SKIP_INSTALL ON)
     FetchContent_MakeAvailable(SPIRV-Headers)
 
     FetchContent_Declare(SPIRV-Tools
         GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Tools.git
         GIT_TAG vulkan-sdk-1.3.275.0
     )
-    set(SKIP_SPIRV_TOOLS_INSTALL oFF)
+    set(SKIP_SPIRV_TOOLS_INSTALL ON)
     set(SPIRV_SKIP_EXECUTABLES ON)
     set(SPIRV_SKIP_TESTS ON)
     FetchContent_MakeAvailable(SPIRV-Tools)
@@ -44,7 +43,7 @@ if (NOT unofficial-shaderc_FOUND)
         GIT_TAG v2024.0
     )
     set(SHADERC_ENABLE_WGSL_OUTPUT OFF)
-    set(SHADERC_OFF ON CACHE BOOL "" FORCE)
+    set(SHADERC_SKIP_INSTALL ON)
     set(SHADERC_SKIP_TESTS ON)
     set(SHADERC_SKIP_EXAMPLES ON)
     set(SHADERC_SKIP_COPYRIGHT_CHECK ON)
@@ -53,4 +52,3 @@ if (NOT unofficial-shaderc_FOUND)
     FetchContent_MakeAvailable(shaderc)
     set(SHADERC_DEPS shaderc)
 endif()
-
