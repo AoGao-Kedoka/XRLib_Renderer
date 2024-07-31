@@ -38,10 +38,11 @@ XRLib& XRLib::SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath) {
         return *this;
     }
     fullPath = std::filesystem::canonical(fullPath);
+    const char* env_name = "XR_RUNTIME_JSON";
 #if defined(_WIN32)
-    _putenv_s("XR_RUNTIME_JSON", fullPath.c_str());
+    _putenv_s(env_name, fullPath.generic_string().c_str());
 #elif defined(__linux__)
-    setenv("XR_RUNTIME_JSON", fullPath.c_str(), 1);
+    setenv(env_name, fullPath.c_str(), 1);
 #else
     Util::ERR("Platform not supported")
 #endif
