@@ -1,31 +1,32 @@
 # XRLib
 A library to create XR application without an engine. Build with Vulkan and OpenXR.
 
-## Build (Windows)
-Only windows is tested currently.
-### Vcpkg (Recommended)
-Install the dependencies:
+## Usage
+```
+include(FetchContent)
+
+FetchContent_Declare(
+    XRLib
+    GIT_REPOSITORY https://github.com/AoGao-Kedoka/XRLib.git
+    GIT_TAG main
+)
+
+FetchContent_MakeAvailable(XRLib)
+
+target_link_libraries(YOUR_TARGET PRIVATE XRLib::XRLib)
+```
+
+**Note**:
+
+It's **recommended** to pre-install the dependencies via vcpkg, otherwise it will cause very long compile time for the first time:
 ```
 vcpkg install openxr-loader vulkan glm glfw3 shaderc
 ```
-
-Build the project:
+Then build your project via:
 ```
-mkdir build
-cd build
-cmake .. -DCMAKE_TOOLCHAIN_FILE=<path_to_vcpkg>/scripts/buildsystems/vcpkg.cmakek
-cmake --build .
+cmake .. -DCMAKE_TOOLCHAIN_FILE=<path_to_vcpkg>/scripts/buildsystems/vcpkg.cmake
 ```
 
-### Without dependencies installed
-- longer build time and inconsistent
-- Validataion layer with this approach is not fully working. Please install the Vulkan-SDK if validation layer needed.
-
-```
-mkdir build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-cmake --build . --config=Release
-```
 ## References
 - https://openxr-tutorial.com//windows/vulkan/index.html
 - https://amini-allight.org/post/openxr-tutorial-part-0
