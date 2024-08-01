@@ -58,7 +58,6 @@ class XRBackend {
     void CreateXrSwapchain();
     void PrepareXrSwapchainImages();
 
-    void PollXREvents();
     void BeginSession();
     void EndSession();
 

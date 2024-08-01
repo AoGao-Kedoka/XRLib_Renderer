@@ -13,7 +13,7 @@
 
 #include "Graphics/Primitives.h"
 #include "Logger.h"
-#include "Utils/LAMath.h"
+#include "Utils/LibMath.h"
 
 class Scene {
    public:

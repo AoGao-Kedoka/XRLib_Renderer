@@ -10,22 +10,22 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec4.hpp>
 
-class LAMath {
+class LibMath {
    public:
-    static XrPosef Identity() {
+    static XrPosef XrIdentity() {
         XrPosef pose{};
         pose.orientation.w = 1;
         return pose;
     }
 
-    static XrPosef Translation(const XrVector3f& translation) {
-        XrPosef t = Identity();
+    static XrPosef XrTranslation(const XrVector3f& translation) {
+        XrPosef t = XrIdentity();
         t.position = translation;
         return t;
     }
 
-    static XrPosef RotateCCWAboutYAxis(float radians, XrVector3f translation) {
-        XrPosef t = Identity();
+    static XrPosef XrRotateCCWAboutYAxis(float radians, XrVector3f translation) {
+        XrPosef t = XrIdentity();
         t.orientation.x = 0.f;
         t.orientation.y = std::sin(radians * 0.5f);
         t.orientation.z = 0.f;

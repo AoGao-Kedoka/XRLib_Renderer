@@ -26,9 +26,6 @@ XRBackend::~XRBackend() {
         return;
     }
 
-    if (xrCore->IsXRValid())
-        EndSession();
-
     if (xrDebugUtilsMessenger != XR_NULL_HANDLE) {
         PFN_xrDestroyDebugUtilsMessengerEXT xrDestroyDebugUtilsMessengerEXT =
             XrUtil::XrGetXRFunction<PFN_xrDestroyDebugUtilsMessengerEXT>(
@@ -318,7 +315,34 @@ void XRBackend::PrepareXrSwapchainImages() {
 XrResult XRBackend::StartFrame(uint32_t& imageIndex) {
     XrResult result;
 
-    PollXREvents();
+    XrEventDataBuffer eventData{XR_TYPE_EVENT_DATA_BUFFER};
+    result = xrPollEvent(xrCore->GetXRInstance(), &eventData);
+    if (result == XR_EVENT_UNAVAILABLE) {
+        return result;
+    }
+
+    if (eventData.type == XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED) {
+        auto stateChangedEvent =
+            reinterpret_cast<XrEventDataSessionStateChanged*>(&eventData);
+        xrCore->GetXrSessionState() = stateChangedEvent->state;
+        if (stateChangedEvent->state == XR_SESSION_STATE_READY) {
+            BeginSession();
+        } else if (stateChangedEvent->state == XR_SESSION_STATE_EXITING) {
+            EndSession();
+        } else {
+            return XR_EVENT_UNAVAILABLE;
+        }
+    }
+
+    auto sessionState = xrCore->GetXrSessionState();
+    if (sessionState != XR_SESSION_STATE_READY &&
+        sessionState != XR_SESSION_STATE_SYNCHRONIZED &&
+        sessionState != XR_SESSION_STATE_VISIBLE &&
+        sessionState != XR_SESSION_STATE_FOCUSED) {
+        return XR_ERROR_SESSION_NOT_READY;
+    }
+
+    xrCore->GetXrFrameState().type = XR_TYPE_FRAME_STATE;
     XrFrameWaitInfo frameWaitInfo{XR_TYPE_FRAME_WAIT_INFO};
     xrWaitFrame(xrCore->GetXRSession(), &frameWaitInfo,
                 &xrCore->GetXrFrameState());
@@ -330,6 +354,11 @@ XrResult XRBackend::StartFrame(uint32_t& imageIndex) {
         return result;
     }
 
+    if (!xrCore->GetXrFrameState().shouldRender)
+        return XR_FRAME_DISCARDED;
+
+    //TODO: Handle eye poses
+
     XrSwapchainImageAcquireInfo swapchainImageAcquireInfo{
         XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
     if ((result = xrAcquireSwapchainImage(xrCore->GetXrSwapchain(),
@@ -338,7 +367,6 @@ XrResult XRBackend::StartFrame(uint32_t& imageIndex) {
         LOGGER(LOGGER::ERR) << "Failed to get acquire swapchain";
         return result;
     }
-
     XrSwapchainImageWaitInfo swapchainImageWaitInfo{
         XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};
     swapchainImageWaitInfo.timeout = XR_INFINITE_DURATION;
@@ -381,11 +409,6 @@ XrResult XRBackend::EndFrame(uint32_t& imageIndex) {
     }
 
     return XR_SUCCESS;
-}
-
-void XRBackend::PollXREvents() {
-    XrEventDataBuffer buffer{XR_TYPE_EVENT_DATA_BUFFER};
-    //TODO
 }
 
 void XRBackend::BeginSession() {
@@ -432,6 +455,31 @@ void XRBackend::LogOpenXRSystemProperties() const {
                               &systemProperties) != XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to get system properties";
     } else {
-        //TODO
+        LOGGER(LOGGER::INFO) << "OpenXR System Properties:";
+        LOGGER(LOGGER::INFO) << "  System ID: " << systemProperties.systemId;
+        LOGGER(LOGGER::INFO) << "  Vendor ID: " << systemProperties.vendorId;
+        LOGGER(LOGGER::INFO)
+            << "  System Name: " << systemProperties.systemName;
+        LOGGER(LOGGER::INFO) << "  Graphics Properties:";
+        LOGGER(LOGGER::INFO)
+            << "    Max Swapchain Image Width: "
+            << systemProperties.graphicsProperties.maxSwapchainImageWidth;
+        LOGGER(LOGGER::INFO)
+            << "    Max Swapchain Image Height: "
+            << systemProperties.graphicsProperties.maxSwapchainImageHeight;
+        LOGGER(LOGGER::INFO)
+            << "    Max Layer Count: "
+            << systemProperties.graphicsProperties.maxLayerCount;
+        LOGGER(LOGGER::INFO) << "  Tracking Properties:";
+        LOGGER(LOGGER::INFO)
+            << "    Orientation Tracking: "
+            << (systemProperties.trackingProperties.orientationTracking
+                    ? "Supported"
+                    : "Not Supported");
+        LOGGER(LOGGER::INFO)
+            << "    Position Tracking: "
+            << (systemProperties.trackingProperties.positionTracking
+                    ? "Supported"
+                    : "Not Supported");
     }
 }

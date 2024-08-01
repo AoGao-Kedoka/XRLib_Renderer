@@ -6,7 +6,7 @@
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
 
-#include "Utils/LAMath.h"
+#include "Utils/LibMath.h"
 #include "Utils/Util.h"
 #include "XrUtil.h"
 
@@ -46,6 +46,8 @@ class XrCore {
     GetCompositionLayerProjectionViews() {
         return compositionLayerProjectionViews;
     }
+
+    XrSessionState& GetXrSessionState() { return xrSessionState; }
 
    private:
     void CreatePlaySpace();

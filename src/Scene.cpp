@@ -28,7 +28,7 @@ Scene& Scene::LoadMeshAsync(const std::string& path, glm::vec3 translation,
                             glm::vec3 rotation, float rotationRadians,
                             glm::vec3 scale) {
     return LoadMeshAsync(
-        path, LAMath::GetTransformationMatrix(translation, rotation,
+        path, LibMath::GetTransformationMatrix(translation, rotation,
                                               rotationRadians, scale));
 }
 
