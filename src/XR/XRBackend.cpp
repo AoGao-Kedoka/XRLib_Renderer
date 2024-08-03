@@ -38,7 +38,6 @@ void XRBackend::Prepare() {
     CreateXrSession();
     CreateXrSwapchain();
     PrepareXrSwapchainImages();
-    BeginSession();
 }
 
 void XRBackend::CreateXrInstance() {
