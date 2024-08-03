@@ -2,135 +2,136 @@
 
 namespace XRLib {
 XRLib::XRLib() {
-    bool result = Util::CheckPlatformSupport();
-    if (result == false) {
-        Util::ErrorPopup("Current platform not supported");
-    }
+  bool result = Util::CheckPlatformSupport();
+  if (result == false) {
+    Util::ErrorPopup("Current platform not supported");
+  }
 }
-XRLib& XRLib::SetApplicationName(std::string applicationName) {
-    _LOGFUNC_;
+XRLib &XRLib::SetApplicationName(std::string applicationName) {
+  _LOGFUNC_;
 
-    info->applicationName = std::move(applicationName);
-    return *this;
+  info->applicationName = std::move(applicationName);
+  return *this;
 }
 
-XRLib& XRLib::SetVersionNumber(unsigned int majorVersion,
+XRLib &XRLib::SetVersionNumber(unsigned int majorVersion,
                                unsigned int minorVersion,
                                unsigned int patchVersion) {
-    _LOGFUNC_;
+  _LOGFUNC_;
 
-    info->majorVersion = majorVersion;
-    info->minorVersion = minorVersion;
-    info->patchVersion = patchVersion;
-    return *this;
+  info->majorVersion = majorVersion;
+  info->minorVersion = minorVersion;
+  info->patchVersion = patchVersion;
+  return *this;
 }
 
-XRLib& XRLib::EnableValidationLayer() {
-    _LOGFUNC_;
+XRLib &XRLib::EnableValidationLayer() {
+  _LOGFUNC_;
 
-    info->validationLayer = true;
-    return *this;
+  info->validationLayer = true;
+  return *this;
 }
 
-XRLib& XRLib::SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath) {
-    auto fullPath = Util::ResolvePath(runtimePath);
-    if (!std::filesystem::is_regular_file(fullPath)) {
-        return *this;
-    }
-    fullPath = std::filesystem::canonical(fullPath);
-    const char* env_name = "XR_RUNTIME_JSON";
+XRLib &XRLib::SetCustomOpenXRRuntime(const std::filesystem::path &runtimePath) {
+  auto fullPath = Util::ResolvePath(runtimePath);
+  if (!std::filesystem::is_regular_file(fullPath)) {
+    return *this;
+  }
+  fullPath = std::filesystem::canonical(fullPath);
+  const char *env_name = "XR_RUNTIME_JSON";
 #if defined(_WIN32)
-    _putenv_s(env_name, fullPath.generic_string().c_str());
+  _putenv_s(env_name, fullPath.generic_string().c_str());
 #elif defined(__linux__)
-    setenv(env_name, fullPath.c_str(), 1);
+  LOGGER(LOGGER::DEBUG) << "Path set to: " << fullPath.generic_string().c_str();
+  setenv(env_name, fullPath.generic_string().c_str(), 1);
 #else
-    Util::ERR("Platform not supported")
+  Util::ERR("Platform not supported")
 #endif
-    LOGGER(LOGGER::INFO) << "Set XR_RUNTIME_JSON to: " << fullPath.string();
-    return *this;
+  LOGGER(LOGGER::INFO) << "Set XR_RUNTIME_JSON to: " << fullPath.string();
+  return *this;
 }
 
 void XRLib::Init(bool xr) {
-    _LOGFUNC_;
+  _LOGFUNC_;
 
-    if (!xr) {
-        xrCore->SetXRValid(false);
-    }
+  if (!xr) {
+    xrCore->SetXRValid(false);
+  }
 
-    if (xr)
-        InitXRBackend();
-    InitRenderBackend();
+  if (xr)
+    InitXRBackend();
+  InitRenderBackend();
 
-    if (scene->CheckTaskRunning()) {
-        scene->WaitForAllMeshesToLoad();
-    }
+  if (scene->CheckTaskRunning()) {
+    scene->WaitForAllMeshesToLoad();
+  }
 
-    if (xrCore->IsXRValid())
-        xrBackend->Prepare();
-    renderBackend->Prepare(passesToAdd);
+  if (xrCore->IsXRValid())
+    xrBackend->Prepare();
+  renderBackend->Prepare(passesToAdd);
 
-    initialized = true;
+  initialized = true;
 }
 
 void XRLib::Run() {
 
-    uint32_t imageIndex = 0;
-    if (xrCore->IsXRValid()) {
-        XrResult result = xrBackend->StartFrame(imageIndex);
-        if (result != XR_SUCCESS) {
-            return;
-        }
+  uint32_t imageIndex = 0;
+  if (xrCore->IsXRValid()) {
+    XrResult result = xrBackend->StartFrame(imageIndex);
+    if (result != XR_SUCCESS) {
+      return;
     }
+  }
 
-    renderBackend->Run(imageIndex);
+  renderBackend->Run(imageIndex);
 
-    if (xrCore->IsXRValid()) {
-        xrBackend->EndFrame(imageIndex);
-    }
+  if (xrCore->IsXRValid()) {
+    xrBackend->EndFrame(imageIndex);
+  }
 }
 
-XRLib& XRLib::Fullscreen() {
-    info->fullscreen = true;
-    return *this;
+XRLib &XRLib::Fullscreen() {
+  info->fullscreen = true;
+  return *this;
 }
 
-XRLib& XRLib::AddRenderPass(const std::string& vertexShaderPath,
-                            const std::string& fragmentShaderPath) {
-    passesToAdd.push_back({vertexShaderPath, fragmentShaderPath});
+XRLib &XRLib::AddRenderPass(const std::string &vertexShaderPath,
+                            const std::string &fragmentShaderPath) {
+  passesToAdd.push_back({vertexShaderPath, fragmentShaderPath});
 
-    return *this;
+  return *this;
 }
 
 void XRLib::InitXRBackend() {
-    _LOGFUNC_;
+  _LOGFUNC_;
 
-    if (info->applicationName.empty()) {
-        LOGGER(LOGGER::ERR) << "No application name specified";
-        exit(-1);
-    }
+  if (info->applicationName.empty()) {
+    LOGGER(LOGGER::ERR) << "No application name specified";
+    exit(-1);
+  }
 
-    xrBackend = std::make_unique<XRBackend>(info, vkCore, xrCore);
+  xrBackend = std::make_unique<XRBackend>(info, vkCore, xrCore);
 }
 
 void XRLib::InitRenderBackend() {
-    _LOGFUNC_;
+  _LOGFUNC_;
 
-    if (info->majorVersion == 0 && info->minorVersion == 0 &&
-        info->patchVersion == 0) {
-        LOGGER(LOGGER::WARNING) << "Version number is 0";
-    }
+  if (info->majorVersion == 0 && info->minorVersion == 0 &&
+      info->patchVersion == 0) {
+    LOGGER(LOGGER::WARNING) << "Version number is 0";
+  }
 
-    if (info->applicationName.empty()) {
-        LOGGER(LOGGER::ERR) << "No application name specified";
-        exit(-1);
-    }
+  if (info->applicationName.empty()) {
+    LOGGER(LOGGER::ERR) << "No application name specified";
+    exit(-1);
+  }
 
-    if (!xrCore->IsXRValid()) {
-        renderBackend =
-            std::make_unique<RenderBackendFlat>(info, vkCore, xrCore, scene);
-    } else {
-        renderBackend =
-            std::make_unique<RenderBackend>(info, vkCore, xrCore, scene);
-    }
+  if (!xrCore->IsXRValid()) {
+    renderBackend =
+        std::make_unique<RenderBackendFlat>(info, vkCore, xrCore, scene);
+  } else {
+    renderBackend =
+        std::make_unique<RenderBackend>(info, vkCore, xrCore, scene);
+  }
 }
-}    // namespace XRLib
+} // namespace XRLib

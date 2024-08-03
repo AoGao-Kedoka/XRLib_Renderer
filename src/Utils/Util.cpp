@@ -1,8 +1,5 @@
 #include "Util.h"
-
-#if defined(_WIN64)
-#include "NMB.h"
-#endif
+#include "boxer.h"
 
 const char* getCurrentPlatform() {
 #if defined(_WIN32)
@@ -94,9 +91,7 @@ std::vector<const char*> Util::SplitStringToCharPtr(const std::string& input) {
 
 void Util::ErrorPopup(std::string message) {
     LOGGER(LOGGER::ERR) << message;
-#if defined(_WIN64)
-    NMB::show("Error", message.c_str(), NMB::Icon::ICON_ERROR);
-#endif
+    boxer::show(message.c_str(), "OK", boxer::Style::Error);
     throw std::runtime_error(message.c_str());
 }
 

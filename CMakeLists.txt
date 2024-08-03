@@ -10,12 +10,17 @@ file(DOWNLOAD
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/stb_image.h
 )
 
-if (WIN32)
-    file(DOWNLOAD
-        https://raw.githubusercontent.com/thegabman/native_message_box/master/include/NMB/NMB.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib/NMB.h
-    )
+if (UNIX)
+    message( STATUS "Platform: Linux" )
+
+    FIND_PACKAGE( PkgConfig REQUIRED)
+    PKG_CHECK_MODULES( GTK REQUIRED gtk+-3.0 )
+    INCLUDE_DIRECTORIES(${GTK_INCLUDE_DIRS})
+    LINK_DIRECTORIES(${GTK_LIBRARY_DIRS})
+    ADD_DEFINITIONS(${GTK_CFLAGS_OTHER})
+    link_libraries( ${GTK_LIBRARIES} )
 endif()
+
 
 set(MESSAGE_BOX "---------------------------")
 include(FetchContent)
@@ -82,16 +87,16 @@ write_basic_package_version_file(
 )
 
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-include(CMakeFindDependencyMacro)
+    include(CMakeFindDependencyMacro)
 
-find_dependency(Vulkan REQUIRED)
-find_dependency(OpenXR REQUIRED)
-find_dependency(glm REQUIRED)
-find_dependency(glfw3 REQUIRED)
-find_dependency(assimp REQUIRED)
-find_dependency(shaderc REQUIRED)
+    find_dependency(Vulkan REQUIRED)
+    find_dependency(OpenXR REQUIRED)
+    find_dependency(glm REQUIRED)
+    find_dependency(glfw3 REQUIRED)
+    find_dependency(assimp REQUIRED)
+    find_dependency(shaderc REQUIRED)
 
-include(\"\${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}Targets.cmake\")
+    include(\"\${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}Targets.cmake\")
 )
 
 install(FILES
