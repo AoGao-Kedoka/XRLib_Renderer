@@ -26,8 +26,7 @@ class RenderPass {
         return *this;
     }
 
-    VkRenderPass& GetRenderPass() { return pass; }
-    void Record(uint32_t imageIndex);
+    VkRenderPass& GetVkRenderPass() { return pass; }
     void SetGraphicPipeline(VkPipeline* pipeline) {
         graphicsPipeline = pipeline;
     }

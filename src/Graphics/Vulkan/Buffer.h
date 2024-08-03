@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include "CommandBuffer.h"
 #include "VkCore.h"
 
 class Buffer {

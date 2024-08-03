@@ -105,9 +105,6 @@ class VkCore {
         return inFlightFence;
     }
 
-    void BeginSingleTimeCommands();
-    void EndSingleTimeCommands();
-
    private:
     VkInstance vkInstance{VK_NULL_HANDLE};
     VkPhysicalDevice vkPhysicalDevice{VK_NULL_HANDLE};

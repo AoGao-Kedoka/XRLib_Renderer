@@ -69,14 +69,14 @@ void Buffer::MapMemory(void* dataInput) {
                 bufferSize, 0, &data);
     std::memcpy(data, dataInput, (size_t)bufferSize);
     vkUnmapMemory(core->GetRenderDevice(), stagingBuffer.GetDeviceMemory());
-    core->BeginSingleTimeCommands();
+    CommandBuffer::BeginSingleTimeCommands(core);
 
     VkBufferCopy copyRegion{};
     copyRegion.size = bufferSize;
     vkCmdCopyBuffer(core->GetCommandBuffer(), stagingBuffer.GetBuffer(), buffer,
                     1, &copyRegion);
 
-    core->EndSingleTimeCommands();
+    CommandBuffer::EndSingleTimeCommands(core);
 }
 
 uint32_t Buffer::FindMemoryType(uint32_t typeFilter,
