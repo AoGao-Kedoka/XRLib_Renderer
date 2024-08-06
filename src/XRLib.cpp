@@ -77,8 +77,8 @@ void XRLib::Run() {
 
   uint32_t imageIndex = 0;
   if (xrCore->IsXRValid()) {
-    XrResult result = xrBackend->StartFrame(imageIndex);
-    if (result != XR_SUCCESS) {
+    int result = xrBackend->StartFrame(imageIndex);
+    if (result != 0) {
       return;
     }
   }

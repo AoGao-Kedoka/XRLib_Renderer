@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <filesystem>
+#include <vector>
 
 #include <vulkan/vulkan.h>
 #define XR_USE_GRAPHICS_API_VULKAN
