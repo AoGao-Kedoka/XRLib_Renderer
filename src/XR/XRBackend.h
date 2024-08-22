@@ -46,8 +46,7 @@ public:
 
   void Prepare();
 
-  // return 0: sucess, return -1: frame should be skipped
-  int StartFrame(uint32_t &imageIndex);
+  XrResult StartFrame(uint32_t &imageIndex);
   XrResult EndFrame(uint32_t &imageIndex);
 
 private:
@@ -79,4 +78,5 @@ private:
   XrDebugUtilsMessengerEXT xrDebugUtilsMessenger{XR_NULL_HANDLE};
 
   bool sessionRunning{false};
+  bool frameStarted{false};
 };

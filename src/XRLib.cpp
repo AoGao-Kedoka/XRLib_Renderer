@@ -74,19 +74,14 @@ void XRLib::Init(bool xr) {
 }
 
 void XRLib::Run() {
-
   uint32_t imageIndex = 0;
   if (xrCore->IsXRValid()) {
-    int result = xrBackend->StartFrame(imageIndex);
-    if (result != 0) {
-      return;
-    }
-  }
-
-  renderBackend->Run(imageIndex);
-
-  if (xrCore->IsXRValid()) {
+    XrResult result = xrBackend->StartFrame(imageIndex);
+    if (result == XR_SUCCESS)
+        renderBackend->Run(imageIndex);
     xrBackend->EndFrame(imageIndex);
+  } else {
+    renderBackend->Run(imageIndex);
   }
 }
 

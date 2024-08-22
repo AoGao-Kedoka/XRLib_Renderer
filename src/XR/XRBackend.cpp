@@ -305,11 +305,11 @@ void XRBackend::PrepareXrSwapchainImages() {
   }
 }
 
-int XRBackend::StartFrame(uint32_t &imageIndex) {
-
+XrResult XRBackend::StartFrame(uint32_t &imageIndex) {
+  frameStarted = false;
   PollEvents();
   if (!this->sessionRunning)
-    return -1;
+    return XR_ERROR_RUNTIME_FAILURE;
 
   XrResult result;
   auto sessionState = xrCore->GetXrSessionState();
@@ -317,24 +317,29 @@ int XRBackend::StartFrame(uint32_t &imageIndex) {
       sessionState != XR_SESSION_STATE_SYNCHRONIZED &&
       sessionState != XR_SESSION_STATE_VISIBLE &&
       sessionState != XR_SESSION_STATE_FOCUSED) {
-    return -1;
+    return XR_ERROR_SESSION_NOT_READY;
   }
-  xrCore->GetXrFrameState().type = XR_TYPE_FRAME_STATE;
-  XrFrameWaitInfo frameWaitInfo{XR_TYPE_FRAME_WAIT_INFO};
-  xrWaitFrame(xrCore->GetXRSession(), &frameWaitInfo,
-              &xrCore->GetXrFrameState());
 
-  if (!xrCore->GetXrFrameState().shouldRender)
-    return -1;
+  XrFrameWaitInfo frameWaitInfo{XR_TYPE_FRAME_WAIT_INFO};
+  xrCore->GetXrFrameState().type = XR_TYPE_FRAME_STATE;
+  if (result = xrWaitFrame(xrCore->GetXRSession(), &frameWaitInfo,
+      &xrCore->GetXrFrameState())) {
+    LOGGER(LOGGER::ERR) << "Failed to wait frame";
+    return result;
+  }
+
+  //TODO: update eye poses
 
   XrFrameBeginInfo frameBeginInfo{XR_TYPE_FRAME_BEGIN_INFO};
   if ((result = xrBeginFrame(xrCore->GetXRSession(), &frameBeginInfo)) !=
       XR_SUCCESS) {
     LOGGER(LOGGER::ERR) << "Failed to begin frame";
-    return -1;
+    return XR_ERROR_RUNTIME_UNAVAILABLE;
   }
+  frameStarted = true;
 
-  // TODO: Handle eye poses
+  if (!xrCore->GetXrFrameState().shouldRender)
+    return XR_ERROR_RUNTIME_FAILURE;
 
   XrSwapchainImageAcquireInfo swapchainImageAcquireInfo{
       XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
@@ -342,7 +347,7 @@ int XRBackend::StartFrame(uint32_t &imageIndex) {
                                         &swapchainImageAcquireInfo,
                                         &imageIndex)) != XR_SUCCESS) {
     LOGGER(LOGGER::ERR) << "Failed to get acquire swapchain";
-    return -1;
+    return result;
   }
   XrSwapchainImageWaitInfo swapchainImageWaitInfo{
       XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};
@@ -350,19 +355,21 @@ int XRBackend::StartFrame(uint32_t &imageIndex) {
   if ((result = xrWaitSwapchainImage(xrCore->GetXrSwapchain(),
                                      &swapchainImageWaitInfo)) != XR_SUCCESS) {
     LOGGER(LOGGER::ERR) << "Failed to wait swapchain image";
-    return -1;
+    return result;
   }
-  return 0;
+  return XR_SUCCESS;
 }
 
 XrResult XRBackend::EndFrame(uint32_t &imageIndex) {
+  if (!frameStarted)
+    return XR_SUCCESS;
   XrResult result;
   XrSwapchainImageReleaseInfo swapchainImageReleaseInfo{
       XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
   if ((result = xrReleaseSwapchainImage(xrCore->GetXrSwapchain(),
                                         &swapchainImageReleaseInfo)) !=
       XR_SUCCESS) {
-    return result;
+    LOGGER(LOGGER::WARNING) << "Failed to release swapchain image" << result;
   }
   XrCompositionLayerProjection compositionLayerProjection{
       XR_TYPE_COMPOSITION_LAYER_PROJECTION};
@@ -372,16 +379,19 @@ XrResult XRBackend::EndFrame(uint32_t &imageIndex) {
   compositionLayerProjection.views =
       xrCore->GetCompositionLayerProjectionViews().data();
 
-  // TODO end view state
+  std::vector<XrCompositionLayerBaseHeader*> layers;
+  layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&compositionLayerProjection));
 
   XrFrameEndInfo frameEndInfo{XR_TYPE_FRAME_END_INFO};
   frameEndInfo.displayTime = xrCore->GetXrFrameState().predictedDisplayTime;
-  frameEndInfo.layerCount = 1;
+  // TODO: update eye poses
+  //frameEndInfo.layerCount = layers.size();
+  //frameEndInfo.layers = layers.data();
+  frameEndInfo.layerCount = 0;
   frameEndInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
   if ((result = xrEndFrame(xrCore->GetXRSession(), &frameEndInfo)) !=
       XR_SUCCESS) {
-    LOGGER(LOGGER::ERR) << "Failed to end frame";
-    return result;
+    Util::ErrorPopup("Failed to end frame with error: " + result);
   }
 
   return XR_SUCCESS;
