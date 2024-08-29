@@ -19,6 +19,11 @@ class XrCore {
     void SetXRValid(bool value) { xrValid = value; }
     XrSession& GetXRSession() { return xrSession; }
     XrSystemId& GetSystemID() { return xrSystemID; }
+
+    XrViewConfigurationType& GetXrViewConfigurationType() {
+        return viewConfigurationType;
+    }
+
     std::vector<XrViewConfigurationView>& GetXRViewConfigurationView() {
         return xrViewsConfiguration;
     }
@@ -29,11 +34,15 @@ class XrCore {
 
     XrSwapchain& GetXrSwapchain() { return xrSwapchain; }
 
+    XrViewState& GetXrViewState() { return xrViewState; }
+
     XrFrameState& GetXrFrameState() { return frameState; }
 
     std::vector<XrSwapchainImageVulkanKHR>& GetSwapchainImages() {
         return swapchainImages;
     }
+
+    std::vector<XrView>& GetXrViews() { return xrViews; }
 
     const XrSpace GetXrSpace() {
         if (xrSceneSpace == XR_NULL_HANDLE) {
@@ -66,6 +75,12 @@ class XrCore {
     XrSpace xrSceneSpace{XR_NULL_HANDLE};
 
     bool xrValid = true;
+
+    std::vector<XrView> xrViews;
+
+    XrViewConfigurationType viewConfigurationType =
+        XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+
     std::vector<XrViewConfigurationView> xrViewsConfiguration;
 
     XrSwapchain xrSwapchain;
