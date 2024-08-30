@@ -9,11 +9,11 @@
 #include "Utils/LibMath.h"
 #include "XR/XrCore.h"
 
-class XRBackend {
+class XrBackend {
    public:
-    XRBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
+    XrBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
               std::shared_ptr<XrCore> xrCore);
-    ~XRBackend();
+    ~XrBackend();
     void Prepare();
 
     XrResult StartFrame(uint32_t& imageIndex);

@@ -1,6 +1,6 @@
 #include "XRBackend.h"
 
-XRBackend::XRBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
+XrBackend::XrBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
                      std::shared_ptr<XrCore> xrCore)
     : info{info}, vkCore{core}, xrCore{xrCore} {
     try {
@@ -21,7 +21,7 @@ XRBackend::XRBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
     }
 }
 
-XRBackend::~XRBackend() {
+XrBackend::~XrBackend() {
     if (!xrCore || !info) {
         return;
     }
@@ -34,7 +34,7 @@ XRBackend::~XRBackend() {
     }
 }
 
-void XRBackend::Prepare() {
+void XrBackend::Prepare() {
     CreateXrSession();
     CreateXrSwapchain();
     PrepareXrSwapchainImages();
@@ -44,7 +44,7 @@ void XRBackend::Prepare() {
     projectionMatrices.resize(viewCount);
 }
 
-void XRBackend::CreateXrInstance() {
+void XrBackend::CreateXrInstance() {
 
     if (info->validationLayer) {
         activeInstanceExtensions.push_back(XR_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -174,7 +174,7 @@ void XRBackend::CreateXrInstance() {
     }
 }
 
-void XRBackend::GetSystemID() {
+void XrBackend::GetSystemID() {
     XrSystemGetInfo systemGetInfo{};
     systemGetInfo.type = XR_TYPE_SYSTEM_GET_INFO;
     systemGetInfo.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
@@ -185,7 +185,7 @@ void XRBackend::GetSystemID() {
     }
 }
 
-void XRBackend::CreateXrSession() {
+void XrBackend::CreateXrSession() {
     auto xrGetVulkanGraphicsRequirementsKHR =
         XrUtil::XrGetXRFunction<PFN_xrGetVulkanGraphicsRequirementsKHR>(
             xrCore->GetXRInstance(), "xrGetVulkanGraphicsRequirementsKHR");
@@ -211,7 +211,7 @@ void XRBackend::CreateXrSession() {
     }
 }
 
-void XRBackend::CreateXrSwapchain() {
+void XrBackend::CreateXrSwapchain() {
     uint32_t swapchainFormatCount;
     if (xrEnumerateSwapchainFormats(xrCore->GetXRSession(), 0,
                                     &swapchainFormatCount,
@@ -277,7 +277,7 @@ void XRBackend::CreateXrSwapchain() {
     }
 }
 
-void XRBackend::PrepareXrSwapchainImages() {
+void XrBackend::PrepareXrSwapchainImages() {
     XrResult result;
 
     uint32_t swapchainImageCount;
@@ -323,7 +323,7 @@ void XRBackend::PrepareXrSwapchainImages() {
     }
 }
 
-XrResult XRBackend::StartFrame(uint32_t& imageIndex) {
+XrResult XrBackend::StartFrame(uint32_t& imageIndex) {
     frameStarted = false;
     PollEvents();
     if (!this->sessionRunning)
@@ -379,7 +379,7 @@ XrResult XRBackend::StartFrame(uint32_t& imageIndex) {
     return XR_SUCCESS;
 }
 
-XrResult XRBackend::EndFrame(uint32_t& imageIndex) {
+XrResult XrBackend::EndFrame(uint32_t& imageIndex) {
     if (!frameStarted)
         return XR_SUCCESS;
     XrResult result;
@@ -418,7 +418,7 @@ XrResult XRBackend::EndFrame(uint32_t& imageIndex) {
     return XR_SUCCESS;
 }
 
-void XRBackend::BeginSession() {
+void XrBackend::BeginSession() {
     XrResult result;
     XrSessionBeginInfo sessionBeginInfo{};
     sessionBeginInfo.type = XR_TYPE_SESSION_BEGIN_INFO;
@@ -432,7 +432,7 @@ void XRBackend::BeginSession() {
     sessionRunning = true;
 }
 
-void XRBackend::EndSession() {
+void XrBackend::EndSession() {
     XrResult result;
     if ((result = xrEndSession(xrCore->GetXRSession())) != XR_SUCCESS) {
         Util::ErrorPopup("Failed to end xr session");
@@ -441,7 +441,7 @@ void XRBackend::EndSession() {
     sessionRunning = false;
 }
 
-void XRBackend::PollEvents() {
+void XrBackend::PollEvents() {
     XrEventDataBuffer eventData{XR_TYPE_EVENT_DATA_BUFFER};
     auto XrPoolEvent = [&]() -> bool {
         eventData = {XR_TYPE_EVENT_DATA_BUFFER};
@@ -485,7 +485,7 @@ void XRBackend::PollEvents() {
     }
 }
 
-void XRBackend::UpdateViews() {
+void XrBackend::UpdateViews() {
     XrResult result;
     xrCore->GetXrViewState().type = XR_TYPE_VIEW_STATE;
     XrViewLocateInfo viewLocateInfo{XR_TYPE_VIEW_LOCATE_INFO};
@@ -520,7 +520,7 @@ void XRBackend::UpdateViews() {
     }
 }
 
-void XRBackend::LogOpenXRRuntimeProperties() const {
+void XrBackend::LogOpenXRRuntimeProperties() const {
 
     if (xrCore->GetXRInstance() == XR_NULL_HANDLE) {
         LOGGER(LOGGER::ERR) << "XR Instance is null";
@@ -539,7 +539,7 @@ void XRBackend::LogOpenXRRuntimeProperties() const {
     }
 }
 
-void XRBackend::LogOpenXRSystemProperties() const {
+void XrBackend::LogOpenXRSystemProperties() const {
     XrSystemProperties systemProperties{XR_TYPE_SYSTEM_PROPERTIES};
     if (xrGetSystemProperties(xrCore->GetXRInstance(), xrCore->GetSystemID(),
                               &systemProperties) != XR_SUCCESS) {

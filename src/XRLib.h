@@ -39,7 +39,7 @@ class XRLib {
     void InitXRBackend();
     void InitRenderBackend();
 
-    std::unique_ptr<XRBackend> xrBackend{nullptr};
+    std::unique_ptr<XrBackend> xrBackend{nullptr};
     std::unique_ptr<RenderBackend> renderBackend{nullptr};
 
     std::vector<std::pair<const std::string&, const std::string&>> passesToAdd;
