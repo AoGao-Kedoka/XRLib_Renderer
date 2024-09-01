@@ -1,8 +1,5 @@
 #pragma once
 
-#include <filesystem>
-#include <shaderc/shaderc.hpp>
-
 #include "Logger.h"
 #include "Utils/Util.h"
 #include "Utils/Info.h"

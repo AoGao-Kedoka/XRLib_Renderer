@@ -1,8 +1,5 @@
 #pragma once
 
-#include <memory>
-#include <string>
-
 #include "Graphics/RenderBackend.h"
 #include "Graphics/RenderBackendFlat.h"
 #include "Scene.h"

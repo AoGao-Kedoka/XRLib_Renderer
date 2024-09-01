@@ -1,10 +1,6 @@
 #pragma once
 
-#include <cstring>
-#include <vector>
-
-#define XR_USE_GRAPHICS_API_VULKAN
-#include <openxr/openxr.h>
+#include <pch.h>
 
 #include "Logger.h"
 

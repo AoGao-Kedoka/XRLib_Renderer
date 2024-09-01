@@ -1,8 +1,5 @@
 #pragma once
 
-#include <cstring>
-#include <utility>
-
 #include "Graphics/Vulkan/VkCore.h"
 #include "Logger.h"
 #include "Utils/Info.h"

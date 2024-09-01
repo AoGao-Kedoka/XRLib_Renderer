@@ -25,7 +25,6 @@ endif()
 set(MESSAGE_BOX "---------------------------")
 include(FetchContent)
 
-# Include dependency cmake files
 include(cmake/vulkan.cmake)
 include(cmake/openxr.cmake)
 include(cmake/glm.cmake)
@@ -33,9 +32,13 @@ include(cmake/glfw.cmake)
 include(cmake/assimp.cmake)
 include(cmake/shaderc.cmake)
 
-# Define the library target
 add_library(${PROJECT_NAME} STATIC)
 add_library(XRLib::XRLib ALIAS XRLib)
+
+# Precompile header
+set(PCH_HEADER "src/pch.h")
+set(PCH_SOURCE "src/pch.cpp")
+target_precompile_headers(${PROJECT_NAME} PRIVATE ${PCH_HEADER})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>

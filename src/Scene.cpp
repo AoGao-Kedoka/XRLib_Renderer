@@ -25,6 +25,11 @@ Scene& Scene::LoadMeshAsync(const std::string& path, Transform transform) {
     return *this;
 }
 
+Scene& Scene::LoadMeshAsync(const std::string& path) {
+    Transform transform;
+    return LoadMeshAsync(path, transform);
+}
+
 void Scene::WaitForAllMeshesToLoad() {
     std::unique_lock<std::mutex> lock(queueMutex);
     done = true;

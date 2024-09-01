@@ -1,7 +1,5 @@
 #pragma once
 
-#include <algorithm>
-
 #include "RenderBackend.h"
 #include "Utils/Util.h"
 

@@ -1,9 +1,6 @@
-#include <functional>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#pragma once
+
+#include <pch.h>
 
 class EventSystem {
    public:

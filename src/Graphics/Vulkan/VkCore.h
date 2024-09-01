@@ -1,9 +1,5 @@
 #pragma once
 
-#include <utility>
-#include <vector>
-#include <vulkan/vulkan_core.h>
-
 #include "Utils/Util.h"
 #include "VkUtil.h"
 

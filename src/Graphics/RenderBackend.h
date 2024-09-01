@@ -1,10 +1,5 @@
 #pragma once
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-#include <utility>
-#include <vector>
-
 #include "Graphics/Vulkan/Buffer.h"
 #include "Graphics/Vulkan/GraphicsRenderPass.h"
 #include "Graphics/Vulkan/Pipeline.h"

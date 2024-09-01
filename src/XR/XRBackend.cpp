@@ -2,7 +2,7 @@
 
 XrBackend::XrBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
                      std::shared_ptr<XrCore> xrCore)
-    : info{info}, vkCore{core}, xrCore{xrCore} {
+    : info{info}, vkCore{core}, xrCore{xrCore}, xrInput{xrCore} {
     try {
         for (const auto layer : apiLayers) {
             bool res = XrUtil::XrCheckLayerSupport(layer.c_str());

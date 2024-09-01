@@ -1,16 +1,5 @@
 #pragma once
 
-#include <assimp/Importer.hpp>
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
-#include <atomic>
-#include <condition_variable>
-#include <future>
-#include <mutex>
-#include <queue>
-#include <thread>
-#include <vector>
-
 #include "Graphics/Primitives.h"
 #include "Logger.h"
 #include "Utils/Transform.h"
@@ -28,6 +17,7 @@ class Scene {
     Scene();
     ~Scene();
     Scene& LoadMeshAsync(const std::string& path, Transform transform);
+    Scene& LoadMeshAsync(const std::string& path);
     void WaitForAllMeshesToLoad();
     bool CheckTaskRunning();
     std::vector<Mesh> Meshes() { return meshes; }

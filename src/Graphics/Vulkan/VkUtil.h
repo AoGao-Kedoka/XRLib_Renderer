@@ -1,11 +1,6 @@
 #pragma once
 
-#include <array>
-#include <cstring>
-#include <vector>
-#include <vulkan/vulkan.h>
-
-#include "../Primitives.h"
+#include "Graphics/Primitives.h"
 #include "Logger.h"
 
 class VkUtil {

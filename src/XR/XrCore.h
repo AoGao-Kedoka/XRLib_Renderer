@@ -1,11 +1,5 @@
 #pragma once
 
-#include "vulkan/vulkan.h"
-#include <vector>
-#define XR_USE_GRAPHICS_API_VULKAN
-#include <openxr/openxr.h>
-#include <openxr/openxr_platform.h>
-
 #include "Utils/LibMath.h"
 #include "Utils/Util.h"
 #include "XrUtil.h"

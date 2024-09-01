@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-
 #include "CommandBuffer.h"
 #include "VkCore.h"
 
@@ -12,7 +10,7 @@ class Buffer {
     Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size,
            VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
            void* data);
-    Buffer(){};
+    Buffer() = default;
     ~Buffer();
 
     Buffer& operator=(const Buffer& other) {
@@ -40,5 +38,5 @@ class Buffer {
     std::shared_ptr<VkCore> core{nullptr};
     VkBuffer buffer{VK_NULL_HANDLE};
     VkDeviceMemory bufferMemory{VK_NULL_HANDLE};
-    VkDeviceSize bufferSize;
+    VkDeviceSize bufferSize{0};
 };

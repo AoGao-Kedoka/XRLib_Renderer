@@ -1,7 +1,5 @@
 #pragma once
 
-#include <array>
-
 #include "Utils/Event.h"
 #include "Utils/Transform.h"
 #include "XrCore.h"

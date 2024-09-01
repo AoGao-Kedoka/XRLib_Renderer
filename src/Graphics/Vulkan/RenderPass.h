@@ -13,8 +13,8 @@ class RenderPass {
         : core(std::exchange(other.core, nullptr)),
           pass(std::exchange(other.pass, VK_NULL_HANDLE)),
           graphicsPipeline(
-
-              std::exchange(other.graphicsPipeline, VK_NULL_HANDLE)) {}
+              std::exchange(other.graphicsPipeline, VK_NULL_HANDLE)),
+          multiview{other.multiview} {}
 
     RenderPass& operator=(RenderPass&& other) noexcept {
         if (this != &other) {
@@ -22,6 +22,7 @@ class RenderPass {
             pass = std::exchange(other.pass, VK_NULL_HANDLE);
             graphicsPipeline =
                 std::exchange(other.graphicsPipeline, VK_NULL_HANDLE);
+            multiview = other.multiview;
         }
         return *this;
     }
@@ -36,5 +37,5 @@ class RenderPass {
     VkRenderPass pass{VK_NULL_HANDLE};
     VkPipeline* graphicsPipeline{nullptr};
 
-    bool multiview;
+    bool multiview = false;
 };
