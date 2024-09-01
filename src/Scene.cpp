@@ -1,5 +1,6 @@
 #include "Scene.h"
 
+
 Scene::Scene() : done(false), stop(false) {
     workerThread = std::thread(&Scene::MeshLoadingThread, this);
 }
@@ -15,21 +16,13 @@ Scene::~Scene() {
     }
 }
 
-Scene& Scene::LoadMeshAsync(const std::string& path, glm::mat4 transformation) {
+Scene& Scene::LoadMeshAsync(const std::string& path, Transform transform) {
     {
         std::lock_guard<std::mutex> lock(queueMutex);
-        meshQueue.push({path, transformation});
+        meshQueue.push({path, transform.GetMatrix()});
     }
     cv.notify_all();
     return *this;
-}
-
-Scene& Scene::LoadMeshAsync(const std::string& path, glm::vec3 translation,
-                            glm::vec3 rotation, float rotationRadians,
-                            glm::vec3 scale) {
-    return LoadMeshAsync(
-        path, LibMath::GetTransformationMatrix(translation, rotation,
-                                              rotationRadians, scale));
 }
 
 void Scene::WaitForAllMeshesToLoad() {
@@ -87,7 +80,7 @@ void Scene::LoadMesh(const std::string& filename, glm::mat4 transformation) {
 
         {
             newMesh.name = filename;
-            newMesh.translation = transformation;
+            newMesh.transform = transformation;
             std::lock_guard<std::mutex> lock(queueMutex);
             meshes.push_back(newMesh);
         }
@@ -127,3 +120,4 @@ bool Scene::CheckTaskRunning() {
     }
     return false;
 }
+

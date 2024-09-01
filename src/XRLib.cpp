@@ -79,12 +79,21 @@ void XRLib::Run() {
     uint32_t imageIndex = 0;
     if (xrCore->IsXRValid()) {
         XrResult result = xrBackend->StartFrame(imageIndex);
-        if (result == XR_SUCCESS)
+
+        if (result == XR_SUCCESS) {
+            xrBackend->UpdateXrInput();
             renderBackend->Run(imageIndex);
+        }
+
         xrBackend->EndFrame(imageIndex);
     } else {
         renderBackend->Run(imageIndex);
     }
+}
+
+bool XRLib::ShouldStop() {
+    return xrCore->IsXRValid() ? xrBackend->XrShouldStop()
+                               : renderBackend->WindowShouldClose();
 }
 
 XRLib& XRLib::Fullscreen() {
@@ -119,8 +128,7 @@ void XRLib::InitRenderBackend() {
     }
 
     if (info->applicationName.empty()) {
-        LOGGER(LOGGER::ERR) << "No application name specified";
-        exit(-1);
+        Util::ErrorPopup("No application name specified");
     }
 
     if (!xrCore->IsXRValid()) {

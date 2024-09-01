@@ -13,7 +13,7 @@
 
 #include "Graphics/Primitives.h"
 #include "Logger.h"
-#include "Utils/LibMath.h"
+#include "Utils/Transform.h"
 
 class Scene {
    public:
@@ -21,17 +21,13 @@ class Scene {
         std::vector<Primitives::Vertex> vertices;
         std::vector<unsigned int> indices;
         std::string name;
-        glm::mat4 translation{1.0f};
+        glm::mat4 transform{1.0f};
     };
 
    public:
     Scene();
     ~Scene();
-    Scene& LoadMeshAsync(const std::string& path,
-                         glm::mat4 transformation = glm::mat4{1.0f});
-    Scene& LoadMeshAsync(const std::string& path, glm::vec3 translation,
-                         glm::vec3 rotation,float rotationRadians,
-                         glm::vec3 scale);
+    Scene& LoadMeshAsync(const std::string& path, Transform transform);
     void WaitForAllMeshesToLoad();
     bool CheckTaskRunning();
     std::vector<Mesh> Meshes() { return meshes; }

@@ -12,9 +12,21 @@ XrBackend::XrBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
         }
 
         CreateXrInstance();
-        GetSystemID();
-        LogOpenXRRuntimeProperties();
 
+        // Fetch system id
+        XrSystemGetInfo systemGetInfo{};
+        systemGetInfo.type = XR_TYPE_SYSTEM_GET_INFO;
+        systemGetInfo.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
+        XrResult result = xrGetSystem(xrCore->GetXRInstance(), &systemGetInfo,
+                                      &xrCore->GetSystemID());
+        if (result != XR_SUCCESS) {
+            Util::ErrorPopup("Failed to get system id, HMD may not connected.");
+        }
+
+        // log system infomation
+        XrUtil::LogXrRuntimeProperties(xrCore->GetXRInstance());
+        XrUtil::LogXrSystemProperties(xrCore->GetXRInstance(),
+                                      xrCore->GetSystemID());
     } catch (const std::runtime_error& e) {
         LOGGER(LOGGER::WARNING) << "Falling back to normal mode";
         xrCore->SetXRValid(false);
@@ -171,17 +183,6 @@ void XrBackend::CreateXrInstance() {
             LOGGER(LOGGER::ERR) << "Failed to create debug messenger";
             info->validationLayer = false;
         }
-    }
-}
-
-void XrBackend::GetSystemID() {
-    XrSystemGetInfo systemGetInfo{};
-    systemGetInfo.type = XR_TYPE_SYSTEM_GET_INFO;
-    systemGetInfo.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
-    XrResult result = xrGetSystem(xrCore->GetXRInstance(), &systemGetInfo,
-                                  &xrCore->GetSystemID());
-    if (result != XR_SUCCESS) {
-        Util::ErrorPopup("Failed to get system id, HMD may not connected.");
     }
 }
 
@@ -400,15 +401,15 @@ XrResult XrBackend::EndFrame(uint32_t& imageIndex) {
         xrCore->GetCompositionLayerProjectionViews().data();
 
     std::vector<XrCompositionLayerBaseHeader*> layers;
-    layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(
-        &compositionLayerProjection));
+    if (xrCore->GetXrFrameState().shouldRender) {
+        layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(
+            &compositionLayerProjection));
+    }
 
     XrFrameEndInfo frameEndInfo{XR_TYPE_FRAME_END_INFO};
     frameEndInfo.displayTime = xrCore->GetXrFrameState().predictedDisplayTime;
-    // TODO: update eye poses
-    //frameEndInfo.layerCount = layers.size();
-    //frameEndInfo.layers = layers.data();
-    frameEndInfo.layerCount = 0;
+    frameEndInfo.layerCount = layers.size();
+    frameEndInfo.layers = layers.data();
     frameEndInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
     if ((result = xrEndFrame(xrCore->GetXRSession(), &frameEndInfo)) !=
         XR_SUCCESS) {
@@ -455,6 +456,8 @@ void XrBackend::PollEvents() {
                     reinterpret_cast<XrEventDataEventsLost*>(&eventData);
                 LOGGER(LOGGER::INFO)
                     << "OpenXR events lost: " << eventsLost->lostEventCount;
+                xrShouldStop = true;
+                break;
             }
             case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
                 XrEventDataSessionStateChanged* sessionStateChanged =
@@ -474,12 +477,13 @@ void XrBackend::PollEvents() {
                 if (sessionStateChanged->state == XR_SESSION_STATE_EXITING ||
                     sessionStateChanged->state ==
                         XR_SESSION_STATE_LOSS_PENDING) {
-                    // TODO: Exit application;
-                    exit(-1);
+                    xrShouldStop = true;
                 }
                 xrCore->GetXrSessionState() = sessionStateChanged->state;
+                break;
             }
             default:
+                xrShouldStop = true;
                 break;
         }
     }
@@ -517,59 +521,5 @@ void XrBackend::UpdateViews() {
         cpLayerProjectionView.fov = view.fov;
 
         //TODO Update view matrices and projection matrices
-    }
-}
-
-void XrBackend::LogOpenXRRuntimeProperties() const {
-
-    if (xrCore->GetXRInstance() == XR_NULL_HANDLE) {
-        LOGGER(LOGGER::ERR) << "XR Instance is null";
-    }
-
-    XrInstanceProperties instanceProperties{XR_TYPE_INSTANCE_PROPERTIES};
-    if (xrGetInstanceProperties(xrCore->GetXRInstance(), &instanceProperties) !=
-        XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to get instance properties";
-    } else {
-        LOGGER(LOGGER::INFO)
-            << "Using OpenXR Runtime: " << instanceProperties.runtimeName
-            << " - " << XR_VERSION_MAJOR(instanceProperties.runtimeVersion)
-            << XR_VERSION_MINOR(instanceProperties.runtimeVersion)
-            << XR_VERSION_PATCH(instanceProperties.runtimeVersion);
-    }
-}
-
-void XrBackend::LogOpenXRSystemProperties() const {
-    XrSystemProperties systemProperties{XR_TYPE_SYSTEM_PROPERTIES};
-    if (xrGetSystemProperties(xrCore->GetXRInstance(), xrCore->GetSystemID(),
-                              &systemProperties) != XR_SUCCESS) {
-        LOGGER(LOGGER::ERR) << "Failed to get system properties";
-    } else {
-        LOGGER(LOGGER::INFO) << "OpenXR System Properties:";
-        LOGGER(LOGGER::INFO) << "  System ID: " << systemProperties.systemId;
-        LOGGER(LOGGER::INFO) << "  Vendor ID: " << systemProperties.vendorId;
-        LOGGER(LOGGER::INFO)
-            << "  System Name: " << systemProperties.systemName;
-        LOGGER(LOGGER::INFO) << "  Graphics Properties:";
-        LOGGER(LOGGER::INFO)
-            << "    Max Swapchain Image Width: "
-            << systemProperties.graphicsProperties.maxSwapchainImageWidth;
-        LOGGER(LOGGER::INFO)
-            << "    Max Swapchain Image Height: "
-            << systemProperties.graphicsProperties.maxSwapchainImageHeight;
-        LOGGER(LOGGER::INFO)
-            << "    Max Layer Count: "
-            << systemProperties.graphicsProperties.maxLayerCount;
-        LOGGER(LOGGER::INFO) << "  Tracking Properties:";
-        LOGGER(LOGGER::INFO)
-            << "    Orientation Tracking: "
-            << (systemProperties.trackingProperties.orientationTracking
-                    ? "Supported"
-                    : "Not Supported");
-        LOGGER(LOGGER::INFO)
-            << "    Position Tracking: "
-            << (systemProperties.trackingProperties.positionTracking
-                    ? "Supported"
-                    : "Not Supported");
     }
 }

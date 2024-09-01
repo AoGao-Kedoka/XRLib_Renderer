@@ -25,7 +25,7 @@ class XRLib {
                          const std::string& fragmentShaderPath);
     void Run();
 
-    bool WindowShouldClose() { return renderBackend->WindowShouldClose(); }
+    bool ShouldStop();
     XRLib& Fullscreen();
 
     Scene& SceneBackend() { return *scene; }

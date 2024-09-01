@@ -8,6 +8,7 @@
 #include "Utils/Info.h"
 #include "Utils/LibMath.h"
 #include "XR/XrCore.h"
+#include "XR/XrInput.h"
 
 class XrBackend {
    public:
@@ -19,11 +20,11 @@ class XrBackend {
     XrResult StartFrame(uint32_t& imageIndex);
     XrResult EndFrame(uint32_t& imageIndex);
 
+    bool XrShouldStop() { return xrShouldStop; };
+    void UpdateXrInput() { xrInput.FetchInput(); }
+
    private:
     void CreateXrInstance();
-    void LogOpenXRRuntimeProperties() const;
-    void LogOpenXRSystemProperties() const;
-    void GetSystemID();
 
     void CreateXrSession();
     void CreateXrSwapchain();
@@ -40,6 +41,8 @@ class XrBackend {
     std::shared_ptr<VkCore> vkCore{nullptr};
     std::shared_ptr<XrCore> xrCore{nullptr};
 
+    XrInput xrInput;
+
     std::vector<const char*> activeAPILayers = {};
     std::vector<const char*> activeInstanceExtensions = {};
     std::vector<std::string> apiLayers = {};
@@ -55,4 +58,5 @@ class XrBackend {
     uint32_t viewCount;
     bool sessionRunning{false};
     bool frameStarted{false};
+    bool xrShouldStop{false};
 };
