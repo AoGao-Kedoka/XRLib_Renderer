@@ -1,5 +1,7 @@
 #include "Window.h"
 
+namespace XRLib {
+namespace Graphics {
 GLFWwindow* WindowHandler::window = nullptr;
 
 void WindowHandler::Init(std::shared_ptr<Info> info) {
@@ -54,3 +56,5 @@ WindowHandler::VkGetWindowExtensions(uint32_t* requiredExtensionCount) {
     }
     return glfwExtensions;
 }
+}    // namespace Graphics
+}    // namespace XRLib

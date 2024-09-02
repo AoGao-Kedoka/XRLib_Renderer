@@ -4,6 +4,8 @@
 #include "RenderPass.h"
 #include "Shader.h"
 
+namespace XRLib {
+namespace Graphics {
 class GraphicsRenderPass {
    public:
     GraphicsRenderPass(std::shared_ptr<VkCore> core, bool multiview,
@@ -30,3 +32,5 @@ class GraphicsRenderPass {
     std::shared_ptr<Pipeline> pipeline;
     bool multiview;
 };
+}    // namespace Graphics
+}    // namespace XRLib

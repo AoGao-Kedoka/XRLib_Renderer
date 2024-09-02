@@ -1,6 +1,9 @@
 #include "XRBackend.h"
 
-XrBackend::XrBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
+namespace XRLib {
+namespace XR {
+XrBackend::XrBackend(std::shared_ptr<Info> info,
+                     std::shared_ptr<XRLib::Graphics::VkCore> core,
                      std::shared_ptr<XrCore> xrCore)
     : info{info}, vkCore{core}, xrCore{xrCore}, xrInput{xrCore} {
     try {
@@ -523,3 +526,5 @@ void XrBackend::UpdateViews() {
         //TODO Update view matrices and projection matrices
     }
 }
+}    // namespace XR
+}    // namespace XRLib

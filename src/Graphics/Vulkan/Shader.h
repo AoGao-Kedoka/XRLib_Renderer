@@ -1,10 +1,12 @@
 #pragma once
 
 #include "Logger.h"
-#include "Utils/Util.h"
 #include "Utils/Info.h"
+#include "Utils/Util.h"
 #include "VkCore.h"
 
+namespace XRLib {
+namespace Graphics {
 class Shader {
    public:
     enum ShaderStage {
@@ -16,7 +18,7 @@ class Shader {
            ShaderStage stage);
     ~Shader();
 
-     Shader(Shader&& other) noexcept
+    Shader(Shader&& other) noexcept
         : core(std::exchange(other.core, nullptr)),
           stage(std::exchange(other.stage, static_cast<ShaderStage>(0))),
           shaderModule(std::exchange(other.shaderModule, VK_NULL_HANDLE)),
@@ -46,3 +48,5 @@ class Shader {
     void Init(std::vector<uint32_t> spirv);
     std::vector<uint32_t> Compile(std::string content, std::string name);
 };
+}    // namespace Graphics
+}    // namespace XRLib

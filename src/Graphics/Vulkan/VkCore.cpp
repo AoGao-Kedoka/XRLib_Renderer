@@ -1,5 +1,7 @@
 #include "VkCore.h"
 
+namespace XRLib {
+namespace Graphics {
 VkCore::~VkCore() {
     for (auto framebuffer : swapChainFrameBuffers) {
         VkUtil::VkSafeClean(vkDestroyFramebuffer, vkDevice, framebuffer,
@@ -53,3 +55,5 @@ void VkCore::CreateCommandPool() {
         Util::ErrorPopup("failed to create command pool!");
     }
 }
+}    // namespace Graphics
+}    // namespace XRLib

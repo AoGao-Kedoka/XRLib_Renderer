@@ -3,6 +3,8 @@
 #include "Utils/Util.h"
 #include "VkUtil.h"
 
+namespace XRLib {
+namespace Graphics {
 class VkCore {
    public:
     VkCore() = default;
@@ -155,3 +157,5 @@ class VkCore {
     void CreateSyncSemaphore(VkSemaphore& semaphore);
     void CreateFence(VkFence& fence);
 };
+}    // namespace Graphics
+}    // namespace XRLib

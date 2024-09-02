@@ -3,6 +3,8 @@
 #include "CommandBuffer.h"
 #include "VkCore.h"
 
+namespace XRLib {
+namespace Graphics {
 class Buffer {
    public:
     Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size,
@@ -40,3 +42,5 @@ class Buffer {
     VkDeviceMemory bufferMemory{VK_NULL_HANDLE};
     VkDeviceSize bufferSize{0};
 };
+}    // namespace Graphics
+}    // namespace XRLib

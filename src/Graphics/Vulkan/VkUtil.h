@@ -3,6 +3,8 @@
 #include "Graphics/Primitives.h"
 #include "Logger.h"
 
+namespace XRLib {
+namespace Graphics {
 class VkUtil {
    public:
     template <typename T, typename Func, typename... Args>
@@ -60,3 +62,5 @@ class VkUtil {
     static std::array<VkVertexInputAttributeDescription, 3>
     GetVertexAttributeDescription();
 };
+}    // namespace Graphics
+}    // namespace XRLib

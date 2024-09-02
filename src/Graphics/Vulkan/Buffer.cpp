@@ -1,5 +1,7 @@
 #include "Buffer.h"
 
+namespace XRLib {
+namespace Graphics {
 Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size,
                VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
                void* data)
@@ -96,3 +98,5 @@ uint32_t Buffer::FindMemoryType(uint32_t typeFilter,
     Util::ErrorPopup("Failed to find suitable memory type!");
     return -1;
 }
+}    // namespace Graphics
+}    // namespace XRLib

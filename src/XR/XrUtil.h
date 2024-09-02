@@ -4,6 +4,8 @@
 
 #include "Logger.h"
 
+namespace XRLib {
+namespace XR {
 class XrUtil {
    public:
     template <typename T, typename Func, typename... Args>
@@ -114,3 +116,5 @@ class XrUtil {
         }
     }
 };
+}    // namespace XR
+}    // namespace XRLib

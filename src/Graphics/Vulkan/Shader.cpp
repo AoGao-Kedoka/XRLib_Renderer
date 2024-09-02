@@ -1,5 +1,7 @@
 #include "Shader.h"
 
+namespace XRLib {
+namespace Graphics {
 Shader::Shader(std::shared_ptr<VkCore> core,
                const std::filesystem::path& filePath, ShaderStage shaderStage)
     : core{core}, stage{shaderStage} {
@@ -80,3 +82,5 @@ std::vector<uint32_t> Shader::Compile(std::string content, std::string name) {
 
     return {module.cbegin(), module.cend()};
 }
+}    // namespace Graphics
+}    // namespace XRLib

@@ -4,6 +4,8 @@
 #include "Utils/Transform.h"
 #include "XrCore.h"
 
+namespace XRLib {
+namespace XR {
 class XrInput {
    public:
     inline static std::string XRLIB_EVENT_LEFT_TRIGGER_PRESSED{
@@ -30,3 +32,5 @@ class XrInput {
     Transform rightControllerPos;
     Transform headPos;
 };
+}    // namespace XR
+}    // namespace XRLib

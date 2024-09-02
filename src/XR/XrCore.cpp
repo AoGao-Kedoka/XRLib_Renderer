@@ -1,5 +1,7 @@
 #include "XrCore.h"
 
+namespace XRLib {
+namespace XR {
 XrCore::~XrCore() {
     XrUtil::XrSafeClean(xrDestroySpace, xrSceneSpace);
     XrUtil::XrSafeClean(xrDestroyInstance, xrInstance);
@@ -21,3 +23,5 @@ void XrCore::CreatePlaySpace() {
         Util::ErrorPopup("Failed to create play space");
     }
 }
+}    // namespace XR
+}    // namespace XRLib

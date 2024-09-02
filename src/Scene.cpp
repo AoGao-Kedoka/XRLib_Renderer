@@ -1,5 +1,6 @@
 #include "Scene.h"
 
+namespace XRLib {
 Scene::Scene() : done(false), stop(false) {
     workerThread = std::thread(&Scene::MeshLoadingThread, this);
 }
@@ -58,7 +59,7 @@ void Scene::LoadMesh(const std::string& filename, glm::mat4 transformation) {
         Mesh newMesh;
 
         for (unsigned int j = 0; j < aiMesh->mNumVertices; j++) {
-            Primitives::Vertex vertex;
+            Graphics::Primitives::Vertex vertex;
             vertex.position = {aiMesh->mVertices[j].x, aiMesh->mVertices[j].y,
                                aiMesh->mVertices[j].z};
             if (aiMesh->mNormals) {
@@ -125,3 +126,4 @@ bool Scene::CheckTaskRunning() {
     }
     return false;
 }
+}    // namespace XRLib

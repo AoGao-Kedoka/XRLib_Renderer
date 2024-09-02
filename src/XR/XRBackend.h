@@ -7,9 +7,12 @@
 #include "XR/XrCore.h"
 #include "XR/XrInput.h"
 
+namespace XRLib {
+namespace XR {
 class XrBackend {
    public:
-    XrBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
+    XrBackend(std::shared_ptr<Info> info,
+              std::shared_ptr<XRLib::Graphics::VkCore> core,
               std::shared_ptr<XrCore> xrCore);
     ~XrBackend();
     void Prepare();
@@ -35,7 +38,7 @@ class XrBackend {
 
    private:
     std::shared_ptr<Info> info{nullptr};
-    std::shared_ptr<VkCore> vkCore{nullptr};
+    std::shared_ptr<XRLib::Graphics::VkCore> vkCore{nullptr};
     std::shared_ptr<XrCore> xrCore{nullptr};
 
     XrInput xrInput;
@@ -57,3 +60,5 @@ class XrBackend {
     bool frameStarted{false};
     bool xrShouldStop{false};
 };
+}    // namespace XR
+}    // namespace XRLib

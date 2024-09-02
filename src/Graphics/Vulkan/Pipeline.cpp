@@ -1,5 +1,7 @@
 #include "Pipeline.h"
 
+namespace XRLib {
+namespace Graphics {
 Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
                    Shader fragmentShader,
                    std::shared_ptr<RenderPass> renderPass)
@@ -121,3 +123,5 @@ Pipeline::~Pipeline() {
     VkUtil::VkSafeClean(vkDestroyPipeline, core->GetRenderDevice(), pipeline,
                         nullptr);
 }
+}    // namespace Graphics
+}    // namespace XRLib

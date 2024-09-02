@@ -2,6 +2,8 @@
 
 #include <pch.h>
 
+namespace XRLib {
+namespace Graphics {
 class Primitives {
    public:
     struct Vertex {
@@ -10,3 +12,5 @@ class Primitives {
         glm::vec2 texCoords;
     };
 };
+}    // namespace Graphics
+}    // namespace XRLib

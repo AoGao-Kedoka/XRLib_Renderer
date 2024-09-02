@@ -1,5 +1,7 @@
 #include "Image.h"
 
+namespace XRLib {
+namespace Graphics {
 Image::Image(VkCore* core, VkImage image, VkFormat format)
     : core{core}, image{image}, format{format} {
     VkImageViewCreateInfo imageViewCreateInfo{};
@@ -21,3 +23,5 @@ Image::Image(VkCore* core, VkImage image, VkFormat format)
         Util::ErrorPopup("Failed to create image view");
     }
 }
+}    // namespace Graphics
+}    // namespace XRLib

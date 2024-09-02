@@ -3,6 +3,8 @@
 #include "Logger.h"
 #include "VkCore.h"
 
+namespace XRLib {
+namespace Graphics {
 class Image {
    public:
     Image() = default;
@@ -15,3 +17,5 @@ class Image {
     VkImageView imageView{VK_NULL_HANDLE};
     VkFormat format{VK_FORMAT_UNDEFINED};
 };
+}    // namespace Graphics
+}    // namespace XRLib

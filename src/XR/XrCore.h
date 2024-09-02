@@ -4,6 +4,8 @@
 #include "Utils/Util.h"
 #include "XrUtil.h"
 
+namespace XRLib {
+namespace XR {
 class XrCore {
    public:
     XrCore() = default;
@@ -83,3 +85,5 @@ class XrCore {
     std::vector<XrCompositionLayerProjectionView>
         compositionLayerProjectionViews;
 };
+}    // namespace XR
+}    // namespace XRLib

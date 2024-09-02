@@ -1,5 +1,7 @@
 #include "VkUtil.h"
 
+namespace XRLib {
+namespace Graphics {
 VkVertexInputBindingDescription VkUtil::GetVertexBindingDescription() {
     VkVertexInputBindingDescription bindingDescription{};
     bindingDescription.binding = 0;
@@ -31,3 +33,5 @@ VkUtil::GetVertexAttributeDescription() {
 
     return attributeDescriptions;
 }
+}    // namespace Graphics
+}    // namespace XRLib

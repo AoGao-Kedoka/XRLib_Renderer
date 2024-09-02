@@ -13,10 +13,13 @@
 #include "Utils/Info.h"
 #include "XR/XrCore.h"
 
+namespace XRLib {
+namespace Graphics {
 class RenderBackend {
    public:
     RenderBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> vkCore,
-                  std::shared_ptr<XrCore> xrCore, std::shared_ptr<Scene> scene);
+                  std::shared_ptr<XRLib::XR::XrCore> xrCore,
+                  std::shared_ptr<XRLib::Scene> scene);
     ~RenderBackend();
 
     RenderBackend(RenderBackend&& src) noexcept
@@ -63,8 +66,8 @@ class RenderBackend {
    protected:
     std::shared_ptr<Info> info;
     std::shared_ptr<VkCore> vkCore;
-    std::shared_ptr<XrCore> xrCore;
-    std::shared_ptr<Scene> scene;
+    std::shared_ptr<XRLib::XR::XrCore> xrCore;
+    std::shared_ptr<XRLib::Scene> scene;
 
     std::vector<std::unique_ptr<Buffer>> vertexBuffers;
     std::vector<std::unique_ptr<Buffer>> indexBuffers;
@@ -79,3 +82,5 @@ class RenderBackend {
 
     PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT{nullptr};
 };
+}    // namespace Graphics
+}    // namespace XRLib

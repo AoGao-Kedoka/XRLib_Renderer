@@ -3,6 +3,8 @@
 #include "Utils/Util.h"
 #include "VkCore.h"
 
+namespace XRLib {
+namespace Graphics {
 class RenderPass {
    public:
     RenderPass() = default;
@@ -39,3 +41,5 @@ class RenderPass {
 
     bool multiview = false;
 };
+}    // namespace Graphics
+}    // namespace XRLib

@@ -1,5 +1,7 @@
 #include "RenderBackendFlat.h"
 
+namespace XRLib {
+namespace Graphics {
 RenderBackendFlat::~RenderBackendFlat() {
     if (vkCore == nullptr || info == nullptr)
         return;
@@ -201,3 +203,5 @@ void RenderBackendFlat::PrepareFlatWindow() {
 
     LOGGER(LOGGER::DEBUG) << "Window created";
 }
+}    // namespace Graphics
+}    // namespace XRLib

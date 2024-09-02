@@ -5,6 +5,8 @@
 #include "Utils/Info.h"
 #include "Utils/Util.h"
 
+namespace XRLib {
+namespace Graphics {
 class WindowHandler {
    public:
     inline static std::string XRLIB_EVENT_WINDOW_RESIZED{"window_resized"};
@@ -23,3 +25,5 @@ class WindowHandler {
    private:
     static GLFWwindow* window;
 };
+}    // namespace Graphics
+}    // namespace XRLib

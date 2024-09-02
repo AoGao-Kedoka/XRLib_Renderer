@@ -1,5 +1,7 @@
 #include "RenderPass.h"
 
+namespace XRLib {
+namespace Graphics {
 RenderPass::RenderPass(std::shared_ptr<VkCore> core, bool multiview)
     : core{core}, multiview{multiview} {
 
@@ -70,3 +72,5 @@ RenderPass::~RenderPass() {
     VkUtil::VkSafeClean(vkDestroyRenderPass, core->GetRenderDevice(), pass,
                         nullptr);
 }
+}    // namespace Graphics
+}    // namespace XRLib

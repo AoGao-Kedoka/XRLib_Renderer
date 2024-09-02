@@ -6,6 +6,8 @@
 #include "VkCore.h"
 #include "VkUtil.h"
 
+namespace XRLib {
+namespace Graphics {
 class Pipeline {
    public:
     // TODO: compute pipeline
@@ -36,3 +38,5 @@ class Pipeline {
     VkPipeline pipeline{VK_NULL_HANDLE};
     VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
 };
+}    // namespace Graphics
+}    // namespace XRLib

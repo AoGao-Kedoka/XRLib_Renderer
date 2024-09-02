@@ -1,10 +1,12 @@
 #include "RenderBackend.h"
 #include "Utils/Util.h"
 
+namespace XRLib {
+namespace Graphics {
 RenderBackend::RenderBackend(std::shared_ptr<Info> info,
                              std::shared_ptr<VkCore> vkCore,
-                             std::shared_ptr<XrCore> xrCore,
-                             std::shared_ptr<Scene> scene)
+                             std::shared_ptr<XRLib::XR::XrCore> xrCore,
+                             std::shared_ptr<XRLib::Scene> scene)
     : info{info}, vkCore{vkCore}, xrCore{xrCore}, scene{scene} {
     if (info->validationLayer) {
         for (const char* layer : validataionLayers) {
@@ -63,7 +65,8 @@ void RenderBackend::InitVulkan() {
 
     if (xrCore->IsXRValid()) {
         auto xrGetVulkanInstanceExtensionsKHR =
-            XrUtil::XrGetXRFunction<PFN_xrGetVulkanInstanceExtensionsKHR>(
+            XRLib::XR::XrUtil::XrGetXRFunction<
+                PFN_xrGetVulkanInstanceExtensionsKHR>(
                 xrCore->GetXRInstance(), "xrGetVulkanInstanceExtensionsKHR");
 
         uint32_t xrVulkanInstanceExtensionsCount;
@@ -152,9 +155,9 @@ void RenderBackend::InitVulkan() {
                                devices.data());
 
     if (xrCore->IsXRValid()) {
-        auto xrGetVulkanGraphicsDeviceKHR =
-            XrUtil::XrGetXRFunction<PFN_xrGetVulkanGraphicsDeviceKHR>(
-                xrCore->GetXRInstance(), "xrGetVulkanGraphicsDeviceKHR");
+        auto xrGetVulkanGraphicsDeviceKHR = XRLib::XR::XrUtil::XrGetXRFunction<
+            PFN_xrGetVulkanGraphicsDeviceKHR>(xrCore->GetXRInstance(),
+                                              "xrGetVulkanGraphicsDeviceKHR");
 
         if (xrGetVulkanGraphicsDeviceKHR(
                 xrCore->GetXRInstance(), xrCore->GetSystemID(),
@@ -215,7 +218,8 @@ void RenderBackend::InitVulkan() {
     VkPhysicalDeviceMultiviewFeaturesKHR physicalDeviceMultiviewFeatures{};
     if (xrCore->IsXRValid()) {
         auto xrGetVulkanDeviceExtensionsKHR =
-            XrUtil::XrGetXRFunction<PFN_xrGetVulkanDeviceExtensionsKHR>(
+            XRLib::XR::XrUtil::XrGetXRFunction<
+                PFN_xrGetVulkanDeviceExtensionsKHR>(
                 xrCore->GetXRInstance(), "xrGetVulkanDeviceExtensionsKHR");
 
         uint32_t deviceExtensionsCount;
@@ -450,3 +454,5 @@ void RenderBackend::Run(uint32_t& imageIndex) {
         vkQueuePresentKHR(vkCore->GetGraphicsQueue(), &presentInfo);
     }
 }
+}    // namespace Graphics
+}    // namespace XRLib

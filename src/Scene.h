@@ -4,10 +4,11 @@
 #include "Logger.h"
 #include "Utils/Transform.h"
 
+namespace XRLib {
 class Scene {
    public:
     struct Mesh {
-        std::vector<Primitives::Vertex> vertices;
+        std::vector<Graphics::Primitives::Vertex> vertices;
         std::vector<unsigned int> indices;
         std::string name;
         glm::mat4 transform{1.0f};
@@ -35,3 +36,4 @@ class Scene {
     std::atomic<bool> stop;
     std::thread workerThread;
 };
+}    // namespace XRLib
