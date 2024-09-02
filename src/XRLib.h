@@ -21,10 +21,8 @@ class XRLib {
     XRLib& AddRenderPass(const std::string& vertexShaderPath,
                          const std::string& fragmentShaderPath);
     void Run();
-
     bool ShouldStop();
     XRLib& Fullscreen();
-
     Scene& SceneBackend() { return *scene; }
 
    private:
@@ -32,13 +30,10 @@ class XRLib {
     std::shared_ptr<VkCore> vkCore{std::make_shared<VkCore>()};
     std::shared_ptr<XrCore> xrCore{std::make_shared<XrCore>()};
     std::shared_ptr<Scene> scene{std::make_shared<Scene>()};
-
     void InitXRBackend();
     void InitRenderBackend();
-
     std::unique_ptr<XrBackend> xrBackend{nullptr};
     std::unique_ptr<RenderBackend> renderBackend{nullptr};
-
     std::vector<std::pair<const std::string&, const std::string&>> passesToAdd;
     bool initialized = false;
 };

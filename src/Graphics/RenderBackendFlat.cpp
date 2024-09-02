@@ -36,8 +36,12 @@ void RenderBackendFlat::Prepare(
 
     InitFrameBuffer();
 
-    // show window when preparation finished
-    glfwShowWindow(window);
+    // register window resize callback
+    EventSystem::Callback<int, int> windowResizeCallback =
+        std::bind(&RenderBackendFlat::OnWindowResized, this,
+                  std::placeholders::_1, std::placeholders::_2);
+    EventSystem::RegisterListener(WindowHandler::XRLIB_EVENT_WINDOW_RESIZED,
+                                  windowResizeCallback);
 }
 
 void RenderBackendFlat::CreateFlatSwapChain() {
@@ -89,7 +93,8 @@ void RenderBackendFlat::CreateFlatSwapChain() {
                                               vkCore->GetFlatSurface(),
                                               &capabilities);
     int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
+    std::pair<int&, int&>(width, height) = WindowHandler::GetFrameBufferSize();
+
     vkCore->SetFlatSwapchainExtent2D(
         {std::clamp(static_cast<uint32_t>(width),
                     capabilities.minImageExtent.width,
@@ -158,16 +163,8 @@ void RenderBackendFlat::CreateFlatSwapChain() {
     LOGGER(LOGGER::DEBUG) << "Flat Swapchain created";
 }
 
-void RenderBackendFlat::OnWindowResized() {
-    int width = 0, height = 0;
-    glfwGetFramebufferSize(window, &width, &height);
-    while (width == 0 || height == 0) {
-        glfwGetFramebufferSize(window, &width, &height);
-        glfwWaitEvents();
-    }
-
+void RenderBackendFlat::OnWindowResized(int width, int height) {
     vkDeviceWaitIdle(vkCore->GetRenderDevice());
-
     for (auto framebuffer : vkCore->GetSwapchainFrameBuffer()) {
         //TODO: Change to save clean
         vkDestroyFramebuffer(vkCore->GetRenderDevice(), framebuffer, nullptr);
@@ -187,20 +184,8 @@ void RenderBackendFlat::OnWindowResized() {
 }
 
 void RenderBackendFlat::PrepareFlatWindow() {
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    window = glfwCreateWindow(
-        info->fullscreen ? glfwGetVideoMode(glfwGetPrimaryMonitor())->width
-                         : 400,
-        info->fullscreen ? glfwGetVideoMode(glfwGetPrimaryMonitor())->height
-                         : 400,
-        info->applicationName.c_str(),
-        info->fullscreen ? glfwGetPrimaryMonitor() : nullptr, nullptr);
-    glfwSetWindowUserPointer(window, this);
-    if (glfwCreateWindowSurface(vkCore->GetRenderInstance(), window, nullptr,
-                                &vkCore->GetFlatSurface()) != VK_SUCCESS) {
-        Util::ErrorPopup("Failed to create window surface");
-    }
+    WindowHandler::VkGetWindowSurface(vkCore->GetRenderInstance(),
+                                      &vkCore->GetFlatSurface());
 
     VkBool32 presentSupport = false;
     vkGetPhysicalDeviceSurfaceSupportKHR(vkCore->GetRenderPhysicalDevice(),

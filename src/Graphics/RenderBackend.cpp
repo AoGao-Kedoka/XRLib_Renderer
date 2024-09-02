@@ -6,8 +6,6 @@ RenderBackend::RenderBackend(std::shared_ptr<Info> info,
                              std::shared_ptr<XrCore> xrCore,
                              std::shared_ptr<Scene> scene)
     : info{info}, vkCore{vkCore}, xrCore{xrCore}, scene{scene} {
-    glfwInit();
-
     if (info->validationLayer) {
         for (const char* layer : validataionLayers) {
             bool res = VkUtil::VkCheckLayerSupport(layer);
@@ -39,7 +37,6 @@ RenderBackend::~RenderBackend() {
 }
 
 void RenderBackend::InitVulkan() {
-
     // create vulkan instance
     VkApplicationInfo applicationInfo{};
     applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -53,14 +50,11 @@ void RenderBackend::InitVulkan() {
 
     std::vector<const char*> vulkanInstanceExtensions;
     uint32_t requiredExtensionCount;
-    const char** glfwExtensions =
-        glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
-    if (!glfwExtensions) {
-        Util::ErrorPopup("Error getting glfw instance extension");
-    }
+    auto windowExtensions =
+        WindowHandler::VkGetWindowExtensions(&requiredExtensionCount);
 
     for (uint32_t i = 0; i < requiredExtensionCount; ++i) {
-        vulkanInstanceExtensions.push_back(glfwExtensions[i]);
+        vulkanInstanceExtensions.push_back(windowExtensions[i]);
     }
 
     if (info->validationLayer) {
@@ -391,7 +385,6 @@ void RenderBackend::InitFrameBuffer() {
 }
 
 void RenderBackend::Run(uint32_t& imageIndex) {
-    glfwPollEvents();
     vkWaitForFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence(),
                     VK_TRUE, UINT64_MAX);
     vkResetCommandBuffer(vkCore->GetCommandBuffer(), 0);
@@ -401,7 +394,11 @@ void RenderBackend::Run(uint32_t& imageIndex) {
             vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(), UINT64_MAX,
             vkCore->GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            OnWindowResized();
+            int width, height;
+            std::pair<int&, int&>(width, height) =
+                WindowHandler::GetFrameBufferSize();
+            EventSystem::TriggerEvent(WindowHandler::XRLIB_EVENT_WINDOW_RESIZED,
+                                      width, height);
             return;
         } else if (result != VK_SUCCESS) {
             Util::ErrorPopup("Failed to acquire next image");

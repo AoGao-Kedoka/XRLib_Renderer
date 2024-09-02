@@ -1,3 +1,4 @@
+#include "Utils/Event.h"
 #include "XRLib.h"
 
 namespace XRLib {
@@ -62,6 +63,8 @@ void XRLib::Init(bool xr) {
 
     if (xr)
         InitXRBackend();
+
+    WindowHandler::Init(info);
     InitRenderBackend();
 
     if (scene->CheckTaskRunning()) {
@@ -70,12 +73,16 @@ void XRLib::Init(bool xr) {
 
     if (xrCore->IsXRValid())
         xrBackend->Prepare();
+
     renderBackend->Prepare(passesToAdd);
 
     initialized = true;
+    WindowHandler::ShowWindow();
 }
 
 void XRLib::Run() {
+    WindowHandler::Update();
+
     uint32_t imageIndex = 0;
     if (xrCore->IsXRValid()) {
         XrResult result = xrBackend->StartFrame(imageIndex);

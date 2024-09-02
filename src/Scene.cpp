@@ -1,6 +1,5 @@
 #include "Scene.h"
 
-
 Scene::Scene() : done(false), stop(false) {
     workerThread = std::thread(&Scene::MeshLoadingThread, this);
 }
@@ -110,7 +109,8 @@ void Scene::MeshLoadingThread() {
         }
 
         std::future<void> future =
-            std::async(std::launch::async, &Scene::LoadMesh, this, filename, transformation);
+            std::async(std::launch::async, &Scene::LoadMesh, this, filename,
+                       transformation);
         futures.push_back(std::move(future));
     }
 }
@@ -125,4 +125,3 @@ bool Scene::CheckTaskRunning() {
     }
     return false;
 }
-

@@ -6,8 +6,10 @@
 #include "Graphics/Vulkan/RenderPass.h"
 #include "Graphics/Vulkan/Shader.h"
 #include "Graphics/Vulkan/VkCore.h"
+#include "Graphics/Window.h"
 #include "Logger.h"
 #include "Scene.h"
+#include "Utils/Event.h"
 #include "Utils/Info.h"
 #include "XR/XrCore.h"
 
@@ -21,7 +23,6 @@ class RenderBackend {
         : info(std::exchange(src.info, nullptr)),
           vkCore(std::exchange(src.vkCore, nullptr)),
           xrCore(std::exchange(src.xrCore, nullptr)),
-          window(std::exchange(src.window, nullptr)),
           vkDebugMessenger(std::exchange(src.vkDebugMessenger, VK_NULL_HANDLE)),
           vkCreateDebugUtilsMessengerEXT(
               std::exchange(src.vkCreateDebugUtilsMessengerEXT, nullptr)) {
@@ -48,7 +49,7 @@ class RenderBackend {
     Prepare(std::vector<std::pair<const std::string&, const std::string&>>
                 passesToAdd);
 
-    virtual void OnWindowResized() {
+    virtual void OnWindowResized(int width, int height) {
         Util::ErrorPopup("Undefined image resize");
     };
 
@@ -64,8 +65,6 @@ class RenderBackend {
     std::shared_ptr<VkCore> vkCore;
     std::shared_ptr<XrCore> xrCore;
     std::shared_ptr<Scene> scene;
-
-    GLFWwindow* window;
 
     std::vector<std::unique_ptr<Buffer>> vertexBuffers;
     std::vector<std::unique_ptr<Buffer>> indexBuffers;

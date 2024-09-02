@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Graphics/Window.h"
 #include "RenderBackend.h"
 #include "Utils/Util.h"
 
@@ -23,9 +24,10 @@ class RenderBackendFlat : public RenderBackend {
     void Prepare(std::vector<std::pair<const std::string&, const std::string&>>
                      passesToAdd) override;
 
-    void OnWindowResized() override;
-    bool WindowShouldClose() override { return glfwWindowShouldClose(window); }
-
+    void OnWindowResized(int width, int height) override;
+    bool WindowShouldClose() override {
+        return WindowHandler::WindowShouldClose();
+    }
 
    private:
     void CreateFlatSwapChain();
