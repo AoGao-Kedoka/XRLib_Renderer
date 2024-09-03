@@ -94,8 +94,7 @@ void RenderBackendFlat::CreateFlatSwapChain() {
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkCore->GetRenderPhysicalDevice(),
                                               vkCore->GetFlatSurface(),
                                               &capabilities);
-    int width, height;
-    std::pair<int&, int&>(width, height) = WindowHandler::GetFrameBufferSize();
+    auto [width, height] = WindowHandler::GetFrameBufferSize();
 
     vkCore->SetFlatSwapchainExtent2D(
         {std::clamp(static_cast<uint32_t>(width),

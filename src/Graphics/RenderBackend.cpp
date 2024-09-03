@@ -396,9 +396,7 @@ void RenderBackend::Run(uint32_t& imageIndex) {
             vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(), UINT64_MAX,
             vkCore->GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            int width, height;
-            std::pair<int&, int&>(width, height) =
-                WindowHandler::GetFrameBufferSize();
+            auto [width, height] = WindowHandler::GetFrameBufferSize();
             EventSystem::TriggerEvent(WindowHandler::XRLIB_EVENT_WINDOW_RESIZED,
                                       width, height);
             return;
