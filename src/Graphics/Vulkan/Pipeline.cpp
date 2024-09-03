@@ -15,15 +15,11 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType =
         VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-
-    //TODO: update this when vertex buffer should be used later
-    //vertexInputInfo.vertexBindingDescriptionCount = 1;
-    //vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    //vertexInputInfo.vertexAttributeDescriptionCount =
-    //    attributeDescription.size();
-    //vertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.vertexAttributeDescriptionCount =
+        attributeDescription.size();
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType =
@@ -81,8 +77,9 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
+    pipelineLayoutInfo.setLayoutCount = 0;
+    // TODO: descriptor set layout
 
     if (vkCreatePipelineLayout(core->GetRenderDevice(), &pipelineLayoutInfo,
                                nullptr, &pipelineLayout) != VK_SUCCESS) {

@@ -75,13 +75,6 @@ class VkCore {
         return commandPool;
     }
 
-    VkCommandBuffer& GetCommandBuffer() {
-        if (commandBuffer == VK_NULL_HANDLE) {
-            CreateCommandBuffer();
-        }
-        return commandBuffer;
-    }
-
     VkSemaphore& GetRenderFinishedSemaphore() {
         if (renderFinishedSemaphore == VK_NULL_HANDLE) {
             CreateSyncSemaphore(renderFinishedSemaphore);
@@ -102,6 +95,28 @@ class VkCore {
         }
         return inFlightFence;
     }
+
+   private:
+    void ParseGraphicsQueueFamilyIndex() {
+        uint32_t queueFamilyCount;
+        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice,
+                                                 &queueFamilyCount, nullptr);
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(
+            vkPhysicalDevice, &queueFamilyCount, queueFamilies.data());
+
+        for (int32_t i = 0; i < queueFamilyCount; ++i) {
+            if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                graphicsQueueIndex = i;
+                break;
+            }
+        }
+    }
+
+    void CreateCommandPool();
+    void CreateCommandBuffer();
+    void CreateSyncSemaphore(VkSemaphore& semaphore);
+    void CreateFence(VkFence& fence);
 
    private:
     VkInstance vkInstance{VK_NULL_HANDLE};
@@ -126,36 +141,14 @@ class VkCore {
 
     // commands
     VkCommandPool commandPool{VK_NULL_HANDLE};
-    VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
 
     // semaphores
     VkSemaphore imageAvailableSemaphore{VK_NULL_HANDLE};
     VkSemaphore renderFinishedSemaphore{VK_NULL_HANDLE};
     VkFence inFlightFence;
-
+    
     int32_t graphicsQueueIndex = -1;
 
-   private:
-    void ParseGraphicsQueueFamilyIndex() {
-        uint32_t queueFamilyCount;
-        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice,
-                                                 &queueFamilyCount, nullptr);
-        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(
-            vkPhysicalDevice, &queueFamilyCount, queueFamilies.data());
-
-        for (int32_t i = 0; i < queueFamilyCount; ++i) {
-            if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-                graphicsQueueIndex = i;
-                break;
-            }
-        }
-    }
-
-    void CreateCommandPool();
-    void CreateCommandBuffer();
-    void CreateSyncSemaphore(VkSemaphore& semaphore);
-    void CreateFence(VkFence& fence);
 };
 }    // namespace Graphics
 }    // namespace XRLib

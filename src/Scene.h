@@ -9,7 +9,7 @@ class Scene {
    public:
     struct Mesh {
         std::vector<Graphics::Primitives::Vertex> vertices;
-        std::vector<unsigned int> indices;
+        std::vector<uint16_t> indices;
         std::string name;
         glm::mat4 transform{1.0f};
     };

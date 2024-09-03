@@ -47,6 +47,30 @@ class Shader {
 
     void Init(std::vector<uint32_t> spirv);
     std::vector<uint32_t> Compile(std::string content, std::string name);
+
+    inline static std::string defaultVert{
+        "#version 450\n"
+        "#extension GL_EXT_multiview : enable\n"
+        "\n"
+        "vec2 positions[3] = vec2[](\n"
+        "    vec2(0.0, -0.5),\n"
+        "    vec2(0.5, 0.5),\n"
+        "    vec2(-0.5, 0.5)\n"
+        ");\n"
+        "\n"
+        "void main() {\n"
+        "    gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);\n"
+        "}\n"};
+
+    inline static std::string defaultFrag{
+        "#version 450\n"
+        "\n"
+        "layout(location = 0) out vec4 outColor;\n"
+        "\n"
+        "void main() {\n"
+        "    outColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
+        "}\n"};
+
 };
 }    // namespace Graphics
 }    // namespace XRLib

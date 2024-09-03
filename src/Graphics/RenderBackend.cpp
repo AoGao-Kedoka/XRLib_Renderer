@@ -329,9 +329,6 @@ void RenderBackend::GetSwapchainInfo() {
 
 void RenderBackend::InitVertexIndexBuffers() {
     // init vertex buffer and index buffer
-    vertexBuffers.resize(scene->Meshes().size());
-    indexBuffers.resize(scene->Meshes().size());
-
     for (int i = 0; i < scene->Meshes().size(); ++i) {
         auto mesh = scene->Meshes()[i];
         void* verticesData = static_cast<void*>(mesh.vertices.data());
@@ -389,9 +386,10 @@ void RenderBackend::InitFrameBuffer() {
 }
 
 void RenderBackend::Run(uint32_t& imageIndex) {
+    CommandBuffer commandBuffer{vkCore};
     vkWaitForFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence(),
                     VK_TRUE, UINT64_MAX);
-    vkResetCommandBuffer(vkCore->GetCommandBuffer(), 0);
+    vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
 
     if (!xrCore->IsXRValid()) {
         auto result = vkAcquireNextImageKHR(
@@ -411,7 +409,15 @@ void RenderBackend::Run(uint32_t& imageIndex) {
 
     vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
 
-    CommandBuffer::Record(vkCore, renderPasses[0], imageIndex);
+    commandBuffer.StartRecord().StartPass(renderPasses[0], imageIndex);
+    for (int i = 0; i < scene->Meshes().size(); ++i) {
+        commandBuffer.BindVertexBuffer(0, {vertexBuffers[i]->GetBuffer()}, {0})
+            .BindIndexBuffer(indexBuffers[i]->GetBuffer(), 0)
+            //.DrawIndexed(scene->Meshes()[i].indices.size(), 1, 0, 0, 0);
+            .Draw(3, 1, 0, 0);
+    }
+
+    commandBuffer.EndPass();
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -427,7 +433,7 @@ void RenderBackend::Run(uint32_t& imageIndex) {
     }
 
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &vkCore->GetCommandBuffer();
+    submitInfo.pCommandBuffers = &commandBuffer.GetCommandBuffer();
 
     VkSemaphore signalSemaphores[] = {vkCore->GetRenderFinishedSemaphore()};
     if (!xrCore->IsXRValid()) {
@@ -435,10 +441,7 @@ void RenderBackend::Run(uint32_t& imageIndex) {
         submitInfo.pSignalSemaphores = signalSemaphores;
     }
 
-    if (vkQueueSubmit(vkCore->GetGraphicsQueue(), 1, &submitInfo,
-                      vkCore->GetInFlightFence()) != VK_SUCCESS) {
-        Util::ErrorPopup("Failed to submit draw command buffer");
-    }
+    commandBuffer.EndRecord(&submitInfo, vkCore->GetInFlightFence());
 
     if (!xrCore->IsXRValid()) {
         VkPresentInfoKHR presentInfo{};

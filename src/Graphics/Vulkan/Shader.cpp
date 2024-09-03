@@ -9,10 +9,10 @@ Shader::Shader(std::shared_ptr<VkCore> core,
     if (filePath.empty()) {
         switch (stage) {
             case ShaderStage::VERTEX_SHADER:
-                rawCode = Info::triangleVert;
+                rawCode = defaultVert;
                 break;
             case ShaderStage::FRAGMENT_SHADER:
-                rawCode = Info::triangleFrag;
+                rawCode = defaultFrag;
                 break;
         }
     } else {
@@ -20,13 +20,13 @@ Shader::Shader(std::shared_ptr<VkCore> core,
     }
 
     if (rawCode == "") {
-        exit(-1);
+        Util::ErrorPopup("Shader file content is empty");
     }
 
-    auto spirv = Compile(rawCode, filePath.empty()
-                                      ? "main"
-                                      : filePath.filename().generic_string());
-    Init(spirv);
+    auto spirvFuture = std::async(
+        std::launch::async, &Shader::Compile, this, rawCode,
+        filePath.empty() ? "main" : filePath.filename().generic_string());
+    Init(spirvFuture.get());
 }
 
 Shader::~Shader() {

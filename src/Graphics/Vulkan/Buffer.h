@@ -2,6 +2,7 @@
 
 #include "CommandBuffer.h"
 #include "VkCore.h"
+#include "Logger.h"
 
 namespace XRLib {
 namespace Graphics {
@@ -22,7 +23,7 @@ class Buffer {
         return *this;
     }
 
-    VkBuffer GetBuffer() { return buffer; }
+    VkBuffer& GetBuffer() { return buffer; }
     VkDeviceMemory GetDeviceMemory() { return bufferMemory; }
 
    private:

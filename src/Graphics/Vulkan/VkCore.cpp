@@ -12,19 +12,6 @@ VkCore::~VkCore() {
     VkUtil::VkSafeClean(vkDestroyDevice, vkDevice, nullptr);
     VkUtil::VkSafeClean(vkDestroyInstance, vkInstance, nullptr);
 }
-void VkCore::CreateCommandBuffer() {
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = GetCommandPool();
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
-
-    if (vkAllocateCommandBuffers(GetRenderDevice(), &allocInfo,
-                                 &commandBuffer) != VK_SUCCESS) {
-        Util::ErrorPopup("failed to allocate command buffers!");
-    }
-}
-
 void VkCore::CreateSyncSemaphore(VkSemaphore& semaphore) {
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;

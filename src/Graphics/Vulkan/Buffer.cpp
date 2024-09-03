@@ -7,12 +7,12 @@ Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size,
                void* data)
     : core{core}, bufferSize{size} {
     CreateBuffer(size, usage, properties);
-    if (usage & VK_BUFFER_USAGE_TRANSFER_DST_BIT) {
+    MapMemory(data);
+    if (!usage & VK_BUFFER_USAGE_TRANSFER_DST_BIT) {
         LOGGER(LOGGER::WARNING)
-            << "You are sending a transfer destnation bit with memory mapping, "
+            << "You are not sending a transfer destnation bit with memory mapping, "
                "this may result error!";
     }
-    MapMemory(data);
 }
 Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size,
                VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
@@ -59,6 +59,10 @@ void Buffer::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
 }
 
 void Buffer::MapMemory(void* dataInput) {
+    if (this->buffer == VK_NULL_HANDLE || bufferSize == 0) {
+        LOGGER(LOGGER::ERR) << "Invalid buffer or buffer size for memory mapping";
+        return;
+    }
     Buffer stagingBuffer{
         this->core,
         bufferSize,
@@ -71,14 +75,16 @@ void Buffer::MapMemory(void* dataInput) {
                 bufferSize, 0, &data);
     std::memcpy(data, dataInput, (size_t)bufferSize);
     vkUnmapMemory(core->GetRenderDevice(), stagingBuffer.GetDeviceMemory());
-    CommandBuffer::BeginSingleTimeCommands(core);
+
+    auto cb = CommandBuffer::BeginSingleTimeCommands(core);
 
     VkBufferCopy copyRegion{};
     copyRegion.size = bufferSize;
-    vkCmdCopyBuffer(core->GetCommandBuffer(), stagingBuffer.GetBuffer(), buffer,
+    vkCmdCopyBuffer(cb->GetCommandBuffer(), stagingBuffer.GetBuffer(),
+                    buffer,
                     1, &copyRegion);
 
-    CommandBuffer::EndSingleTimeCommands(core);
+    CommandBuffer::EndSingleTimeCommands(cb);
 }
 
 uint32_t Buffer::FindMemoryType(uint32_t typeFilter,
