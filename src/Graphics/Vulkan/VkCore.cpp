@@ -42,5 +42,19 @@ void VkCore::CreateCommandPool() {
         Util::ErrorPopup("failed to create command pool!");
     }
 }
+void VkCore::CreateDescriptorPool() {
+    VkDescriptorPoolSize poolSizes{};
+    poolSizes.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes.descriptorCount = 1;
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSizes;
+    poolInfo.maxSets = 1;
+    if (vkCreateDescriptorPool(GetRenderDevice(), &poolInfo, nullptr,
+        &descriptorPool) != VK_SUCCESS) {
+
+    }
+}
 }    // namespace Graphics
 }    // namespace XRLib

@@ -89,7 +89,7 @@ std::vector<const char*> Util::SplitStringToCharPtr(const std::string& input) {
     return out;
 }
 
-void Util::ErrorPopup(std::string message) {
+void Util::ErrorPopup(std::string&& message) {
     LOGGER(LOGGER::ERR) << message;
     boxer::show(message.c_str(), "OK", boxer::Style::Error);
     throw std::runtime_error(message.c_str());

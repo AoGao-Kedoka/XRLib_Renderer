@@ -280,12 +280,15 @@ void RenderBackend::Prepare(
     GetSwapchainInfo();
     if (passesToAdd.empty()) {
         auto graphicsRenderPass =
-            std::make_unique<GraphicsRenderPass>(vkCore, true);
+            std::make_shared<GraphicsRenderPass>(vkCore, true);
+
         renderPasses.push_back(std::move(graphicsRenderPass));
+
     } else {
+        // custom render pass
         for (auto& pass : passesToAdd) {
-            auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(
-                vkCore, true, pass.first, pass.second);
+            auto graphicsRenderPass = std::make_shared<GraphicsRenderPass>(
+                vkCore, true, nullptr, pass.first, pass.second);
             renderPasses.push_back(std::move(graphicsRenderPass));
         }
     }
@@ -337,12 +340,12 @@ void RenderBackend::InitVertexIndexBuffers() {
             vkCore, sizeof(mesh.vertices[0]) * mesh.vertices.size(),
             VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, verticesData));
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, verticesData, true));
 
         indexBuffers.push_back(std::make_unique<Buffer>(
             vkCore, sizeof(mesh.indices[0]) * mesh.indices.size(),
             VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            VK_MEMORY_HEAP_DEVICE_LOCAL_BIT, indicesData));
+            VK_MEMORY_HEAP_DEVICE_LOCAL_BIT, indicesData, true));
     }
 }
 

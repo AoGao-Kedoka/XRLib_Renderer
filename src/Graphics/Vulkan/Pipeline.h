@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DescriptorSet.h"
 #include "RenderPass.h"
 #include "Shader.h"
 #include "Utils/Util.h"
@@ -13,7 +14,8 @@ class Pipeline {
     // TODO: compute pipeline
     Pipeline() = default;
     Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
-             Shader fragmentShader, std::shared_ptr<RenderPass> pass);
+             Shader fragmentShader, std::shared_ptr<RenderPass> pass,
+             std::shared_ptr<DescriptorSet> descriptorSet);
     ~Pipeline();
 
     Pipeline(Pipeline&& other) noexcept

@@ -4,14 +4,14 @@ namespace XRLib {
 namespace Graphics {
 Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size,
                VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-               void* data)
+               void* data, bool deviceBuffer)
     : core{core}, bufferSize{size} {
     CreateBuffer(size, usage, properties);
-    MapMemory(data);
-    if (!usage & VK_BUFFER_USAGE_TRANSFER_DST_BIT) {
-        LOGGER(LOGGER::WARNING)
-            << "You are not sending a transfer destnation bit with memory mapping, "
-               "this may result error!";
+    deviceBuffer ? MapDeviceMemory(data) : MapHostMemory(data);
+    if (!(usage & VK_BUFFER_USAGE_TRANSFER_DST_BIT)) {
+        LOGGER(LOGGER::WARNING) << "You are not sending a transfer destnation "
+                                   "bit with memory mapping, "
+                                   "this may result error!";
     }
 }
 Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size,
@@ -58,9 +58,14 @@ void Buffer::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     vkBindBufferMemory(this->core->GetRenderDevice(), buffer, bufferMemory, 0);
 }
 
-void Buffer::MapMemory(void* dataInput) {
+void Buffer::MapHostMemory(void* dataInput) {
+    vkMapMemory(core->GetRenderDevice(), bufferMemory, 0, bufferSize, 0, &data);
+}
+
+void Buffer::MapDeviceMemory(void* dataInput) {
     if (this->buffer == VK_NULL_HANDLE || bufferSize == 0) {
-        LOGGER(LOGGER::ERR) << "Invalid buffer or buffer size for memory mapping";
+        LOGGER(LOGGER::ERR)
+            << "Invalid buffer or buffer size for memory mapping";
         return;
     }
     Buffer stagingBuffer{
@@ -70,7 +75,7 @@ void Buffer::MapMemory(void* dataInput) {
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
     };
-    void* data;
+
     vkMapMemory(core->GetRenderDevice(), stagingBuffer.GetDeviceMemory(), 0,
                 bufferSize, 0, &data);
     std::memcpy(data, dataInput, (size_t)bufferSize);
@@ -80,8 +85,7 @@ void Buffer::MapMemory(void* dataInput) {
 
     VkBufferCopy copyRegion{};
     copyRegion.size = bufferSize;
-    vkCmdCopyBuffer(cb->GetCommandBuffer(), stagingBuffer.GetBuffer(),
-                    buffer,
+    vkCmdCopyBuffer(cb->GetCommandBuffer(), stagingBuffer.GetBuffer(), buffer,
                     1, &copyRegion);
 
     CommandBuffer::EndSingleTimeCommands(cb);

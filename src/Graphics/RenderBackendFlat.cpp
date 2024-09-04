@@ -25,13 +25,46 @@ void RenderBackendFlat::Prepare(
 
     // prepare shader
     if (passesToAdd.empty()) {
+        // default flat render pass
+        static auto startTime = std::chrono::high_resolution_clock::now();
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(
+                         currentTime - startTime)
+                         .count();
+
+        Primitives::UniformBufferObject ubo;
+        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(0.1f),
+                                glm::vec3(0.0f, 0.0f, 1.0));
+        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
+                               glm::vec3(0.0f, 0.0f, 0.0f),
+                               glm::vec3(0.0f, 0.0f, 1.0f));
+        auto [width, height] = WindowHandler::GetFrameBufferSize();
+        ubo.proj = glm::perspective(glm::radians(45.0f), width / (float)height,
+                                    0.1f, 10.0f);
+        ubo.proj[1][1] *= -1;
+
+        Buffer uniformBuffer{vkCore,
+                             sizeof(Primitives::UniformBufferObject),
+                             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                             static_cast<void*>(&ubo),
+                             false};
+
+        std::vector<DescriptorLayoutElement> layoutElements{
+            {uniformBuffer.GetBuffer(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+             sizeof(ubo)}};
+        std::shared_ptr<DescriptorSet> descriptorSet =
+            std::make_shared<DescriptorSet>(vkCore, layoutElements);
+
         auto graphicsRenderPass =
-            std::make_unique<GraphicsRenderPass>(vkCore, false);
+            std::make_shared<GraphicsRenderPass>(vkCore, true, descriptorSet);
+
         renderPasses.push_back(std::move(graphicsRenderPass));
     } else {
         for (auto& pass : passesToAdd) {
-            auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(
-                vkCore, false, pass.first, pass.second);
+            auto graphicsRenderPass = std::make_shared<GraphicsRenderPass>(
+                vkCore, false, nullptr, pass.first, pass.second);
             renderPasses.push_back(std::move(graphicsRenderPass));
         }
     }

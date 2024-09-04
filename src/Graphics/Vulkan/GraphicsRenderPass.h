@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DescriptorSet.h"
 #include "Pipeline.h"
 #include "RenderPass.h"
 #include "Shader.h"
@@ -9,6 +10,7 @@ namespace Graphics {
 class GraphicsRenderPass {
    public:
     GraphicsRenderPass(std::shared_ptr<VkCore> core, bool multiview,
+                       std::shared_ptr<DescriptorSet> descriptorSet = nullptr,
                        std::string vertexShaderPath = "",
                        std::string fragmentShaderPath = "")
         : core{core}, multiview{multiview} {
@@ -17,9 +19,9 @@ class GraphicsRenderPass {
                               Shader::FRAGMENT_SHADER};
         renderPass = std::make_shared<RenderPass>(core, multiview);
 
-        pipeline =
-            std::make_shared<Pipeline>(core, std::move(vertexShader),
-                                       std::move(fragmentShader), renderPass);
+        pipeline = std::make_shared<Pipeline>(core, std::move(vertexShader),
+                                              std::move(fragmentShader),
+                                              renderPass, descriptorSet);
     }
 
     RenderPass& GetRenderPass() { return *renderPass; }

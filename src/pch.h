@@ -17,6 +17,7 @@
 #include <thread>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include <vulkan/vulkan.h>

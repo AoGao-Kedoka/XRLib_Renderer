@@ -4,7 +4,8 @@ namespace XRLib {
 namespace Graphics {
 Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
                    Shader fragmentShader,
-                   std::shared_ptr<RenderPass> renderPass)
+                   std::shared_ptr<RenderPass> renderPass,
+                   std::shared_ptr<DescriptorSet> descriptorSet)
     : core{core} {
     VkPipelineShaderStageCreateInfo shaderStages[] = {
         vertexShader.GetShaderStageInfo(), fragmentShader.GetShaderStageInfo()};
@@ -78,8 +79,14 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
+
+    if (descriptorSet != nullptr) {
+        pipelineLayoutInfo.setLayoutCount = 1;
+        pipelineLayoutInfo.pSetLayouts =
+            &descriptorSet->GetDescriptorSetLayout();
+    } else {
     pipelineLayoutInfo.setLayoutCount = 0;
-    // TODO: descriptor set layout
+    }
 
     if (vkCreatePipelineLayout(core->GetRenderDevice(), &pipelineLayoutInfo,
                                nullptr, &pipelineLayout) != VK_SUCCESS) {

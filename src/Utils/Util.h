@@ -14,5 +14,5 @@ class Util {
     static std::vector<const char*>
     SplitStringToCharPtr(const std::string& input);
 
-    static void ErrorPopup(std::string message);
+    static void ErrorPopup(std::string&& message);
 };

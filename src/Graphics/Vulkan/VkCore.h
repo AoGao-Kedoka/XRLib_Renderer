@@ -67,7 +67,7 @@ class VkCore {
         return stereoSwapchainImageViews;
     }
 
-    // render loop
+    // pools
     VkCommandPool& GetCommandPool() {
         if (commandPool == VK_NULL_HANDLE) {
             CreateCommandPool();
@@ -75,6 +75,12 @@ class VkCore {
         return commandPool;
     }
 
+    VkDescriptorPool& GetDescriptorPool() {
+        if (descriptorPool == VK_NULL_HANDLE) {}
+        return descriptorPool;
+    }
+
+    // rendering loop
     VkSemaphore& GetRenderFinishedSemaphore() {
         if (renderFinishedSemaphore == VK_NULL_HANDLE) {
             CreateSyncSemaphore(renderFinishedSemaphore);
@@ -114,7 +120,7 @@ class VkCore {
     }
 
     void CreateCommandPool();
-    void CreateCommandBuffer();
+    void CreateDescriptorPool();
     void CreateSyncSemaphore(VkSemaphore& semaphore);
     void CreateFence(VkFence& fence);
 
@@ -139,16 +145,17 @@ class VkCore {
     std::vector<VkImageView> stereoSwapchainImageViews;
     VkExtent2D swapchainExtentStereo{0, 0};
 
-    // commands
+    // pools
     VkCommandPool commandPool{VK_NULL_HANDLE};
+    VkDescriptorPool descriptorPool{VK_NULL_HANDLE};
 
     // semaphores
     VkSemaphore imageAvailableSemaphore{VK_NULL_HANDLE};
     VkSemaphore renderFinishedSemaphore{VK_NULL_HANDLE};
     VkFence inFlightFence;
-    
-    int32_t graphicsQueueIndex = -1;
 
+    int32_t graphicsQueueIndex = -1;
+    uint8_t maxFramesInFlight = 3;
 };
 }    // namespace Graphics
 }    // namespace XRLib
