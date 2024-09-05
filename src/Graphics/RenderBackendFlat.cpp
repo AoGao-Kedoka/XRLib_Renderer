@@ -58,12 +58,12 @@ void RenderBackendFlat::Prepare(
             std::make_shared<DescriptorSet>(vkCore, layoutElements);
 
         auto graphicsRenderPass =
-            std::make_shared<GraphicsRenderPass>(vkCore, true, descriptorSet);
+            std::make_unique<GraphicsRenderPass>(vkCore, false, nullptr);
 
         renderPasses.push_back(std::move(graphicsRenderPass));
     } else {
         for (auto& pass : passesToAdd) {
-            auto graphicsRenderPass = std::make_shared<GraphicsRenderPass>(
+            auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(
                 vkCore, false, nullptr, pass.first, pass.second);
             renderPasses.push_back(std::move(graphicsRenderPass));
         }

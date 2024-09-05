@@ -76,7 +76,9 @@ class VkCore {
     }
 
     VkDescriptorPool& GetDescriptorPool() {
-        if (descriptorPool == VK_NULL_HANDLE) {}
+        if (descriptorPool == VK_NULL_HANDLE) {
+            CreateDescriptorPool();
+        }
         return descriptorPool;
     }
 
