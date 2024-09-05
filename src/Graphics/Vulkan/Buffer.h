@@ -1,11 +1,11 @@
 #pragma once
 
-#include "CommandBuffer.h"
 #include "Logger.h"
 #include "VkCore.h"
 
 namespace XRLib {
 namespace Graphics {
+
 class Buffer {
    public:
     Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size,

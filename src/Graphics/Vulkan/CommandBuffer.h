@@ -7,8 +7,10 @@ namespace XRLib {
 namespace Graphics {
 class CommandBuffer {
    public:
-    static std::shared_ptr<CommandBuffer> BeginSingleTimeCommands(std::shared_ptr<VkCore> core);
-    static void EndSingleTimeCommands(std::shared_ptr<CommandBuffer> commandBuffer);
+    static std::shared_ptr<CommandBuffer>
+    BeginSingleTimeCommands(std::shared_ptr<VkCore> core);
+    static void
+    EndSingleTimeCommands(std::shared_ptr<CommandBuffer> commandBuffer);
 
    public:
     CommandBuffer(std::shared_ptr<VkCore> core);
@@ -20,10 +22,13 @@ class CommandBuffer {
     CommandBuffer&
     BindIndexBuffer(VkBuffer indexBuffer, VkDeviceSize offset,
                     VkIndexType indexType = VK_INDEX_TYPE_UINT16);
-    ;
+
+    CommandBuffer& BindDescriptorSets(std::shared_ptr<GraphicsRenderPass> pass, uint32_t firstSet,
+                                      uint32_t dynamicOffsetCount = 0,
+                                      const uint32_t* pDynamicOffsets = nullptr);
     CommandBuffer& StartRecord();
     CommandBuffer& StartPass(std::shared_ptr<GraphicsRenderPass> pass,
-                           uint32_t imageIndex);
+                             uint32_t imageIndex);
     CommandBuffer& EndPass();
     CommandBuffer& DrawIndexed(uint32_t indexCount, uint32_t instanceCount,
                                uint32_t firstIndex, uint32_t vertexOffset,
@@ -38,7 +43,6 @@ class CommandBuffer {
     std::shared_ptr<VkCore> core;
     std::shared_ptr<GraphicsRenderPass> currentPass{nullptr};
     VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
-    
 };
 }    // namespace Graphics
 }    // namespace XRLib

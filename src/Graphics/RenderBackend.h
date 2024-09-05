@@ -6,6 +6,7 @@
 #include "Graphics/Vulkan/RenderPass.h"
 #include "Graphics/Vulkan/Shader.h"
 #include "Graphics/Vulkan/VkCore.h"
+#include "Graphics/Vulkan/CommandBuffer.h"
 #include "Graphics/Window.h"
 #include "Logger.h"
 #include "Scene.h"

@@ -410,12 +410,12 @@ void RenderBackend::Run(uint32_t& imageIndex) {
 
     vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
 
-    commandBuffer.StartRecord().StartPass(renderPasses[0], imageIndex);
+    auto currentPass = renderPasses[0];
+    commandBuffer.StartRecord().StartPass(currentPass, imageIndex).BindDescriptorSets(currentPass, 0);
     for (int i = 0; i < scene->Meshes().size(); ++i) {
         commandBuffer.BindVertexBuffer(0, {vertexBuffers[i]->GetBuffer()}, {0})
             .BindIndexBuffer(indexBuffers[i]->GetBuffer(), 0)
-            //.DrawIndexed(scene->Meshes()[i].indices.size(), 1, 0, 0, 0);
-            .Draw(3, 1, 0, 0);
+            .DrawIndexed(scene->Meshes()[i].indices.size(), 1, 0, 0, 0);
     }
 
     commandBuffer.EndPass();

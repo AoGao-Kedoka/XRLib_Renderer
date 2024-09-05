@@ -23,12 +23,14 @@ CommandBuffer::~CommandBuffer() {
 
 std::shared_ptr<CommandBuffer>
 CommandBuffer::BeginSingleTimeCommands(std::shared_ptr<VkCore> core) {
-    std::shared_ptr<CommandBuffer> commandBuffer = std::make_shared<CommandBuffer>(core);
+    std::shared_ptr<CommandBuffer> commandBuffer =
+        std::make_shared<CommandBuffer>(core);
     commandBuffer->StartRecord();
     return commandBuffer;
 }
 
-void CommandBuffer::EndSingleTimeCommands(std::shared_ptr<CommandBuffer> commandBuffer) {
+void CommandBuffer::EndSingleTimeCommands(
+    std::shared_ptr<CommandBuffer> commandBuffer) {
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
@@ -36,9 +38,9 @@ void CommandBuffer::EndSingleTimeCommands(std::shared_ptr<CommandBuffer> command
     commandBuffer->EndRecord(&submitInfo, VK_NULL_HANDLE);
 }
 
-CommandBuffer& CommandBuffer::BindVertexBuffer(int firstBinding,
-                                               std::vector<VkBuffer> buffers,
-                                               std::vector<VkDeviceSize> offsets) {
+CommandBuffer&
+CommandBuffer::BindVertexBuffer(int firstBinding, std::vector<VkBuffer> buffers,
+                                std::vector<VkDeviceSize> offsets) {
     vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(),
                            offsets.data());
     return *this;
@@ -48,6 +50,19 @@ CommandBuffer& CommandBuffer::BindIndexBuffer(VkBuffer indexBuffer,
                                               VkDeviceSize offset,
                                               VkIndexType indexType) {
     vkCmdBindIndexBuffer(commandBuffer, indexBuffer, offset, indexType);
+    return *this;
+}
+
+CommandBuffer& CommandBuffer::BindDescriptorSets(
+    std::shared_ptr<GraphicsRenderPass> pass, uint32_t firstSet,
+    uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets) {
+    VkPipelineLayout layout = pass->GetPipeline().GetVkPipelineLayout();
+    VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    VkDescriptorSet descriptorSet =
+        pass->GetDescriptorSet().GetVkDescriptorSet();
+    vkCmdBindDescriptorSets(commandBuffer, bindPoint, layout, firstSet, 1,
+                            &descriptorSet, dynamicOffsetCount,
+                            pDynamicOffsets);
     return *this;
 }
 
@@ -63,8 +78,9 @@ CommandBuffer& CommandBuffer::StartRecord() {
     return *this;
 }
 
-CommandBuffer& CommandBuffer::StartPass(std::shared_ptr<GraphicsRenderPass> pass,
-                                      uint32_t imageIndex) {
+CommandBuffer&
+CommandBuffer::StartPass(std::shared_ptr<GraphicsRenderPass> pass,
+                         uint32_t imageIndex) {
 
     if (pass->GetPipeline().GetVkPipeline() == VK_NULL_HANDLE) {
         Util::ErrorPopup("Graphics pipeline not initialized");
@@ -123,7 +139,9 @@ CommandBuffer& CommandBuffer::DrawIndexed(uint32_t indexCount,
     return *this;
 }
 
-CommandBuffer& CommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) {
+CommandBuffer& CommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount,
+                                   uint32_t firstVertex,
+                                   uint32_t firstInstance) {
     vkCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex,
               firstInstance);
     return *this;

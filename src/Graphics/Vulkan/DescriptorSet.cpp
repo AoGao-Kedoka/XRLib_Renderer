@@ -5,13 +5,13 @@ namespace Graphics {
 DescriptorSet::DescriptorSet(
     std::shared_ptr<VkCore> core,
     std::vector<DescriptorLayoutElement> layoutBindings)
-    : core{core} {
-    bindings.resize(layoutBindings.size());
-    for (int i = 0; i < layoutBindings.size(); ++i) {
+    : core{core}, elements{layoutBindings} {
+    bindings.resize(elements.size());
+    for (int i = 0; i < elements.size(); ++i) {
         bindings[i].binding = i;
-        bindings[i].descriptorType = layoutBindings[i].GetType();
+        bindings[i].descriptorType = elements[i].GetType();
         bindings[i].descriptorCount = 1;
-        bindings[i].stageFlags = layoutBindings[i].stage;
+        bindings[i].stageFlags = elements[i].stage;
         bindings[i].pImmutableSamplers = nullptr;
     }
 
@@ -37,33 +37,34 @@ DescriptorSet::DescriptorSet(
         Util::ErrorPopup("Failed to allocate descriptor set, Error: " + result);
     }
 
-    std::vector<VkWriteDescriptorSet> descriptorWrites(layoutBindings.size());
-    for (int i = 0; i < layoutBindings.size(); ++i) {
+    std::vector<VkWriteDescriptorSet> descriptorWrites(elements.size());
+    for (int i = 0; i < elements.size(); ++i) {
         descriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[i].dstSet = descriptorSet;
         descriptorWrites[i].dstBinding = i;
         descriptorWrites[i].dstArrayElement = 0;
         descriptorWrites[i].descriptorCount = 1;
 
-        if (std::holds_alternative<VkBuffer>(layoutBindings[i].data)) {
+        if (auto bufferPtr =
+                std::get_if<std::shared_ptr<Buffer>>(&elements[i].data)) {
             // write buffer
             VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = std::get<VkBuffer>(layoutBindings[i].data);
+            bufferInfo.buffer = (*bufferPtr)->GetBuffer();
             bufferInfo.offset = 0;
-            bufferInfo.range = layoutBindings[i].size;
+            bufferInfo.range = elements[i].size;
 
-            descriptorWrites[i].descriptorType = layoutBindings[i].GetType();
+            descriptorWrites[i].descriptorType = elements[i].GetType();
             descriptorWrites[i].pBufferInfo = &bufferInfo;
 
-        } else if (std::holds_alternative<Image>(
-                       layoutBindings[i].data)) {
+        } else if (auto imagePtr =
+                       std::get_if<std::shared_ptr<Image>>(&elements[i].data)) {
             // write sampler
-            Image image = std::get<Image>(layoutBindings[i].data);
             VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageView = image.GetImageView();
-            imageInfo.sampler = image.GetSampler();
+            imageInfo.imageView = (*imagePtr)->GetImageView();
+            imageInfo.sampler = (*imagePtr)->GetSampler();
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-            descriptorWrites[i].descriptorType = layoutBindings[i].GetType();
+            descriptorWrites[i].descriptorType = elements[i].GetType();
             descriptorWrites[i].pImageInfo = &imageInfo;
         }
     }

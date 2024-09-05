@@ -51,26 +51,37 @@ class Shader {
     inline static std::string defaultVert{
         "#version 450\n"
         "#extension GL_EXT_multiview : enable\n"
+        "#extension GL_ARB_separate_shader_objects : enable\n"
         "\n"
-        "vec2 positions[3] = vec2[](\n"
-        "    vec2(0.0, -0.5),\n"
-        "    vec2(0.5, 0.5),\n"
-        "    vec2(-0.5, 0.5)\n"
-        ");\n"
+        "layout(set=0,binding = 0) uniform UniformBufferObject {\n"
+        "        mat4 model;\n"
+        "        mat4 view;\n"
+        "        mat4 proj;\n"
+        "} ubo;\n"
+        "\n"
+        "layout(location = 0) in vec3 inPosition;\n"
+        "layout(location = 1) in vec3 inNormal;\n"
+        "layout(location = 2) in vec2 inTexCoord;\n"
+        "\n"
+        "layout(location = 0) out vec3 fragNormal;\n"
+        "layout(location = 1) out vec2 fragTexCoord;\n"
         "\n"
         "void main() {\n"
-        "    gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);\n"
+        "    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, "
+        "1.0);\n"
+        "    fragNormal = inNormal;\n"
+        "    fragTexCoord = inTexCoord;\n"
         "}\n"};
 
     inline static std::string defaultFrag{
         "#version 450\n"
+        "#extension GL_ARB_separate_shader_objects : enable\n"
         "\n"
         "layout(location = 0) out vec4 outColor;\n"
         "\n"
         "void main() {\n"
         "    outColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
         "}\n"};
-
 };
 }    // namespace Graphics
 }    // namespace XRLib

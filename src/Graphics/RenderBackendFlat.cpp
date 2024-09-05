@@ -43,22 +43,20 @@ void RenderBackendFlat::Prepare(
                                     0.1f, 10.0f);
         ubo.proj[1][1] *= -1;
 
-        Buffer uniformBuffer{vkCore,
-                             sizeof(Primitives::UniformBufferObject),
-                             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                             static_cast<void*>(&ubo),
-                             false};
+        auto uniformBuffer = std::make_shared<Buffer>(
+            vkCore, sizeof(Primitives::UniformBufferObject),
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            static_cast<void*>(&ubo), false);
 
-        std::vector<DescriptorLayoutElement> layoutElements{
-            {uniformBuffer.GetBuffer(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-             sizeof(ubo)}};
+
+        std::vector<DescriptorLayoutElement> layoutElements{{uniformBuffer, sizeof(ubo)}};
         std::shared_ptr<DescriptorSet> descriptorSet =
             std::make_shared<DescriptorSet>(vkCore, layoutElements);
 
         auto graphicsRenderPass =
-            std::make_unique<GraphicsRenderPass>(vkCore, false, nullptr);
+            std::make_unique<GraphicsRenderPass>(vkCore, false, descriptorSet);
 
         renderPasses.push_back(std::move(graphicsRenderPass));
     } else {

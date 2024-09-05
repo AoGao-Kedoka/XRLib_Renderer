@@ -34,6 +34,7 @@ class Pipeline {
     }
 
     VkPipeline& GetVkPipeline() { return pipeline; }
+    VkPipelineLayout& GetVkPipelineLayout() { return pipelineLayout; }
 
    private:
     std::shared_ptr<VkCore> core{nullptr};

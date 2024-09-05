@@ -13,7 +13,7 @@ class GraphicsRenderPass {
                        std::shared_ptr<DescriptorSet> descriptorSet = nullptr,
                        std::string vertexShaderPath = "",
                        std::string fragmentShaderPath = "")
-        : core{core}, multiview{multiview} {
+        : core{core}, multiview{multiview}, descriptorSet{descriptorSet} {
         Shader vertexShader{core, vertexShaderPath, Shader::VERTEX_SHADER};
         Shader fragmentShader{core, fragmentShaderPath,
                               Shader::FRAGMENT_SHADER};
@@ -26,12 +26,14 @@ class GraphicsRenderPass {
 
     RenderPass& GetRenderPass() { return *renderPass; }
     Pipeline& GetPipeline() { return *pipeline; }
+    DescriptorSet& GetDescriptorSet() { return *descriptorSet; }
     bool Stereo() { return multiview; }
 
    private:
     std::shared_ptr<VkCore> core;
     std::shared_ptr<RenderPass> renderPass;
     std::shared_ptr<Pipeline> pipeline;
+    std::shared_ptr<DescriptorSet> descriptorSet;
     bool multiview;
 };
 }    // namespace Graphics
