@@ -12,6 +12,43 @@ VkCore::~VkCore() {
     VkUtil::VkSafeClean(vkDestroyDevice, vkDevice, nullptr);
     VkUtil::VkSafeClean(vkDestroyInstance, vkInstance, nullptr);
 }
+
+uint32_t VkCore::GetMemoryType(uint32_t typeFilter,
+                               VkMemoryPropertyFlags properties) {
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(GetRenderPhysicalDevice(),
+                                        &memProperties);
+
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((typeFilter & (1 << i)) &&
+            (memProperties.memoryTypes[i].propertyFlags & properties) ==
+                properties) {
+            return i;
+        }
+    }
+
+    Util::ErrorPopup("Failed to find suitable memory type!");
+    return -1;
+}
+
+VkFormat VkCore::FindSupportedFormat(const std::vector<VkFormat>& candidates,
+                                     VkImageTiling tiling,
+                                     VkFormatFeatureFlags features) {
+    for (VkFormat format : candidates) {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(GetRenderPhysicalDevice(), format,
+                                            &props);
+        if (tiling == VK_IMAGE_TILING_LINEAR &&
+            (props.linearTilingFeatures & features) == features) {
+            return format;
+        } else if (tiling == VK_IMAGE_TILING_OPTIMAL &&
+                   (props.optimalTilingFeatures & features) == features) {
+            return format;
+        }
+    }
+    Util::ErrorPopup("Error finding supported format");
+}
+
 void VkCore::CreateSyncSemaphore(VkSemaphore& semaphore) {
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -52,9 +89,7 @@ void VkCore::CreateDescriptorPool() {
     poolInfo.pPoolSizes = &poolSizes;
     poolInfo.maxSets = 1;
     if (vkCreateDescriptorPool(GetRenderDevice(), &poolInfo, nullptr,
-        &descriptorPool) != VK_SUCCESS) {
-
-    }
+                               &descriptorPool) != VK_SUCCESS) {}
 }
 }    // namespace Graphics
 }    // namespace XRLib

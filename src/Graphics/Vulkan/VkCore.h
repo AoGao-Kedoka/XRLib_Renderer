@@ -20,6 +20,14 @@ class VkCore {
         return graphicsQueueIndex;
     }
 
+    uint32_t GetMemoryType(uint32_t typeFilter,
+                           VkMemoryPropertyFlags properties);
+
+    VkFormat
+    FindSupportedFormat(const std::vector<VkFormat>& candidates,
+                                     VkImageTiling tiling,
+                                     VkFormatFeatureFlags features);
+
     // flat renderer
     VkSurfaceKHR& GetFlatSurface() { return surfaceFlat; }
     VkSwapchainKHR& GetFlatSwapchain() { return swapChainFlat; }

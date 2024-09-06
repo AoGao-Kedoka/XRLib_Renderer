@@ -38,6 +38,192 @@ RenderBackend::~RenderBackend() {
     }
 }
 
+void RenderBackend::Prepare(
+    std::vector<std::pair<const std::string&, const std::string&>>
+        passesToAdd) {
+    InitVertexIndexBuffers();
+    GetSwapchainInfo();
+    if (passesToAdd.empty()) {
+        auto graphicsRenderPass =
+            std::make_shared<GraphicsRenderPass>(vkCore, true);
+
+        renderPasses.push_back(std::move(graphicsRenderPass));
+
+    } else {
+        // custom render pass
+        for (auto& pass : passesToAdd) {
+            auto graphicsRenderPass = std::make_shared<GraphicsRenderPass>(
+                vkCore, true, nullptr, pass.first, pass.second);
+            renderPasses.push_back(std::move(graphicsRenderPass));
+        }
+    }
+    InitFrameBuffer();
+}
+
+void RenderBackend::GetSwapchainInfo() {
+    uint8_t swapchainImageCount = xrCore->GetSwapchainImages().size();
+    vkCore->GetStereoSwapchainImages().resize(swapchainImageCount);
+    vkCore->GetStereoSwapchainImageViews().resize(swapchainImageCount);
+    for (uint32_t i = 0; i < xrCore->GetSwapchainImages().size(); ++i) {
+        // create image view
+        vkCore->GetStereoSwapchainImages()[i] =
+            xrCore->GetSwapchainImages()[i].image;
+        VkImageViewCreateInfo imageViewCreateInfo{};
+        imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        imageViewCreateInfo.image = vkCore->GetStereoSwapchainImages()[i];
+        imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+        imageViewCreateInfo.format = vkCore->GetStereoSwapchainImageFormat();
+        imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageViewCreateInfo.subresourceRange.aspectMask =
+            VK_IMAGE_ASPECT_COLOR_BIT;
+        imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+        imageViewCreateInfo.subresourceRange.levelCount = 1;
+        imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+        imageViewCreateInfo.subresourceRange.layerCount = 2;
+        if (vkCreateImageView(
+                vkCore->GetRenderDevice(), &imageViewCreateInfo, nullptr,
+                &vkCore->GetStereoSwapchainImageViews()[i]) != VK_SUCCESS) {
+            Util::ErrorPopup("Failed to create image view");
+        }
+    }
+
+    vkCore->SetStereoSwapchainExtent2D(
+        {xrCore->GetXRViewConfigurationView()[0].recommendedImageRectWidth,
+         xrCore->GetXRViewConfigurationView()[0].recommendedImageRectHeight});
+}
+
+void RenderBackend::InitVertexIndexBuffers() {
+    // init vertex buffer and index buffer
+    for (int i = 0; i < scene->Meshes().size(); ++i) {
+        auto mesh = scene->Meshes()[i];
+        void* verticesData = static_cast<void*>(mesh.vertices.data());
+        void* indicesData = static_cast<void*>(mesh.indices.data());
+        vertexBuffers.push_back(std::make_unique<Buffer>(
+            vkCore, sizeof(mesh.vertices[0]) * mesh.vertices.size(),
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, verticesData, true));
+
+        indexBuffers.push_back(std::make_unique<Buffer>(
+            vkCore, sizeof(mesh.indices[0]) * mesh.indices.size(),
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            VK_MEMORY_HEAP_DEVICE_LOCAL_BIT, indicesData, true));
+    }
+}
+
+void RenderBackend::InitFrameBuffer() {
+    // create frame buffer
+    if (xrCore->IsXRValid()) {
+        vkCore->GetSwapchainFrameBuffer().resize(
+            vkCore->GetStereoSwapchainImageViews().size());
+    } else {
+        vkCore->GetSwapchainFrameBuffer().resize(
+            vkCore->GetSwapchainImageViewsFlat().size());
+    }
+
+    for (size_t i = 0; i < vkCore->GetSwapchainFrameBuffer().size(); i++) {
+        std::vector<VkImageView> attachments;
+        if (xrCore->IsXRValid()) {
+            attachments.push_back(vkCore->GetStereoSwapchainImageViews()[i]);
+        } else {
+            attachments.push_back(vkCore->GetSwapchainImageViewsFlat()[i]);
+        }
+
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = renderPasses[renderPasses.size() - 1]
+                                         ->GetRenderPass()
+                                         .GetVkRenderPass();
+        framebufferInfo.attachmentCount = attachments.size();
+        framebufferInfo.pAttachments = attachments.data();
+        framebufferInfo.width =
+            vkCore->GetSwapchainExtent(xrCore->IsXRValid()).width;
+        framebufferInfo.height =
+            vkCore->GetSwapchainExtent(xrCore->IsXRValid()).height;
+        framebufferInfo.layers = 1;
+
+        if (vkCreateFramebuffer(
+                vkCore->GetRenderDevice(), &framebufferInfo, nullptr,
+                &vkCore->GetSwapchainFrameBuffer()[i]) != VK_SUCCESS) {
+            Util::ErrorPopup("Failed to create frame buffer");
+        }
+    }
+}
+
+void RenderBackend::Run(uint32_t& imageIndex) {
+    CommandBuffer commandBuffer{vkCore};
+    vkWaitForFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence(),
+                    VK_TRUE, UINT64_MAX);
+    vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
+
+    if (!xrCore->IsXRValid()) {
+        auto result = vkAcquireNextImageKHR(
+            vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(), UINT64_MAX,
+            vkCore->GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+            auto [width, height] = WindowHandler::GetFrameBufferSize();
+            EventSystem::TriggerEvent(WindowHandler::XRLIB_EVENT_WINDOW_RESIZED,
+                                      width, height);
+            return;
+        } else if (result != VK_SUCCESS) {
+            Util::ErrorPopup("Failed to acquire next image");
+        }
+    }
+
+    vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
+
+    commandBuffer.StartRecord().StartPass(renderPasses[0], imageIndex).BindDescriptorSets(renderPasses[0], 0);
+    for (int i = 0; i < scene->Meshes().size(); ++i) {
+        commandBuffer.BindVertexBuffer(0, {vertexBuffers[i]->GetBuffer()}, {0})
+            .BindIndexBuffer(indexBuffers[i]->GetBuffer(), 0)
+            .DrawIndexed(scene->Meshes()[i].indices.size(), 1, 0, 0, 0);
+            //.Draw(3, 1, 0, 0);
+    }
+
+    commandBuffer.EndPass();
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    VkSemaphore waitSemaphores[] = {vkCore->GetImageAvailableSemaphore()};
+    VkPipelineStageFlags waitStages[] = {
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submitInfo.waitSemaphoreCount = 0;
+    if (!xrCore->IsXRValid()) {
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask = waitStages;
+    }
+
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer.GetCommandBuffer();
+
+    VkSemaphore signalSemaphores[] = {vkCore->GetRenderFinishedSemaphore()};
+    if (!xrCore->IsXRValid()) {
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = signalSemaphores;
+    }
+
+    commandBuffer.EndRecord(&submitInfo, vkCore->GetInFlightFence());
+
+    if (!xrCore->IsXRValid()) {
+        VkPresentInfoKHR presentInfo{};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = signalSemaphores;
+        VkSwapchainKHR swapChains[] = {vkCore->GetFlatSwapchain()};
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapChains;
+        presentInfo.pImageIndices = &imageIndex;
+
+        vkQueuePresentKHR(vkCore->GetGraphicsQueue(), &presentInfo);
+    }
+}
+
 void RenderBackend::InitVulkan() {
     // create vulkan instance
     VkApplicationInfo applicationInfo{};
@@ -271,192 +457,6 @@ void RenderBackend::InitVulkan() {
     vkGetDeviceQueue(vkCore->GetRenderDevice(),
                      vkCore->GetGraphicsQueueFamilyIndex(), 0,
                      &vkCore->GetGraphicsQueue());
-}
-
-void RenderBackend::Prepare(
-    std::vector<std::pair<const std::string&, const std::string&>>
-        passesToAdd) {
-    InitVertexIndexBuffers();
-    GetSwapchainInfo();
-    if (passesToAdd.empty()) {
-        auto graphicsRenderPass =
-            std::make_shared<GraphicsRenderPass>(vkCore, true);
-
-        renderPasses.push_back(std::move(graphicsRenderPass));
-
-    } else {
-        // custom render pass
-        for (auto& pass : passesToAdd) {
-            auto graphicsRenderPass = std::make_shared<GraphicsRenderPass>(
-                vkCore, true, nullptr, pass.first, pass.second);
-            renderPasses.push_back(std::move(graphicsRenderPass));
-        }
-    }
-    InitFrameBuffer();
-}
-
-void RenderBackend::GetSwapchainInfo() {
-    uint8_t swapchainImageCount = xrCore->GetSwapchainImages().size();
-    vkCore->GetStereoSwapchainImages().resize(swapchainImageCount);
-    vkCore->GetStereoSwapchainImageViews().resize(swapchainImageCount);
-    for (uint32_t i = 0; i < xrCore->GetSwapchainImages().size(); ++i) {
-        // create image view
-        vkCore->GetStereoSwapchainImages()[i] =
-            xrCore->GetSwapchainImages()[i].image;
-        VkImageViewCreateInfo imageViewCreateInfo{};
-        imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        imageViewCreateInfo.image = vkCore->GetStereoSwapchainImages()[i];
-        imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-        imageViewCreateInfo.format = vkCore->GetStereoSwapchainImageFormat();
-        imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-        imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-        imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-        imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-        imageViewCreateInfo.subresourceRange.aspectMask =
-            VK_IMAGE_ASPECT_COLOR_BIT;
-        imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-        imageViewCreateInfo.subresourceRange.levelCount = 1;
-        imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-        imageViewCreateInfo.subresourceRange.layerCount = 2;
-        if (vkCreateImageView(
-                vkCore->GetRenderDevice(), &imageViewCreateInfo, nullptr,
-                &vkCore->GetStereoSwapchainImageViews()[i]) != VK_SUCCESS) {
-            Util::ErrorPopup("Failed to create image view");
-        }
-    }
-
-    vkCore->SetStereoSwapchainExtent2D(
-        {xrCore->GetXRViewConfigurationView()[0].recommendedImageRectWidth,
-         xrCore->GetXRViewConfigurationView()[0].recommendedImageRectHeight});
-}
-
-void RenderBackend::InitVertexIndexBuffers() {
-    // init vertex buffer and index buffer
-    for (int i = 0; i < scene->Meshes().size(); ++i) {
-        auto mesh = scene->Meshes()[i];
-        void* verticesData = static_cast<void*>(mesh.vertices.data());
-        void* indicesData = static_cast<void*>(mesh.indices.data());
-        vertexBuffers.push_back(std::make_unique<Buffer>(
-            vkCore, sizeof(mesh.vertices[0]) * mesh.vertices.size(),
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, verticesData, true));
-
-        indexBuffers.push_back(std::make_unique<Buffer>(
-            vkCore, sizeof(mesh.indices[0]) * mesh.indices.size(),
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            VK_MEMORY_HEAP_DEVICE_LOCAL_BIT, indicesData, true));
-    }
-}
-
-void RenderBackend::InitFrameBuffer() {
-    // create frame buffer
-    if (xrCore->IsXRValid()) {
-        vkCore->GetSwapchainFrameBuffer().resize(
-            vkCore->GetStereoSwapchainImageViews().size());
-    } else {
-        vkCore->GetSwapchainFrameBuffer().resize(
-            vkCore->GetSwapchainImageViewsFlat().size());
-    }
-
-    for (size_t i = 0; i < vkCore->GetSwapchainFrameBuffer().size(); i++) {
-        std::vector<VkImageView> attachments;
-        if (xrCore->IsXRValid()) {
-            attachments.push_back(vkCore->GetStereoSwapchainImageViews()[i]);
-        } else {
-            attachments.push_back(vkCore->GetSwapchainImageViewsFlat()[i]);
-        }
-
-        VkFramebufferCreateInfo framebufferInfo{};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = renderPasses[renderPasses.size() - 1]
-                                         ->GetRenderPass()
-                                         .GetVkRenderPass();
-        framebufferInfo.attachmentCount = attachments.size();
-        framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width =
-            vkCore->GetSwapchainExtent(xrCore->IsXRValid()).width;
-        framebufferInfo.height =
-            vkCore->GetSwapchainExtent(xrCore->IsXRValid()).height;
-        framebufferInfo.layers = 1;
-
-        if (vkCreateFramebuffer(
-                vkCore->GetRenderDevice(), &framebufferInfo, nullptr,
-                &vkCore->GetSwapchainFrameBuffer()[i]) != VK_SUCCESS) {
-            Util::ErrorPopup("Failed to create frame buffer");
-        }
-    }
-}
-
-void RenderBackend::Run(uint32_t& imageIndex) {
-    CommandBuffer commandBuffer{vkCore};
-    vkWaitForFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence(),
-                    VK_TRUE, UINT64_MAX);
-    vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
-
-    if (!xrCore->IsXRValid()) {
-        auto result = vkAcquireNextImageKHR(
-            vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(), UINT64_MAX,
-            vkCore->GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            auto [width, height] = WindowHandler::GetFrameBufferSize();
-            EventSystem::TriggerEvent(WindowHandler::XRLIB_EVENT_WINDOW_RESIZED,
-                                      width, height);
-            return;
-        } else if (result != VK_SUCCESS) {
-            Util::ErrorPopup("Failed to acquire next image");
-        }
-    }
-
-    vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
-
-    auto currentPass = renderPasses[0];
-    commandBuffer.StartRecord().StartPass(currentPass, imageIndex).BindDescriptorSets(currentPass, 0);
-    for (int i = 0; i < scene->Meshes().size(); ++i) {
-        commandBuffer.BindVertexBuffer(0, {vertexBuffers[i]->GetBuffer()}, {0})
-            .BindIndexBuffer(indexBuffers[i]->GetBuffer(), 0)
-            .DrawIndexed(scene->Meshes()[i].indices.size(), 1, 0, 0, 0);
-    }
-
-    commandBuffer.EndPass();
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-    VkSemaphore waitSemaphores[] = {vkCore->GetImageAvailableSemaphore()};
-    VkPipelineStageFlags waitStages[] = {
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    submitInfo.waitSemaphoreCount = 0;
-    if (!xrCore->IsXRValid()) {
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
-    }
-
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer.GetCommandBuffer();
-
-    VkSemaphore signalSemaphores[] = {vkCore->GetRenderFinishedSemaphore()};
-    if (!xrCore->IsXRValid()) {
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
-    }
-
-    commandBuffer.EndRecord(&submitInfo, vkCore->GetInFlightFence());
-
-    if (!xrCore->IsXRValid()) {
-        VkPresentInfoKHR presentInfo{};
-        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
-        VkSwapchainKHR swapChains[] = {vkCore->GetFlatSwapchain()};
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = swapChains;
-        presentInfo.pImageIndices = &imageIndex;
-
-        vkQueuePresentKHR(vkCore->GetGraphicsQueue(), &presentInfo);
-    }
 }
 }    // namespace Graphics
 }    // namespace XRLib

@@ -41,7 +41,7 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
 
     VkPipelineMultisampleStateCreateInfo multisampling{};
@@ -93,6 +93,15 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
         throw std::runtime_error("failed to create pipeline layout!");
     }
 
+    VkPipelineDepthStencilStateCreateInfo depthStencil{};
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.depthTestEnable = VK_TRUE;
+    depthStencil.depthWriteEnable = VK_TRUE;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencil.depthBoundsTestEnable = VK_FALSE;
+    depthStencil.minDepthBounds = 0.0f; // Optional
+    depthStencil.maxDepthBounds = 1.0f; // Optional
+
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = 2;
@@ -108,6 +117,7 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
     pipelineInfo.renderPass = renderPass->GetVkRenderPass();
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+    //pipelineInfo.pDepthStencilState = &depthStencil;
 
     if (vkCreateGraphicsPipelines(core->GetRenderDevice(), VK_NULL_HANDLE, 1,
                                   &pipelineInfo, nullptr,

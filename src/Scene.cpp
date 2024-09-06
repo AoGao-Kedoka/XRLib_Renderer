@@ -16,18 +16,13 @@ Scene::~Scene() {
     }
 }
 
-Scene& Scene::LoadMeshAsync(const std::string& path, Transform transform) {
+Scene& Scene::LoadMeshAsync(const MeshLoadInfo& loadInfo) {
     {
         std::lock_guard<std::mutex> lock(queueMutex);
-        meshQueue.push({path, transform.GetMatrix()});
+        meshQueue.push(loadInfo);
     }
     cv.notify_all();
     return *this;
-}
-
-Scene& Scene::LoadMeshAsync(const std::string& path) {
-    Transform transform;
-    return LoadMeshAsync(path, transform);
 }
 
 void Scene::WaitForAllMeshesToLoad() {
@@ -41,11 +36,11 @@ void Scene::WaitForAllMeshesToLoad() {
     }
 }
 
-void Scene::LoadMesh(const std::string& filename, glm::mat4 transformation) {
+void Scene::LoadMesh(const MeshLoadInfo& meshLoadInfo) {
     Assimp::Importer importer;
 
     const aiScene* scene =
-        importer.ReadFile(filename, aiProcess_Triangulate | aiProcess_FlipUVs |
+        importer.ReadFile(meshLoadInfo.meshPath, aiProcess_Triangulate | aiProcess_FlipUVs |
                                         aiProcess_JoinIdenticalVertices);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE ||
@@ -84,34 +79,32 @@ void Scene::LoadMesh(const std::string& filename, glm::mat4 transformation) {
         }
 
         {
-            newMesh.name = filename;
-            newMesh.transform = transformation;
+            newMesh.name = meshLoadInfo.meshPath;
+            newMesh.transform = meshLoadInfo.transform;
+            newMesh.texturePath = meshLoadInfo.texturePath;
             std::lock_guard<std::mutex> lock(queueMutex);
             meshes.push_back(newMesh);
         }
     }
 
-    LOGGER(LOGGER::INFO) << "Loaded mesh: " << filename;
+    LOGGER(LOGGER::INFO) << "Loaded mesh: " << meshLoadInfo.meshPath;
 }
 
 void Scene::MeshLoadingThread() {
     while (true) {
-        std::string filename;
-        glm::mat4 transformation;
+        MeshLoadInfo loadInfo;
         {
             std::unique_lock<std::mutex> lock(queueMutex);
             cv.wait(lock, [this] { return !meshQueue.empty() || stop; });
             if (stop && meshQueue.empty()) {
                 return;
             }
-            filename = meshQueue.front().first;
-            transformation = meshQueue.front().second;
+            loadInfo = meshQueue.front();
             meshQueue.pop();
         }
 
         std::future<void> future =
-            std::async(std::launch::async, &Scene::LoadMesh, this, filename,
-                       transformation);
+            std::async(std::launch::async, &Scene::LoadMesh, this, loadInfo);
         futures.push_back(std::move(future));
     }
 }
@@ -126,4 +119,13 @@ bool Scene::CheckTaskRunning() {
     }
     return false;
 }
+
+glm::mat4 Scene::GetCameraProjection() {
+    auto [width, height] = Graphics::WindowHandler::GetFrameBufferSize();
+    auto proj = glm::perspective(glm::radians(45.0f), width / (float)height,
+                                 0.1f, 10.0f);
+    proj[1][1] *= -1;
+    return proj;
+}
+
 }    // namespace XRLib

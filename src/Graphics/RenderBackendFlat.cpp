@@ -26,32 +26,29 @@ void RenderBackendFlat::Prepare(
     // prepare shader
     if (passesToAdd.empty()) {
         // default flat render pass
-        static auto startTime = std::chrono::high_resolution_clock::now();
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(
-                         currentTime - startTime)
-                         .count();
+        Primitives::ViewProjection viewProjection;
+        viewProjection.view = scene->Camera().GetMatrix();
+        viewProjection.proj = scene->GetCameraProjection();
 
-        Primitives::UniformBufferObject ubo;
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(0.1f),
-                                glm::vec3(0.0f, 0.0f, 1.0));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
-                               glm::vec3(0.0f, 0.0f, 0.0f),
-                               glm::vec3(0.0f, 0.0f, 1.0f));
-        auto [width, height] = WindowHandler::GetFrameBufferSize();
-        ubo.proj = glm::perspective(glm::radians(45.0f), width / (float)height,
-                                    0.1f, 10.0f);
-        ubo.proj[1][1] *= -1;
+        // TODO: adapt to multiple objects
+        Primitives::ModelPos model;
+        model.model = glm::mat4(1);
 
-        auto uniformBuffer = std::make_shared<Buffer>(
-            vkCore, sizeof(Primitives::UniformBufferObject),
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            static_cast<void*>(&ubo), false);
+        std::vector<DescriptorLayoutElement> layoutElements{
+            {std::make_shared<Buffer>(
+                vkCore, sizeof(Primitives::ViewProjection),
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                static_cast<void*>(&viewProjection), false)},
+            {std::make_shared<Buffer>(vkCore, sizeof(Primitives::ModelPos),
+                                      VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                      static_cast<void*>(&model), false)},
+            {std::make_shared<Image>(vkCore, scene->Meshes()[0].texturePath,
+                                     VK_FORMAT_R8G8B8A8_SRGB)}};
 
-
-        std::vector<DescriptorLayoutElement> layoutElements{{uniformBuffer, sizeof(ubo)}};
         std::shared_ptr<DescriptorSet> descriptorSet =
             std::make_shared<DescriptorSet>(vkCore, layoutElements);
 

@@ -49,7 +49,7 @@ void Buffer::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex =
-        FindMemoryType(memRequirements.memoryTypeBits, properties);
+        core->GetMemoryType(memRequirements.memoryTypeBits, properties);
 
     if (vkAllocateMemory(core->GetRenderDevice(), &allocInfo, nullptr,
                          &bufferMemory) != VK_SUCCESS) {
@@ -61,6 +61,7 @@ void Buffer::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
 
 void Buffer::MapHostMemory(void* dataInput) {
     vkMapMemory(core->GetRenderDevice(), bufferMemory, 0, bufferSize, 0, &data);
+    std::memcpy(data, dataInput, (size_t)bufferSize);
 }
 
 void Buffer::MapDeviceMemory(void* dataInput) {
@@ -92,22 +93,5 @@ void Buffer::MapDeviceMemory(void* dataInput) {
     CommandBuffer::EndSingleTimeCommands(cb);
 }
 
-uint32_t Buffer::FindMemoryType(uint32_t typeFilter,
-                                VkMemoryPropertyFlags properties) {
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(core->GetRenderPhysicalDevice(),
-                                        &memProperties);
-
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if ((typeFilter & (1 << i)) &&
-            (memProperties.memoryTypes[i].propertyFlags & properties) ==
-                properties) {
-            return i;
-        }
-    }
-
-    Util::ErrorPopup("Failed to find suitable memory type!");
-    return -1;
-}
 }    // namespace Graphics
 }    // namespace XRLib

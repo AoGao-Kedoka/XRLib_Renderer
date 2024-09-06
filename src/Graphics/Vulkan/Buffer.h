@@ -26,11 +26,9 @@ class Buffer {
     VkBuffer& GetBuffer() { return buffer; }
     VkDeviceMemory GetDeviceMemory() { return bufferMemory; }
     void* GetMappedData() { return data; }
+    VkDeviceSize GetSize() { return bufferSize; }
 
    private:
-    uint32_t FindMemoryType(uint32_t typeFilter,
-                            VkMemoryPropertyFlags properties);
-
     void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                       VkMemoryPropertyFlags properties);
 

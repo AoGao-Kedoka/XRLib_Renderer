@@ -73,6 +73,8 @@ class RenderBackend {
     std::vector<std::unique_ptr<Buffer>> vertexBuffers;
     std::vector<std::unique_ptr<Buffer>> indexBuffers;
 
+    Image depthImage;
+
    private:
     void InitVulkan();
     void GetSwapchainInfo();

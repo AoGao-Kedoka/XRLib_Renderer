@@ -22,10 +22,30 @@ RenderPass::RenderPass(std::shared_ptr<VkCore> core, bool multiview)
     colorAttachmentRef.attachment = 0;
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+    //VkAttachmentDescription depthAttachment{};
+    //depthAttachment.format = core->FindSupportedFormat(
+    //    {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
+    //     VK_FORMAT_D24_UNORM_S8_UINT},
+    //    VK_IMAGE_TILING_OPTIMAL,
+    //    VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    //depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    //depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    //depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    //depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    //depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    //depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    //depthAttachment.finalLayout =
+    //    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    //VkAttachmentReference depthAttachmentRef{};
+    //depthAttachmentRef.attachment = 1;
+    //depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
+    //subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
     VkSubpassDependency dependency{};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -36,7 +56,9 @@ RenderPass::RenderPass(std::shared_ptr<VkCore> core, bool multiview)
     dependency.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     dependency.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
     dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    //dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
+    //std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = 1;

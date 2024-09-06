@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Graphics/Primitives.h"
+#include "Graphics/Window.h"
 #include "Logger.h"
 #include "Utils/Transform.h"
 
@@ -11,25 +12,39 @@ class Scene {
         std::vector<Graphics::Primitives::Vertex> vertices;
         std::vector<uint16_t> indices;
         std::string name;
-        glm::mat4 transform{1.0f};
+        Transform transform;
+        std::string texturePath{""};
+    };
+
+    struct MeshLoadInfo {
+        std::string meshPath{""};
+        std::string texturePath{""};
+        Transform transform;
     };
 
    public:
     Scene();
     ~Scene();
-    Scene& LoadMeshAsync(const std::string& path, Transform transform);
-    Scene& LoadMeshAsync(const std::string& path);
+    Scene& LoadMeshAsync(const MeshLoadInfo& loadInfo);
     void WaitForAllMeshesToLoad();
     bool CheckTaskRunning();
-    std::vector<Mesh> Meshes() { return meshes; }
+
+    std::vector<Mesh>& Meshes() { return meshes; }
+    std::vector<Transform>& Lights() { return lights; }
+    Transform& Camera() { return camera; }
+    glm::mat4 GetCameraProjection();
 
    private:
-    void LoadMesh(const std::string& path, glm::mat4 translation);
+    void LoadMesh(const MeshLoadInfo& meshLoadInfo);
     void MeshLoadingThread();
     std::vector<Mesh> meshes;
+    std::vector<Transform> lights;
+    Transform camera{glm::lookAt(glm::vec3(3.0f, 3.0f, 3.0f),
+                                 glm::vec3(0.0f, 0.0f, 0.0f),
+                                 glm::vec3(0.0f, 0.0f, 1.0f))};
 
     std::vector<std::future<void>> futures;
-    std::queue<std::pair<std::string, glm::mat4>> meshQueue;
+    std::queue<MeshLoadInfo> meshQueue;
     std::condition_variable cv;
     std::mutex queueMutex;
     std::atomic<bool> done;

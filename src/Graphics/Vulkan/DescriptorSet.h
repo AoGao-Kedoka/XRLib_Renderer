@@ -11,7 +11,6 @@ namespace Graphics {
 struct DescriptorLayoutElement {
 
     std::variant<std::shared_ptr<Buffer>, std::shared_ptr<Image>> data;
-    VkDeviceSize size;
     VkShaderStageFlags stage =
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
