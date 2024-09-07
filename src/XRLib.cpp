@@ -1,10 +1,9 @@
 #include "Graphics/RenderBackend.h"
 #include "Graphics/RenderBackendFlat.h"
-#include "Scene.h"
-#include "Utils/Info.h"
+#include "Graphics/Window.h"
 #include "XR/XRBackend.h"
+
 #include "XRLib.h"
-#include <iostream>
 
 namespace XRLib {
 class XRLib::Impl {
@@ -82,7 +81,6 @@ void XRLib::Impl::Init(bool xr) {
         InitXRBackend();
     }
 
-
     Graphics::WindowHandler::Init(info);
     InitRenderBackend();
 
@@ -93,7 +91,9 @@ void XRLib::Impl::Init(bool xr) {
     renderBackend->Prepare(passesToAdd);
 
     initialized = true;
-    Graphics::WindowHandler::ShowWindow();
+
+    if (!xrCore->IsXRValid())
+        Graphics::WindowHandler::ShowWindow();
 
     LOGGER(LOGGER::INFO) << "XRLib Initialized";
 }
@@ -103,7 +103,8 @@ void XRLib::Run() {
 }
 
 void XRLib::Impl::Run() {
-    Graphics::WindowHandler::Update();
+    if (!xrCore->IsXRValid())
+        Graphics::WindowHandler::Update();
 
     uint32_t imageIndex = 0;
     if (xrCore->IsXRValid()) {

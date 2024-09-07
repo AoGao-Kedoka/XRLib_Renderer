@@ -23,11 +23,6 @@ class VkCore {
     uint32_t GetMemoryType(uint32_t typeFilter,
                            VkMemoryPropertyFlags properties);
 
-    VkFormat
-    FindSupportedFormat(const std::vector<VkFormat>& candidates,
-                                     VkImageTiling tiling,
-                                     VkFormatFeatureFlags features);
-
     // flat renderer
     VkSurfaceKHR& GetFlatSurface() { return surfaceFlat; }
     VkSwapchainKHR& GetFlatSwapchain() { return swapChainFlat; }
@@ -75,6 +70,7 @@ class VkCore {
         return stereoSwapchainImageViews;
     }
 
+    VkExtent2D GetswapchainExtentStereo() { return swapchainExtentStereo; }
     // pools
     VkCommandPool& GetCommandPool() {
         if (commandPool == VK_NULL_HANDLE) {

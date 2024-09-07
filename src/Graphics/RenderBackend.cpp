@@ -44,6 +44,14 @@ void RenderBackend::Prepare(
         passesToAdd) {
     InitVertexIndexBuffers();
     GetSwapchainInfo();
+
+    auto stereoExtent = std::make_pair(vkCore->GetswapchainExtentStereo().width,
+                                   vkCore->GetswapchainExtentStereo().height);
+    depthImage = std::make_unique<Image>(
+        vkCore, stereoExtent, VkUtil::FindDepthFormat(vkCore->GetRenderPhysicalDevice()),
+        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
     if (passesToAdd.empty()) {
         auto graphicsRenderPass =
             std::make_shared<GraphicsRenderPass>(vkCore, true);
@@ -127,12 +135,14 @@ void RenderBackend::InitFrameBuffer() {
 
     for (size_t i = 0; i < vkCore->GetSwapchainFrameBuffer().size(); i++) {
         std::vector<VkImageView> attachments;
+
         if (xrCore->IsXRValid()) {
             attachments.push_back(vkCore->GetStereoSwapchainImageViews()[i]);
         } else {
             attachments.push_back(vkCore->GetSwapchainImageViewsFlat()[i]);
-            attachments.push_back(depthImage->GetImageView(VK_IMAGE_ASPECT_DEPTH_BIT));
         }
+        attachments.push_back(
+            depthImage->GetImageView(VK_IMAGE_ASPECT_DEPTH_BIT));
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

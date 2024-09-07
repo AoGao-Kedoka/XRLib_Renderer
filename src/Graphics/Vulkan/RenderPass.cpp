@@ -23,7 +23,8 @@ RenderPass::RenderPass(std::shared_ptr<VkCore> core, bool multiview)
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkAttachmentDescription depthAttachment{};
-    depthAttachment.format = core->FindSupportedFormat(
+    depthAttachment.format = VkUtil::FindSupportedFormat(
+        core->GetRenderPhysicalDevice(),
         {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
          VK_FORMAT_D24_UNORM_S8_UINT},
         VK_IMAGE_TILING_OPTIMAL,

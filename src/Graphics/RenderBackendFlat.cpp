@@ -16,22 +16,16 @@ RenderBackendFlat::~RenderBackendFlat() {
                         vkCore->GetFlatSurface(), nullptr);
 }
 
-VkFormat findDepthFormat(std::shared_ptr<VkCore> core) {
-    return core->FindSupportedFormat(
-        {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
-         VK_FORMAT_D24_UNORM_S8_UINT},
-        VK_IMAGE_TILING_OPTIMAL,
-        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-}
-
 void RenderBackendFlat::Prepare(
     std::vector<std::pair<const std::string&, const std::string&>>
         passesToAdd) {
     PrepareFlatWindow();
     CreateFlatSwapChain();
     InitVertexIndexBuffers();
+
     depthImage = std::make_unique<Image>(
-        vkCore, WindowHandler::GetFrameBufferSize(), findDepthFormat(vkCore),
+        vkCore, WindowHandler::GetFrameBufferSize(),
+        VkUtil::FindDepthFormat(vkCore->GetRenderPhysicalDevice()),
         VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -223,7 +217,8 @@ void RenderBackendFlat::OnWindowResized(int width, int height) {
                           nullptr);
 
     depthImage = std::make_unique<Image>(
-        vkCore, std::make_pair(width, height), findDepthFormat(vkCore),
+        vkCore, WindowHandler::GetFrameBufferSize(),
+        VkUtil::FindDepthFormat(vkCore->GetRenderPhysicalDevice()),
         VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
