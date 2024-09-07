@@ -73,8 +73,7 @@ class RenderBackend {
 
     std::vector<std::unique_ptr<Buffer>> vertexBuffers;
     std::vector<std::unique_ptr<Buffer>> indexBuffers;
-
-    Image depthImage;
+    std::unique_ptr<Image> depthImage{nullptr};
 
    private:
     void InitVulkan();

@@ -9,7 +9,7 @@ Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size,
     : core{core}, bufferSize{size} {
     CreateBuffer(size, usage, properties);
     deviceBuffer ? MapDeviceMemory(data) : MapHostMemory(data);
-    if (!(usage & VK_BUFFER_USAGE_TRANSFER_DST_BIT)) {
+    if (!(usage & VK_BUFFER_USAGE_TRANSFER_DST_BIT) && deviceBuffer == true) {
         LOGGER(LOGGER::WARNING) << "You are not sending a transfer destnation "
                                    "bit with memory mapping, "
                                    "this may result error!";

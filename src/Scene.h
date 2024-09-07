@@ -13,7 +13,10 @@ class Scene {
         std::vector<uint16_t> indices;
         std::string name;
         Transform transform;
-        std::string texturePath{""};
+        std::vector<uint8_t> textureData;
+        int textureWidth = 0;
+        int textureHeight = 0;
+        int textureChannels = 0; 
     };
 
     struct MeshLoadInfo {

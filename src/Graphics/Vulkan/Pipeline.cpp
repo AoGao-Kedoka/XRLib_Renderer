@@ -117,7 +117,7 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
     pipelineInfo.renderPass = renderPass->GetVkRenderPass();
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-    //pipelineInfo.pDepthStencilState = &depthStencil;
+    pipelineInfo.pDepthStencilState = &depthStencil;
 
     if (vkCreateGraphicsPipelines(core->GetRenderDevice(), VK_NULL_HANDLE, 1,
                                   &pipelineInfo, nullptr,

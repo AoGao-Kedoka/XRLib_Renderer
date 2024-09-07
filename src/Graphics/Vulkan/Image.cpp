@@ -1,30 +1,21 @@
 #include "Image.h"
 
-#define STB_IMAGE_IMPLEMENTATION
 #include "CommandBuffer.h"
-#include "stb_image.h"
 
 namespace XRLib {
 namespace Graphics {
-Image::Image(std::shared_ptr<VkCore> core, const std::string& path,
-             VkFormat format)
+Image::Image(std::shared_ptr<VkCore> core, std::vector<uint8_t> textureData,
+             int width, int height, int channels, VkFormat format)
     : core{core}, format{format} {
-    int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight,
-                                &texChannels, STBI_rgb_alpha);
-    size = texWidth * texHeight * 4;
+    size = width * height * channels;
 
-    if (!pixels) {
-        Util::ErrorPopup("Failed to load texture image!");
-    }
+    std::unique_ptr<Buffer> imageBuffer =
+        std::make_unique<Buffer>(core, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                 static_cast<void*>(textureData.data()), false);
 
-    std::unique_ptr<Buffer> imageBuffer = std::make_unique<Buffer>(
-        core, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        static_cast<void*>(pixels), false);
-
-    CreateImage(texWidth, texHeight, format, VK_IMAGE_TILING_OPTIMAL,
+    CreateImage(width, height, format, VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemorry);
 
@@ -33,37 +24,39 @@ Image::Image(std::shared_ptr<VkCore> core, const std::string& path,
                           VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    CopyBufferToImage(imageBuffer->GetBuffer(), image,
-                      static_cast<uint32_t>(texWidth),
-                      static_cast<uint32_t>(texHeight));
+    CopyBufferToImage(imageBuffer->GetBuffer(), image, width, height);
 
     TransitionImageLayout(image, VK_FORMAT_R8G8B8A8_UNORM,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
+
 Image::Image(std::shared_ptr<VkCore> core, std::pair<int, int> frameSize,
-             VkFormat format) {
-    CreateImage(frameSize.first, frameSize.second, format,
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-                    VK_IMAGE_USAGE_STORAGE_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemorry);
+             VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+             VkMemoryPropertyFlags properties)
+    : core{core}, format{format} {
+    CreateImage(frameSize.first, frameSize.second, format, tiling, usage,
+                properties, image, imageMemorry);
 }
+
+Image::Image(std::shared_ptr<VkCore> core, VkImage image) {}
+
 Image::~Image() {
     VkUtil::VkSafeClean(vkFreeMemory, core->GetRenderDevice(), imageMemorry,
                         nullptr);
     VkUtil::VkSafeClean(vkDestroyImageView, core->GetRenderDevice(), imageView,
                         nullptr);
-    VkUtil::VkSafeClean(vkDestroySampler, core->GetRenderDevice(), sampler, nullptr);
+    VkUtil::VkSafeClean(vkDestroySampler, core->GetRenderDevice(), sampler,
+                        nullptr);
 }
-VkImageView& Image::GetImageView() {
+VkImageView& Image::GetImageView(VkImageAspectFlags aspectFlags) {
     if (imageView == VK_NULL_HANDLE) {
         VkImageViewCreateInfo imageViewInfo{};
         imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         imageViewInfo.image = image;
         imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
         imageViewInfo.format = format;
-        imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageViewInfo.subresourceRange.aspectMask = aspectFlags;
         imageViewInfo.subresourceRange.baseMipLevel = 0;
         imageViewInfo.subresourceRange.levelCount = 1;
         imageViewInfo.subresourceRange.baseArrayLayer = 0;

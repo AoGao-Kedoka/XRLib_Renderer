@@ -131,6 +131,7 @@ void RenderBackend::InitFrameBuffer() {
             attachments.push_back(vkCore->GetStereoSwapchainImageViews()[i]);
         } else {
             attachments.push_back(vkCore->GetSwapchainImageViewsFlat()[i]);
+            attachments.push_back(depthImage->GetImageView(VK_IMAGE_ASPECT_DEPTH_BIT));
         }
 
         VkFramebufferCreateInfo framebufferInfo{};

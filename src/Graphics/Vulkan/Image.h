@@ -9,15 +9,23 @@ namespace Graphics {
 class Image {
    public:
     Image() = default;
-    Image(std::shared_ptr<VkCore> core, const std::string& path,
-          VkFormat format);
-    Image(std::shared_ptr<VkCore> core, std::pair<int, int> frameSize,
-          VkFormat format);
+    Image(std::shared_ptr<VkCore> core, std::vector<uint8_t> textureData,
+          int width, int height, int channels, VkFormat format);
+    Image(
+        std::shared_ptr<VkCore> core, std::pair<int, int> frameSize,
+        VkFormat format, VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL,
+        VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                  VK_IMAGE_USAGE_SAMPLED_BIT |
+                                  VK_IMAGE_USAGE_STORAGE_BIT,
+        VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    Image(std::shared_ptr<VkCore> core, VkImage image);
     ~Image();
 
     VkSampler& GetSampler();
-    VkImageView& GetImageView();
+    VkImageView&
+    GetImageView(VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
     VkDeviceSize GetSize() { return size; }
+    VkFormat GetFormat() { return format; }
 
    private:
     void CreateImage(uint32_t width, uint32_t height, VkFormat format,

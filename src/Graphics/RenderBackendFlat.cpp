@@ -16,12 +16,24 @@ RenderBackendFlat::~RenderBackendFlat() {
                         vkCore->GetFlatSurface(), nullptr);
 }
 
+VkFormat findDepthFormat(std::shared_ptr<VkCore> core) {
+    return core->FindSupportedFormat(
+        {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
+         VK_FORMAT_D24_UNORM_S8_UINT},
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+}
+
 void RenderBackendFlat::Prepare(
     std::vector<std::pair<const std::string&, const std::string&>>
         passesToAdd) {
     PrepareFlatWindow();
     CreateFlatSwapChain();
     InitVertexIndexBuffers();
+    depthImage = std::make_unique<Image>(
+        vkCore, WindowHandler::GetFrameBufferSize(), findDepthFormat(vkCore),
+        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     // prepare shader
     if (passesToAdd.empty()) {
@@ -46,7 +58,10 @@ void RenderBackendFlat::Prepare(
                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                       static_cast<void*>(&model), false)},
-            {std::make_shared<Image>(vkCore, scene->Meshes()[0].texturePath,
+            {std::make_shared<Image>(vkCore, scene->Meshes()[0].textureData,
+                                     scene->Meshes()[0].textureWidth,
+                                     scene->Meshes()[0].textureHeight,
+                                     scene->Meshes()[0].textureChannels,
                                      VK_FORMAT_R8G8B8A8_SRGB)}};
 
         std::shared_ptr<DescriptorSet> descriptorSet =
@@ -194,6 +209,7 @@ void RenderBackendFlat::CreateFlatSwapChain() {
 
 void RenderBackendFlat::OnWindowResized(int width, int height) {
     vkDeviceWaitIdle(vkCore->GetRenderDevice());
+
     for (auto framebuffer : vkCore->GetSwapchainFrameBuffer()) {
         //TODO: Change to save clean
         vkDestroyFramebuffer(vkCore->GetRenderDevice(), framebuffer, nullptr);
@@ -206,10 +222,15 @@ void RenderBackendFlat::OnWindowResized(int width, int height) {
     vkDestroySwapchainKHR(vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(),
                           nullptr);
 
+    depthImage = std::make_unique<Image>(
+        vkCore, std::make_pair(width, height), findDepthFormat(vkCore),
+        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
     this->CreateFlatSwapChain();
     this->InitFrameBuffer();
 
-    LOGGER(LOGGER::DEBUG) << "Swapchain recreated!";
+    LOGGER(LOGGER::DEBUG) << "Window resized";
 }
 
 void RenderBackendFlat::PrepareFlatWindow() {

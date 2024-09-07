@@ -1,4 +1,7 @@
 #include "Scene.h"
+#
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 namespace XRLib {
 Scene::Scene() : done(false), stop(false) {
@@ -39,9 +42,9 @@ void Scene::WaitForAllMeshesToLoad() {
 void Scene::LoadMesh(const MeshLoadInfo& meshLoadInfo) {
     Assimp::Importer importer;
 
-    const aiScene* scene =
-        importer.ReadFile(meshLoadInfo.meshPath, aiProcess_Triangulate | aiProcess_FlipUVs |
-                                        aiProcess_JoinIdenticalVertices);
+    const aiScene* scene = importer.ReadFile(
+        meshLoadInfo.meshPath, aiProcess_Triangulate | aiProcess_FlipUVs |
+                                   aiProcess_JoinIdenticalVertices);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE ||
         !scene->mRootNode) {
@@ -53,6 +56,7 @@ void Scene::LoadMesh(const MeshLoadInfo& meshLoadInfo) {
         aiMesh* aiMesh = scene->mMeshes[i];
         Mesh newMesh;
 
+        // Process vertices
         for (unsigned int j = 0; j < aiMesh->mNumVertices; j++) {
             Graphics::Primitives::Vertex vertex;
             vertex.position = {aiMesh->mVertices[j].x, aiMesh->mVertices[j].y,
@@ -70,7 +74,7 @@ void Scene::LoadMesh(const MeshLoadInfo& meshLoadInfo) {
             newMesh.vertices.push_back(vertex);
         }
 
-        // Extract indices
+        // Process indices
         for (unsigned int j = 0; j < aiMesh->mNumFaces; j++) {
             aiFace face = aiMesh->mFaces[j];
             for (unsigned int k = 0; k < face.mNumIndices; k++) {
@@ -78,10 +82,88 @@ void Scene::LoadMesh(const MeshLoadInfo& meshLoadInfo) {
             }
         }
 
+        // Load texture data
+        if (aiMesh->mMaterialIndex >= 0) {
+            aiMaterial* material = scene->mMaterials[aiMesh->mMaterialIndex];
+            aiString texturePath;
+
+            if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) ==
+                AI_SUCCESS) {
+                const aiTexture* embeddedTexture =
+                    scene->GetEmbeddedTexture(texturePath.C_Str());
+                if (embeddedTexture) {
+                    if (embeddedTexture->mHeight == 0) {
+                        newMesh.textureData.resize(embeddedTexture->mWidth);
+                        memcpy(newMesh.textureData.data(),
+                               embeddedTexture->pcData,
+                               embeddedTexture->mWidth);
+
+                        int width, height, channels;
+                        unsigned char* decodedData = stbi_load_from_memory(
+                            reinterpret_cast<const unsigned char*>(
+                                embeddedTexture->pcData),
+                            embeddedTexture->mWidth, &width, &height, &channels,
+                            STBI_rgb_alpha);
+                        if (decodedData) {
+                            newMesh.textureWidth = width;
+                            newMesh.textureHeight = height;
+                            newMesh.textureChannels = 4;
+                            newMesh.textureData.resize(
+                                width * height *
+                                4);
+                            memcpy(newMesh.textureData.data(), decodedData,
+                                   width * height * 4);
+                            stbi_image_free(decodedData);
+                        } else {
+                            newMesh.textureWidth = embeddedTexture->mWidth;
+                            newMesh.textureHeight = embeddedTexture->mHeight;
+                            newMesh.textureChannels =
+                                4;
+                            newMesh.textureData.resize(newMesh.textureWidth *
+                                                       newMesh.textureHeight * 4);
+                            memcpy(newMesh.textureData.data(),
+                                   embeddedTexture->pcData,
+                                   newMesh.textureData.size());
+                        }
+                    } else {
+                        newMesh.textureWidth = embeddedTexture->mWidth;
+                        newMesh.textureHeight = embeddedTexture->mHeight;
+                        newMesh.textureChannels =
+                            4;
+                        newMesh.textureData.resize(newMesh.textureWidth *
+                                                   newMesh.textureHeight * 4);
+                        memcpy(newMesh.textureData.data(),
+                               embeddedTexture->pcData,
+                               newMesh.textureData.size());
+                    }
+                }
+            }
+        }
+
+        if (newMesh.textureData.empty() && !meshLoadInfo.texturePath.empty()) {
+            unsigned char* imageData =
+                stbi_load(meshLoadInfo.texturePath.c_str(),
+                          &newMesh.textureWidth, &newMesh.textureHeight,
+                          &newMesh.textureChannels, STBI_rgb_alpha);
+
+            if (imageData) {
+                size_t imageSize =
+                    newMesh.textureWidth * newMesh.textureHeight * 4;
+                newMesh.textureChannels = 4;
+                newMesh.textureData.resize(imageSize);
+                memcpy(newMesh.textureData.data(), imageData, imageSize);
+                stbi_image_free(
+                    imageData);
+            } else {
+                LOGGER(LOGGER::ERR)
+                    << "Failed to load texture: " << meshLoadInfo.texturePath;
+            }
+        }
+
+        // Add the new mesh to the list
         {
             newMesh.name = meshLoadInfo.meshPath;
             newMesh.transform = meshLoadInfo.transform;
-            newMesh.texturePath = meshLoadInfo.texturePath;
             std::lock_guard<std::mutex> lock(queueMutex);
             meshes.push_back(newMesh);
         }

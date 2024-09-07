@@ -34,6 +34,7 @@ class RenderBackendFlat : public RenderBackend {
    private:
     void CreateFlatSwapChain();
     void PrepareFlatWindow();
+
 };
 }    // namespace Graphics
 }    // namespace XRLib
