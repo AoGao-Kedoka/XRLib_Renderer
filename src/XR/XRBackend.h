@@ -6,6 +6,8 @@
 #include "Utils/LibMath.h"
 #include "XR/XrCore.h"
 #include "XR/XrInput.h"
+#include "Event/EventSystem.h"
+#include "Event/Events.h"
 
 namespace XRLib {
 namespace XR {
@@ -15,7 +17,6 @@ class XrBackend {
               std::shared_ptr<XRLib::Graphics::VkCore> core,
               std::shared_ptr<XrCore> xrCore);
     ~XrBackend();
-    void Prepare();
 
     XrResult StartFrame(uint32_t& imageIndex);
     XrResult EndFrame(uint32_t& imageIndex);
@@ -24,6 +25,7 @@ class XrBackend {
     void UpdateXrInput() { xrInput.FetchInput(); }
 
    private:
+    void Prepare();
     void CreateXrInstance();
 
     void CreateXrSession();

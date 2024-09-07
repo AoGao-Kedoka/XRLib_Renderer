@@ -21,6 +21,7 @@ RenderBackend::RenderBackend(std::shared_ptr<Info> info,
         }
     }
     InitVulkan();
+    EventSystem::TriggerEvent(Events::XRLIB_EVENT_RENDERBACKEND_INIT_FINISHED);
 }
 
 RenderBackend::~RenderBackend() {
@@ -165,8 +166,8 @@ void RenderBackend::Run(uint32_t& imageIndex) {
             vkCore->GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             auto [width, height] = WindowHandler::GetFrameBufferSize();
-            EventSystem::TriggerEvent(WindowHandler::XRLIB_EVENT_WINDOW_RESIZED,
-                                      width, height);
+            EventSystem::TriggerEvent(Events::XRLIB_EVENT_WINDOW_RESIZED, width,
+                                      height);
             return;
         } else if (result != VK_SUCCESS) {
             Util::ErrorPopup("Failed to acquire next image");
@@ -175,12 +176,14 @@ void RenderBackend::Run(uint32_t& imageIndex) {
 
     vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
 
-    commandBuffer.StartRecord().StartPass(renderPasses[0], imageIndex).BindDescriptorSets(renderPasses[0], 0);
+    commandBuffer.StartRecord()
+        .StartPass(renderPasses[0], imageIndex)
+        .BindDescriptorSets(renderPasses[0], 0);
     for (int i = 0; i < scene->Meshes().size(); ++i) {
         commandBuffer.BindVertexBuffer(0, {vertexBuffers[i]->GetBuffer()}, {0})
             .BindIndexBuffer(indexBuffers[i]->GetBuffer(), 0)
             .DrawIndexed(scene->Meshes()[i].indices.size(), 1, 0, 0, 0);
-            //.Draw(3, 1, 0, 0);
+        //.Draw(3, 1, 0, 0);
     }
 
     commandBuffer.EndPass();
@@ -360,8 +363,9 @@ void RenderBackend::InitVulkan() {
             vkGetPhysicalDeviceProperties(device, &deviceProperties);
             vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
             return deviceProperties.deviceType ==
-                       VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-                   deviceFeatures.geometryShader;
+                           VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+                       deviceFeatures.geometryShader ||
+                   VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
         };
 
         for (const auto& device : devices) {

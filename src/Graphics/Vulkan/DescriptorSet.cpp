@@ -24,8 +24,7 @@ DescriptorSet::DescriptorSet(
     if ((result = vkCreateDescriptorSetLayout(
              core->GetRenderDevice(), &layoutInfo, nullptr,
              &descriptorSetLayout)) != VK_SUCCESS) {
-        Util::ErrorPopup("Error create descriptor set layout, Error: " +
-                         result);
+        Util::ErrorPopup("Error create descriptor set layout");
     }
 
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -35,7 +34,7 @@ DescriptorSet::DescriptorSet(
     allocInfo.pSetLayouts = &descriptorSetLayout;
     if ((result = vkAllocateDescriptorSets(core->GetRenderDevice(), &allocInfo,
                                            &descriptorSet)) != VK_SUCCESS) {
-        Util::ErrorPopup("Failed to allocate descriptor set, Error: " + result);
+        Util::ErrorPopup("Failed to allocate descriptor set");
     }
 
     // Create storage for buffer and image infos

@@ -109,8 +109,8 @@ class LOGGER {
     }
 
     static inline std::mutex _mutex;
-    std::string _logger_file_path{"./Logger.txt"};
-    std::ofstream _outfile;
+    static inline std::string _logger_file_path{"./Logger.txt"};
+    static inline std::ofstream _outfile;
     LOG_LEVEL _log_level;
     std::source_location _location;
 #ifdef NDEBUG

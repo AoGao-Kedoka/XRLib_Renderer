@@ -9,9 +9,6 @@ namespace XRLib {
 namespace Graphics {
 class WindowHandler {
    public:
-    inline static std::string XRLIB_EVENT_WINDOW_RESIZED{"window_resized"};
-
-   public:
     static void Init(std::shared_ptr<Info> info);
     static void ShowWindow();
     static void Update();

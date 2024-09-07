@@ -70,7 +70,7 @@ void RenderBackendFlat::Prepare(
     EventSystem::Callback<int, int> windowResizeCallback =
         std::bind(&RenderBackendFlat::OnWindowResized, this,
                   std::placeholders::_1, std::placeholders::_2);
-    EventSystem::RegisterListener(WindowHandler::XRLIB_EVENT_WINDOW_RESIZED,
+    EventSystem::RegisterListener(Events::XRLIB_EVENT_WINDOW_RESIZED,
                                   windowResizeCallback);
 }
 

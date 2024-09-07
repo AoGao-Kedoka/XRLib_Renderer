@@ -2,6 +2,7 @@
 
 #include <pch.h>
 
+namespace XRLib {
 class EventSystem {
    public:
     using EventID = std::string;
@@ -68,3 +69,4 @@ class EventSystem {
         return map;
     }
 };
+}    // namespace XRLib

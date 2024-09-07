@@ -30,6 +30,14 @@ XrBackend::XrBackend(std::shared_ptr<Info> info,
         XrUtil::LogXrRuntimeProperties(xrCore->GetXRInstance());
         XrUtil::LogXrSystemProperties(xrCore->GetXRInstance(),
                                       xrCore->GetSystemID());
+
+        EventSystem::Callback callback = [this]() {
+            Prepare();
+        };
+
+        EventSystem::RegisterListener(
+            Events::XRLIB_EVENT_RENDERBACKEND_INIT_FINISHED, callback);
+
     } catch (const std::runtime_error& e) {
         LOGGER(LOGGER::WARNING) << "Falling back to normal mode";
         xrCore->SetXRValid(false);
@@ -50,6 +58,8 @@ XrBackend::~XrBackend() {
 }
 
 void XrBackend::Prepare() {
+    if (!xrCore->IsXRValid())
+        return;
     CreateXrSession();
     CreateXrSwapchain();
     PrepareXrSwapchainImages();

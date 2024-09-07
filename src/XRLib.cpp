@@ -1,7 +1,6 @@
 #include "Graphics/RenderBackend.h"
 #include "Graphics/RenderBackendFlat.h"
 #include "Scene.h"
-#include "Utils/Event.h"
 #include "Utils/Info.h"
 #include "XR/XRBackend.h"
 #include "XRLib.h"
@@ -79,10 +78,10 @@ void XRLib::Init(bool xr) {
 void XRLib::Impl::Init(bool xr) {
     if (!xr) {
         xrCore->SetXRValid(false);
+    } else {
+        InitXRBackend();
     }
 
-    if (xr)
-        InitXRBackend();
 
     Graphics::WindowHandler::Init(info);
     InitRenderBackend();
@@ -91,13 +90,12 @@ void XRLib::Impl::Init(bool xr) {
         scene->WaitForAllMeshesToLoad();
     }
 
-    if (xrCore->IsXRValid())
-        xrBackend->Prepare();
-
     renderBackend->Prepare(passesToAdd);
 
     initialized = true;
     Graphics::WindowHandler::ShowWindow();
+
+    LOGGER(LOGGER::INFO) << "XRLib Initialized";
 }
 
 void XRLib::Run() {
@@ -144,8 +142,7 @@ XRLib& XRLib::AddRenderPass(const std::string& vertexShaderPath,
 
 void XRLib::Impl::InitXRBackend() {
     if (info->applicationName.empty()) {
-        std::cerr << "No application name specified" << std::endl;
-        exit(-1);
+        Util::ErrorPopup("No application name specified");
     }
 
     xrBackend = std::make_unique<XR::XrBackend>(info, vkCore, xrCore);
@@ -154,7 +151,7 @@ void XRLib::Impl::InitXRBackend() {
 void XRLib::Impl::InitRenderBackend() {
     if (info->majorVersion == 0 && info->minorVersion == 0 &&
         info->patchVersion == 0) {
-        std::cerr << "Version number is 0" << std::endl;
+        LOGGER(LOGGER::WARNING) << "Version number is 0";
     }
 
     if (info->applicationName.empty()) {
