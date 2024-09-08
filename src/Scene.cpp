@@ -42,9 +42,9 @@ void Scene::WaitForAllMeshesToLoad() {
 void Scene::LoadMesh(const MeshLoadInfo& meshLoadInfo) {
     Assimp::Importer importer;
 
-    const aiScene* scene = importer.ReadFile(
-        meshLoadInfo.meshPath, aiProcess_Triangulate | aiProcess_FlipUVs |
-                                   aiProcess_JoinIdenticalVertices);
+    const aiScene* scene = importer.ReadFile(meshLoadInfo.meshPath, 
+    aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_PreTransformVertices);
+
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE ||
         !scene->mRootNode) {

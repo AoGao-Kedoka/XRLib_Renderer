@@ -25,6 +25,11 @@ class Primitives {
         alignas(16) glm::mat4 model;
     };
 
+    struct ViewProjectionStereo{
+        glm::mat4 views[2];
+        glm::mat4 proj[2];
+    };
+
 };
 }    // namespace Graphics
 }    // namespace XRLib

@@ -32,7 +32,8 @@ class LibMath {
         glm::vec3 scale) {
         glm::mat4 trans = glm::mat4(1.0f);
         trans = glm::translate(trans, translation);
-        trans = glm::rotate(trans, glm::radians(rotationRadians), rotation);
+        if (rotationRadians != 0)
+            trans = glm::rotate(trans, glm::radians(rotationRadians), rotation);
         trans = glm::scale(trans, scale);
         return trans;
     }
