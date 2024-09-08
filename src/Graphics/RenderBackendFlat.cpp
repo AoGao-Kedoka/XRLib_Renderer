@@ -35,6 +35,10 @@ void RenderBackendFlat::Prepare(
         Primitives::ViewProjection viewProjection;
         viewProjection.view = scene->Camera().GetMatrix();
         viewProjection.proj = scene->GetCameraProjection();
+        LOGGER(LOGGER::DEBUG) << "View matrix: \n"
+                              << glm::to_string(viewProjection.view) << "\n"
+                              << "Projection matrix \n"
+                              << glm::to_string(viewProjection.proj);
 
         // TODO: adapt to multiple objects
         Primitives::ModelPos model;

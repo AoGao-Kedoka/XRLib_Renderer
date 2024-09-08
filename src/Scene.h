@@ -42,9 +42,12 @@ class Scene {
     void MeshLoadingThread();
     std::vector<Mesh> meshes;
     std::vector<Transform> lights;
-    Transform camera{glm::lookAt(glm::vec3(3.0f, 3.0f, 3.0f),
-                                 glm::vec3(0.0f, 0.0f, 0.0f),
-                                 glm::vec3(0.0f, 0.0f, 1.0f))};
+
+    glm::vec3 eye = glm::vec3(0, 0, 10);
+    glm::vec3 up = glm::vec3(0, 1, 0);
+    glm::vec3 center = glm::vec3(0, 0, 0);
+
+    Transform camera{glm::lookAt(eye, center, up)};
 
     std::vector<std::future<void>> futures;
     std::queue<MeshLoadInfo> meshQueue;
