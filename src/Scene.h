@@ -33,11 +33,15 @@ class Scene {
         glm::vec3 BackVector() { return -cameraFront; }
         glm::vec3 UpVector() { return cameraUp; }
         glm::vec3 DownVector() { return -cameraUp; }
-        glm::vec3 LeftVector() { return glm::cross(cameraFront, cameraUp); }
-        glm::vec3 RightVector () { return -glm::cross(cameraFront, cameraUp); }
+        glm::vec3 LeftVector() {
+            return -glm::normalize(glm::cross(cameraFront, cameraUp));
+        }
+        glm::vec3 RightVector() {
+            return glm::normalize(glm::cross(cameraFront, cameraUp));
+        }
 
         glm::vec3 TranslationVector() { return cameraPos; }
-        
+
         void SetCameraFront(glm::vec3 front);
         void SetCameraUp(glm::vec3 up);
         void SetCameraPos(glm::vec3 pos);

@@ -273,7 +273,7 @@ void RenderBackendFlat::OnKeyPressed(int keyCode) {
     if (keyCode == GLFW_KEY_W) {
         cam.SetCameraPos(cam.TranslationVector() +
                          cam.FrontVector() *
-                             movementSensitivity);    // TODO: change to front
+                             movementSensitivity);
     }
     if (keyCode == GLFW_KEY_S) {
         cam.SetCameraPos(cam.TranslationVector() +
