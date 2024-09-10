@@ -202,12 +202,25 @@ bool Scene::CheckTaskRunning() {
     return false;
 }
 
-glm::mat4 Scene::GetCameraProjection() {
+glm::mat4 Scene::Camera::GetCameraProjection() {
     auto [width, height] = Graphics::WindowHandler::GetFrameBufferSize();
     auto proj = glm::perspective(glm::radians(45.0f), width / (float)height,
                                  0.1f, 10.0f);
     proj[1][1] *= -1;
     return proj;
+}
+void Scene::Camera::SetCameraFront(glm::vec3 front) {
+    cameraFront = front;
+    camera = {glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp)};
+}
+
+void Scene::Camera::SetCameraUp(glm::vec3 up) {
+    cameraUp = up;
+    camera = {glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp)};
+}
+void Scene::Camera::SetCameraPos(glm::vec3 pos) {
+    cameraPos = pos;
+    camera = {glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp)};
 }
 
 }    // namespace XRLib

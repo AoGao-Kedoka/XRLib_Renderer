@@ -16,13 +16,41 @@ class Scene {
         std::vector<uint8_t> textureData;
         int textureWidth = 0;
         int textureHeight = 0;
-        int textureChannels = 0; 
+        int textureChannels = 0;
     };
 
     struct MeshLoadInfo {
         std::string meshPath{""};
         std::string texturePath{""};
         Transform transform;
+    };
+
+    class Camera {
+       public:
+        Transform& GetTransform() { return camera; }
+
+        glm::vec3 FrontVector() { return cameraFront; }
+        glm::vec3 BackVector() { return -cameraFront; }
+        glm::vec3 UpVector() { return cameraUp; }
+        glm::vec3 DownVector() { return -cameraUp; }
+        glm::vec3 LeftVector() { return glm::cross(cameraFront, cameraUp); }
+        glm::vec3 RightVector () { return -glm::cross(cameraFront, cameraUp); }
+
+        glm::vec3 TranslationVector() { return cameraPos; }
+        
+        void SetCameraFront(glm::vec3 front);
+        void SetCameraUp(glm::vec3 up);
+        void SetCameraPos(glm::vec3 pos);
+
+        glm::mat4 GetCameraProjection();
+
+       private:
+        glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+        glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+
+        Transform camera{
+            glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp)};
     };
 
    public:
@@ -32,22 +60,17 @@ class Scene {
     void WaitForAllMeshesToLoad();
     bool CheckTaskRunning();
 
+    Camera& Cam() { return cam; };
+
     std::vector<Mesh>& Meshes() { return meshes; }
     std::vector<Transform>& Lights() { return lights; }
-    Transform& Camera() { return camera; }
-    glm::mat4 GetCameraProjection();
 
    private:
     void LoadMesh(const MeshLoadInfo& meshLoadInfo);
     void MeshLoadingThread();
     std::vector<Mesh> meshes;
     std::vector<Transform> lights;
-
-    glm::vec3 eye = glm::vec3(0, 0, 10);
-    glm::vec3 up = glm::vec3(0, 1, 0);
-    glm::vec3 center = glm::vec3(0, 0, 0);
-
-    Transform camera{glm::lookAt(eye, center, up)};
+    Camera cam;
 
     std::vector<std::future<void>> futures;
     std::queue<MeshLoadInfo> meshQueue;

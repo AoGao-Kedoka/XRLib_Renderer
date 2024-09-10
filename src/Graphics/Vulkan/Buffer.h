@@ -28,6 +28,8 @@ class Buffer {
     void* GetMappedData() { return data; }
     VkDeviceSize GetSize() { return bufferSize; }
 
+    void UpdateBuffer(VkDeviceSize size, void* data);
+
    private:
     void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                       VkMemoryPropertyFlags properties);

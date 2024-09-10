@@ -28,6 +28,13 @@ Buffer::~Buffer() {
                         nullptr);
 }
 
+
+void Buffer::UpdateBuffer(VkDeviceSize size, void* data) {
+    auto cb = CommandBuffer::BeginSingleTimeCommands(core);
+    vkCmdUpdateBuffer(cb->GetCommandBuffer(), buffer, 0, size, data);
+    CommandBuffer::EndSingleTimeCommands(cb);
+}
+
 void Buffer::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                           VkMemoryPropertyFlags properties) {
     VkBufferCreateInfo bufferInfo{};

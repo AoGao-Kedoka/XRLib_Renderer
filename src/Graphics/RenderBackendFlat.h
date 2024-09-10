@@ -32,9 +32,13 @@ class RenderBackendFlat : public RenderBackend {
     }
 
    private:
+    void OnMouseMovement(double deltaX, double deltaY);
+    void OnKeyPressed(int keyCode);
     void CreateFlatSwapChain();
     void PrepareFlatWindow();
 
+   private:
+    Primitives::ViewProjection viewProj;
 };
 }    // namespace Graphics
 }    // namespace XRLib

@@ -23,6 +23,27 @@ void RenderBackendFlat::Prepare(
     CreateFlatSwapChain();
     InitVertexIndexBuffers();
 
+    // register window resize callback
+    EventSystem::Callback<int, int> windowResizeCallback =
+        std::bind(&RenderBackendFlat::OnWindowResized, this,
+                  std::placeholders::_1, std::placeholders::_2);
+    EventSystem::RegisterListener(Events::XRLIB_EVENT_WINDOW_RESIZED,
+                                  windowResizeCallback);
+    // register key press callback
+    EventSystem::Callback<int> keyPressCallback = std::bind(
+        &RenderBackendFlat::OnKeyPressed, this, std::placeholders::_1);
+    EventSystem::RegisterListener(Events::XRLIB_EVENT_KEY_PRESSED,
+                                  keyPressCallback);
+
+    // register mouse movement callback
+    EventSystem::Callback<double, double> onMouseCallback =
+        std::bind(&RenderBackendFlat::OnMouseMovement, this,
+                  std::placeholders::_1, std::placeholders::_2);
+    EventSystem::RegisterListener(
+        Events::XRLIB_EVENT_MOUSE_RIGHT_MOVEMENT_EVENT, onMouseCallback);
+
+    WindowHandler::ActivateInput();
+
     depthImage = std::make_unique<Image>(
         vkCore, WindowHandler::GetFrameBufferSize(),
         VkUtil::FindDepthFormat(vkCore->GetRenderPhysicalDevice()),
@@ -32,25 +53,27 @@ void RenderBackendFlat::Prepare(
     // prepare shader
     if (passesToAdd.empty()) {
         // default flat render pass
-        Primitives::ViewProjection viewProjection;
-        viewProjection.view = scene->Camera().GetMatrix();
-        viewProjection.proj = scene->GetCameraProjection();
+        viewProj.view = scene->Cam().GetTransform().GetMatrix();
+        viewProj.proj = scene->Cam().GetCameraProjection();
         LOGGER(LOGGER::DEBUG) << "View matrix: \n"
-                              << glm::to_string(viewProjection.view) << "\n"
+                              << glm::to_string(viewProj.view) << "\n"
                               << "Projection matrix \n"
-                              << glm::to_string(viewProjection.proj);
+                              << glm::to_string(viewProj.proj);
 
         // TODO: adapt to multiple objects
         Primitives::ModelPos model;
         model.model = glm::mat4(1);
 
+        auto ViewProjBuffer =
+            std::make_shared<Buffer>(vkCore, sizeof(Primitives::ViewProjection),
+                                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
+                                         VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                     static_cast<void*>(&viewProj), false);
+
         std::vector<DescriptorLayoutElement> layoutElements{
-            {std::make_shared<Buffer>(
-                vkCore, sizeof(Primitives::ViewProjection),
-                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                static_cast<void*>(&viewProjection), false)},
+            {ViewProjBuffer},
             {std::make_shared<Buffer>(vkCore, sizeof(Primitives::ModelPos),
                                       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
@@ -69,6 +92,29 @@ void RenderBackendFlat::Prepare(
             std::make_unique<GraphicsRenderPass>(vkCore, false, descriptorSet);
 
         renderPasses.push_back(std::move(graphicsRenderPass));
+
+        // register buffers updates when events
+        EventSystem::Callback<int> bufferOnKeyShouldUpdateCallback =
+            [this, ViewProjBuffer](int keyCode) {
+                viewProj.view = scene->Cam().GetTransform().GetMatrix();
+                ViewProjBuffer->UpdateBuffer(sizeof(Primitives::ViewProjection),
+                                             static_cast<void*>(&viewProj));
+            };
+
+        EventSystem::RegisterListener(Events::XRLIB_EVENT_KEY_PRESSED,
+                                      bufferOnKeyShouldUpdateCallback);
+
+        EventSystem::Callback<double, double>
+            bufferOnMouseShouldUpdateCallback =
+                [this, ViewProjBuffer](double deltaX, double deltaY) {
+                    viewProj.view = scene->Cam().GetTransform().GetMatrix();
+                    ViewProjBuffer->UpdateBuffer(
+                        sizeof(Primitives::ViewProjection),
+                        static_cast<void*>(&viewProj));
+                };
+        EventSystem::RegisterListener(
+            Events::XRLIB_EVENT_MOUSE_RIGHT_MOVEMENT_EVENT,
+            bufferOnMouseShouldUpdateCallback);
     } else {
         for (auto& pass : passesToAdd) {
             auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(
@@ -78,13 +124,6 @@ void RenderBackendFlat::Prepare(
     }
 
     InitFrameBuffer();
-
-    // register window resize callback
-    EventSystem::Callback<int, int> windowResizeCallback =
-        std::bind(&RenderBackendFlat::OnWindowResized, this,
-                  std::placeholders::_1, std::placeholders::_2);
-    EventSystem::RegisterListener(Events::XRLIB_EVENT_WINDOW_RESIZED,
-                                  windowResizeCallback);
 }
 
 void RenderBackendFlat::CreateFlatSwapChain() {
@@ -203,6 +242,51 @@ void RenderBackendFlat::CreateFlatSwapChain() {
     }
 
     LOGGER(LOGGER::DEBUG) << "Flat Swapchain created";
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Handling events
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void RenderBackendFlat::OnMouseMovement(double deltaX, double deltaY) {
+    float sensitivity = 0.01f;
+    float xoffset = deltaX * sensitivity;
+    float yoffset = deltaY * sensitivity;
+
+    auto cameraUp = scene->Cam().UpVector();
+    auto cameraFront = scene->Cam().FrontVector();
+
+    glm::quat quatX = glm::angleAxis(glm::radians(xoffset), cameraUp);
+    glm::quat quatY = glm::angleAxis(glm::radians(yoffset),
+                                     glm::cross(cameraFront, cameraUp));
+
+    glm::quat rotation = quatX * quatY;
+
+    scene->Cam().SetCameraFront(glm::normalize(rotation * cameraFront));
+    scene->Cam().SetCameraUp(glm::normalize(
+        glm::cross(glm::cross(cameraFront, cameraUp), cameraFront)));
+}
+
+void RenderBackendFlat::OnKeyPressed(int keyCode) {
+    float movementSensitivity = 0.01;
+    auto& cam = scene->Cam();
+    if (keyCode == GLFW_KEY_W) {
+        cam.SetCameraPos(cam.TranslationVector() +
+                         cam.FrontVector() *
+                             movementSensitivity);    // TODO: change to front
+    }
+    if (keyCode == GLFW_KEY_S) {
+        cam.SetCameraPos(cam.TranslationVector() +
+                         cam.BackVector() * movementSensitivity);
+    }
+    if (keyCode == GLFW_KEY_A) {
+        cam.SetCameraPos(cam.TranslationVector() +
+                         cam.LeftVector() * movementSensitivity);
+    }
+    if (keyCode == GLFW_KEY_D) {
+        cam.SetCameraPos(cam.TranslationVector() +
+                         cam.RightVector() * movementSensitivity);
+    }
 }
 
 void RenderBackendFlat::OnWindowResized(int width, int height) {
