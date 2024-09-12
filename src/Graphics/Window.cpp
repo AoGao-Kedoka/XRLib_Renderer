@@ -13,13 +13,10 @@ void WindowHandler::Init(std::shared_ptr<Info> info) {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    window = glfwCreateWindow(
-        info->fullscreen ? glfwGetVideoMode(glfwGetPrimaryMonitor())->width
-                         : 400,
-        info->fullscreen ? glfwGetVideoMode(glfwGetPrimaryMonitor())->height
-                         : 400,
-        info->applicationName.c_str(),
-        info->fullscreen ? glfwGetPrimaryMonitor() : nullptr, nullptr);
+    window =
+        glfwCreateWindow(info->fullscreen ? glfwGetVideoMode(glfwGetPrimaryMonitor())->width : 400,
+                         info->fullscreen ? glfwGetVideoMode(glfwGetPrimaryMonitor())->height : 400,
+                         info->applicationName.c_str(), info->fullscreen ? glfwGetPrimaryMonitor() : nullptr, nullptr);
 
     glfwMakeContextCurrent(window);
 }
@@ -38,12 +35,10 @@ void WindowHandler::Update() {
     glfwPollEvents();
 }
 
-void WindowHandler::MouseButtonCallback(GLFWwindow* window, int button,
-                                        int action, int mods) {
+void WindowHandler::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
         if (action == GLFW_PRESS) {
-            EventSystem::TriggerEvent(
-                Events::XRLIB_EVENT_MOUSE_LEFT_DOWN_EVENT);
+            EventSystem::TriggerEvent(Events::XRLIB_EVENT_MOUSE_LEFT_DOWN_EVENT);
             glfwGetCursorPos(window, &lastLeftX, &lastLeftY);
             leftMouseDown = true;
         }
@@ -53,8 +48,7 @@ void WindowHandler::MouseButtonCallback(GLFWwindow* window, int button,
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT) {
         if (action == GLFW_PRESS) {
-            EventSystem::TriggerEvent(
-                Events::XRLIB_EVENT_MOUSE_LEFT_DOWN_EVENT);
+            EventSystem::TriggerEvent(Events::XRLIB_EVENT_MOUSE_LEFT_DOWN_EVENT);
             glfwGetCursorPos(window, &lastRightX, &lastRightY);
             rightMouseDown = true;
         }
@@ -64,24 +58,20 @@ void WindowHandler::MouseButtonCallback(GLFWwindow* window, int button,
     }
 }
 
-void WindowHandler::MouseMoveCallback(GLFWwindow* window, double xpos,
-                                      double ypos) {
+void WindowHandler::MouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
     if (leftMouseDown) {
         double deltaX = xpos - lastLeftX;
         double deltaY = ypos - lastLeftY;
-        EventSystem::TriggerEvent(Events::XRLIB_EVENT_MOUSE_LEFT_MOVEMENT_EVENT,
-                                  deltaX, deltaY);
+        EventSystem::TriggerEvent(Events::XRLIB_EVENT_MOUSE_LEFT_MOVEMENT_EVENT, deltaX, deltaY);
     }
     if (rightMouseDown) {
         double deltaX = xpos - lastRightX;
         double deltaY = ypos - lastRightY;
-        EventSystem::TriggerEvent(
-            Events::XRLIB_EVENT_MOUSE_RIGHT_MOVEMENT_EVENT, deltaX, deltaY);
+        EventSystem::TriggerEvent(Events::XRLIB_EVENT_MOUSE_RIGHT_MOVEMENT_EVENT, deltaX, deltaY);
     }
 }
 
-void WindowHandler::HandleKeyCallback(GLFWwindow* window, int key, int scancode,
-                                      int action, int mods) {
+void WindowHandler::HandleKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_REPEAT || action == GLFW_PRESS) {
         if (key == -1)
             return;
@@ -93,10 +83,8 @@ bool WindowHandler::WindowShouldClose() {
     return glfwWindowShouldClose(window);
 }
 
-void WindowHandler::VkGetWindowSurface(VkInstance instance,
-                                       VkSurfaceKHR* surface) {
-    if (glfwCreateWindowSurface(instance, window, nullptr, surface) !=
-        VK_SUCCESS) {
+void WindowHandler::VkGetWindowSurface(VkInstance instance, VkSurfaceKHR* surface) {
+    if (glfwCreateWindowSurface(instance, window, nullptr, surface) != VK_SUCCESS) {
         Util::ErrorPopup("Failed to create window surface");
     }
 }
@@ -111,10 +99,8 @@ std::pair<int, int> WindowHandler::GetFrameBufferSize() {
     return {width, height};
 }
 
-const char**
-WindowHandler::VkGetWindowExtensions(uint32_t* requiredExtensionCount) {
-    const char** glfwExtensions =
-        glfwGetRequiredInstanceExtensions(requiredExtensionCount);
+const char** WindowHandler::VkGetWindowExtensions(uint32_t* requiredExtensionCount) {
+    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(requiredExtensionCount);
     if (!glfwExtensions) {
         Util::ErrorPopup("Error getting glfw instance extension");
     }

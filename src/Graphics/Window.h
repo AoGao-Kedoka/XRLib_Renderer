@@ -24,13 +24,11 @@ class WindowHandler {
     static void ActivateInput();
 
    private:
-    static void MouseButtonCallback(GLFWwindow* window, int button, int action,
-                                    int mods);
+    static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 
     static void MouseMoveCallback(GLFWwindow* window, double xpos, double ypos);
 
-    static void HandleKeyCallback(GLFWwindow* window, int key, int scancode,
-                                  int action, int mods);
+    static void HandleKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
    private:
     static GLFWwindow* window;

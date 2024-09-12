@@ -2,29 +2,24 @@
 
 namespace XRLib {
 namespace Graphics {
-Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
-                   Shader fragmentShader,
-                   std::shared_ptr<RenderPass> renderPass,
-                   std::shared_ptr<DescriptorSet> descriptorSet)
+Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fragmentShader,
+                   std::shared_ptr<RenderPass> renderPass, std::shared_ptr<DescriptorSet> descriptorSet)
     : core{core} {
-    VkPipelineShaderStageCreateInfo shaderStages[] = {
-        vertexShader.GetShaderStageInfo(), fragmentShader.GetShaderStageInfo()};
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShader.GetShaderStageInfo(),
+                                                      fragmentShader.GetShaderStageInfo()};
 
     auto bindingDescription = VkUtil::GetVertexBindingDescription();
     auto attributeDescription = VkUtil::GetVertexAttributeDescription();
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-    vertexInputInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    vertexInputInfo.vertexAttributeDescriptionCount =
-        attributeDescription.size();
+    vertexInputInfo.vertexAttributeDescriptionCount = attributeDescription.size();
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-    inputAssembly.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
@@ -34,8 +29,7 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
     viewportState.scissorCount = 1;
 
     VkPipelineRasterizationStateCreateInfo rasterizer{};
-    rasterizer.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.depthClampEnable = VK_FALSE;
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
@@ -45,20 +39,17 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
     rasterizer.depthBiasEnable = VK_FALSE;
 
     VkPipelineMultisampleStateCreateInfo multisampling{};
-    multisampling.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask =
-        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-        VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_FALSE;
 
     VkPipelineColorBlendStateCreateInfo colorBlending{};
-    colorBlending.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.logicOp = VK_LOGIC_OP_COPY;
     colorBlending.attachmentCount = 1;
@@ -68,12 +59,10 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
     colorBlending.blendConstants[2] = 0.0f;
     colorBlending.blendConstants[3] = 0.0f;
 
-    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,
-                                                 VK_DYNAMIC_STATE_SCISSOR};
+    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     VkPipelineDynamicStateCreateInfo dynamicState{};
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicState.dynamicStateCount =
-        static_cast<uint32_t>(dynamicStates.size());
+    dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
@@ -82,14 +71,12 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
 
     if (descriptorSet != nullptr) {
         pipelineLayoutInfo.setLayoutCount = 1;
-        pipelineLayoutInfo.pSetLayouts =
-            &descriptorSet->GetDescriptorSetLayout();
+        pipelineLayoutInfo.pSetLayouts = &descriptorSet->GetDescriptorSetLayout();
     } else {
-    pipelineLayoutInfo.setLayoutCount = 0;
+        pipelineLayoutInfo.setLayoutCount = 0;
     }
 
-    if (vkCreatePipelineLayout(core->GetRenderDevice(), &pipelineLayoutInfo,
-                               nullptr, &pipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(core->GetRenderDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
 
@@ -99,8 +86,8 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
     depthStencil.depthWriteEnable = VK_TRUE;
     depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
     depthStencil.depthBoundsTestEnable = VK_FALSE;
-    depthStencil.minDepthBounds = 0.0f; // Optional
-    depthStencil.maxDepthBounds = 1.0f; // Optional
+    depthStencil.minDepthBounds = 0.0f;    // Optional
+    depthStencil.maxDepthBounds = 1.0f;    // Optional
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -119,9 +106,8 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader,
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.pDepthStencilState = &depthStencil;
 
-    if (vkCreateGraphicsPipelines(core->GetRenderDevice(), VK_NULL_HANDLE, 1,
-                                  &pipelineInfo, nullptr,
-                                  &pipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(core->GetRenderDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) !=
+        VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
@@ -132,10 +118,8 @@ Pipeline::~Pipeline() {
     LOGGER(LOGGER::DEBUG) << "Pipeline destructor called";
     if (!core)
         return;
-    VkUtil::VkSafeClean(vkDestroyPipelineLayout, core->GetRenderDevice(),
-                        pipelineLayout, nullptr);
-    VkUtil::VkSafeClean(vkDestroyPipeline, core->GetRenderDevice(), pipeline,
-                        nullptr);
+    VkUtil::VkSafeClean(vkDestroyPipelineLayout, core->GetRenderDevice(), pipelineLayout, nullptr);
+    VkUtil::VkSafeClean(vkDestroyPipeline, core->GetRenderDevice(), pipeline, nullptr);
 }
 }    // namespace Graphics
 }    // namespace XRLib

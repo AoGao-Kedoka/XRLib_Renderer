@@ -11,8 +11,7 @@ class Primitives {
         glm::vec3 normal;
         glm::vec2 texCoords;
         bool operator==(const Vertex& other) const {
-            return position == other.position && normal == other.normal &&
-                   texCoords == other.texCoords;
+            return position == other.position && normal == other.normal && texCoords == other.texCoords;
         }
     };
 
@@ -27,7 +26,7 @@ class Primitives {
 
     struct ViewProjectionStereo {
         glm::mat4 views[2];
-        glm::mat4 proj[2];
+        glm::mat4 projs[2];
     };
 };
 }    // namespace Graphics

@@ -18,8 +18,7 @@ class VkUtil {
     }
 
     template <typename Func, typename T, typename K, typename... Args>
-    static void VkSafeClean(Func func, T variableA, K variableB,
-                            Args&&... args) {
+    static void VkSafeClean(Func func, T variableA, K variableB, Args&&... args) {
         if (variableA != VK_NULL_HANDLE && variableB != VK_NULL_HANDLE) {
             func(variableA, variableB, std::forward<Args>(args)...);
         }
@@ -39,11 +38,10 @@ class VkUtil {
         return false;
     }
 
-    static VKAPI_ATTR VkBool32 VKAPI_CALL
-    VkDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                    VkDebugUtilsMessageTypeFlagsEXT messageType,
-                    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                    void* pUserData) {
+    static VKAPI_ATTR VkBool32 VKAPI_CALL VkDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                          VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                          const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                          void* pUserData) {
         auto logLevel = LOGGER::INFO;
         switch (messageSeverity) {
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
@@ -55,23 +53,18 @@ class VkUtil {
             default:
                 logLevel = LOGGER::INFO;
         }
-        LOGGER(logLevel) << "Validation layer in Rendering backend: "
-                         << pCallbackData->pMessage;
+        LOGGER(logLevel) << "Validation layer in Rendering backend: " << pCallbackData->pMessage;
         return VK_FALSE;
     }
 
-    static VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice,
-                                 const std::vector<VkFormat>& candidates,
-                                 VkImageTiling tiling,
-                                 VkFormatFeatureFlags features) {
+    static VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates,
+                                        VkImageTiling tiling, VkFormatFeatureFlags features) {
         for (VkFormat format : candidates) {
             VkFormatProperties props;
             vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
-            if (tiling == VK_IMAGE_TILING_LINEAR &&
-                (props.linearTilingFeatures & features) == features) {
+            if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
                 return format;
-            } else if (tiling == VK_IMAGE_TILING_OPTIMAL &&
-                       (props.optimalTilingFeatures & features) == features) {
+            } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
                 return format;
             }
         }
@@ -81,16 +74,13 @@ class VkUtil {
 
     static VkFormat FindDepthFormat(VkPhysicalDevice physicalDevice) {
         return FindSupportedFormat(physicalDevice,
-            {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
-             VK_FORMAT_D24_UNORM_S8_UINT},
-            VK_IMAGE_TILING_OPTIMAL,
-            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+                                   {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+                                   VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
     }
 
     static VkVertexInputBindingDescription GetVertexBindingDescription();
 
-    static std::array<VkVertexInputAttributeDescription, 3>
-    GetVertexAttributeDescription();
+    static std::array<VkVertexInputAttributeDescription, 3> GetVertexAttributeDescription();
 };
 }    // namespace Graphics
 }    // namespace XRLib

@@ -15,7 +15,7 @@ class Shader {
         // possibly more
     };
     Shader(std::shared_ptr<VkCore> core, const std::filesystem::path& file_path,
-           ShaderStage stage);
+           ShaderStage stage, bool stereo);
     ~Shader();
 
     Shader(Shader&& other) noexcept

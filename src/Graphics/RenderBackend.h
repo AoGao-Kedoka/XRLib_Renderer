@@ -84,6 +84,9 @@ class RenderBackend {
     VkDebugUtilsMessengerEXT vkDebugMessenger{};
 
     PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT{nullptr};
+
+   private:
+    Primitives::ViewProjectionStereo viewProj;
 };
 }    // namespace Graphics
 }    // namespace XRLib

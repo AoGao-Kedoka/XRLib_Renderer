@@ -49,9 +49,6 @@ class XrBackend {
     std::vector<const char*> activeInstanceExtensions = {};
     std::vector<std::string> apiLayers = {};
 
-    std::vector<glm::mat4> viewMatrices;
-    std::vector<glm::mat4> projectionMatrices;
-
     std::vector<std::string> instanceExtensions = {
         XR_KHR_VULKAN_ENABLE_EXTENSION_NAME};
 

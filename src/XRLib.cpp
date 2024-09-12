@@ -9,10 +9,8 @@ namespace XRLib {
 class XRLib::Impl {
    public:
     Impl()
-        : info(std::make_shared<Info>()),
-          vkCore(std::make_shared<Graphics::VkCore>()),
-          xrCore(std::make_shared<XR::XrCore>()),
-          scene(std::make_shared<Scene>()) {}
+        : info(std::make_shared<Info>()), vkCore(std::make_shared<Graphics::VkCore>()),
+          xrCore(std::make_shared<XR::XrCore>()), scene(std::make_shared<Scene>()) {}
 
     std::shared_ptr<Info> info;
     std::shared_ptr<Graphics::VkCore> vkCore;
@@ -39,9 +37,7 @@ XRLib& XRLib::SetApplicationName(std::string applicationName) {
     return *this;
 }
 
-XRLib& XRLib::SetVersionNumber(unsigned int majorVersion,
-                               unsigned int minorVersion,
-                               unsigned int patchVersion) {
+XRLib& XRLib::SetVersionNumber(unsigned int majorVersion, unsigned int minorVersion, unsigned int patchVersion) {
     impl->info->majorVersion = majorVersion;
     impl->info->minorVersion = minorVersion;
     impl->info->patchVersion = patchVersion;
@@ -126,8 +122,7 @@ bool XRLib::ShouldStop() {
 }
 
 bool XRLib::Impl::ShouldStop() {
-    return xrCore->IsXRValid() ? xrBackend->XrShouldStop()
-                               : renderBackend->WindowShouldClose();
+    return xrCore->IsXRValid() ? xrBackend->XrShouldStop() : renderBackend->WindowShouldClose();
 }
 
 XRLib& XRLib::Fullscreen() {
@@ -135,8 +130,7 @@ XRLib& XRLib::Fullscreen() {
     return *this;
 }
 
-XRLib& XRLib::AddRenderPass(const std::string& vertexShaderPath,
-                            const std::string& fragmentShaderPath) {
+XRLib& XRLib::AddRenderPass(const std::string& vertexShaderPath, const std::string& fragmentShaderPath) {
     impl->passesToAdd.push_back({vertexShaderPath, fragmentShaderPath});
     return *this;
 }
@@ -150,8 +144,7 @@ void XRLib::Impl::InitXRBackend() {
 }
 
 void XRLib::Impl::InitRenderBackend() {
-    if (info->majorVersion == 0 && info->minorVersion == 0 &&
-        info->patchVersion == 0) {
+    if (info->majorVersion == 0 && info->minorVersion == 0 && info->patchVersion == 0) {
         LOGGER(LOGGER::WARNING) << "Version number is 0";
     }
 
@@ -160,11 +153,9 @@ void XRLib::Impl::InitRenderBackend() {
     }
 
     if (!xrCore->IsXRValid()) {
-        renderBackend = std::make_unique<Graphics::RenderBackendFlat>(
-            info, vkCore, xrCore, scene);
+        renderBackend = std::make_unique<Graphics::RenderBackendFlat>(info, vkCore, xrCore, scene);
     } else {
-        renderBackend = std::make_unique<Graphics::RenderBackend>(
-            info, vkCore, xrCore, scene);
+        renderBackend = std::make_unique<Graphics::RenderBackend>(info, vkCore, xrCore, scene);
     }
 }
 

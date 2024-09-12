@@ -11,8 +11,7 @@ namespace Graphics {
 struct DescriptorLayoutElement {
 
     std::variant<std::shared_ptr<Buffer>, std::shared_ptr<Image>> data;
-    VkShaderStageFlags stage =
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkDescriptorType GetType() {
         if (std::holds_alternative<std::shared_ptr<Buffer>>(data)) {
@@ -27,13 +26,10 @@ struct DescriptorLayoutElement {
 
 class DescriptorSet {
    public:
-    DescriptorSet(std::shared_ptr<VkCore> core,
-                  std::vector<DescriptorLayoutElement> layoutBindings);
+    DescriptorSet(std::shared_ptr<VkCore> core, std::vector<DescriptorLayoutElement> layoutBindings);
     ~DescriptorSet();
 
-    VkDescriptorSetLayout& GetDescriptorSetLayout() {
-        return descriptorSetLayout;
-    }
+    VkDescriptorSetLayout& GetDescriptorSetLayout() { return descriptorSetLayout; }
 
     VkDescriptorSet& GetVkDescriptorSet() { return descriptorSet; }
 

@@ -25,7 +25,7 @@ class Scene {
         Transform transform;
     };
 
-    class Camera {
+    class Camera { //TODO: camera needs to be rewritten into transform class
        public:
         Transform& GetTransform() { return camera; }
 
@@ -33,12 +33,8 @@ class Scene {
         glm::vec3 BackVector() { return -cameraFront; }
         glm::vec3 UpVector() { return cameraUp; }
         glm::vec3 DownVector() { return -cameraUp; }
-        glm::vec3 LeftVector() {
-            return -glm::normalize(glm::cross(cameraFront, cameraUp));
-        }
-        glm::vec3 RightVector() {
-            return glm::normalize(glm::cross(cameraFront, cameraUp));
-        }
+        glm::vec3 LeftVector() { return -glm::normalize(glm::cross(cameraFront, cameraUp)); }
+        glm::vec3 RightVector() { return glm::normalize(glm::cross(cameraFront, cameraUp)); }
 
         glm::vec3 TranslationVector() { return cameraPos; }
 
@@ -53,8 +49,7 @@ class Scene {
         glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
         glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 
-        Transform camera{
-            glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp)};
+        Transform camera{glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp)};
     };
 
    public:

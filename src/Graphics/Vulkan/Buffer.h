@@ -8,10 +8,8 @@ namespace Graphics {
 
 class Buffer {
    public:
-    Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size,
-           VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
-    Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size,
-           VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+    Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+    Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
            void* data, bool deviceBuffer);
     Buffer() = default;
     ~Buffer();
@@ -31,8 +29,7 @@ class Buffer {
     void UpdateBuffer(VkDeviceSize size, void* data);
 
    private:
-    void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
-                      VkMemoryPropertyFlags properties);
+    void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 
     void MapHostMemory(void* dataInput);
     /*

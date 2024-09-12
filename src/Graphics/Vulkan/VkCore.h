@@ -20,19 +20,14 @@ class VkCore {
         return graphicsQueueIndex;
     }
 
-    uint32_t GetMemoryType(uint32_t typeFilter,
-                           VkMemoryPropertyFlags properties);
+    uint32_t GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
     // flat renderer
     VkSurfaceKHR& GetFlatSurface() { return surfaceFlat; }
     VkSwapchainKHR& GetFlatSwapchain() { return swapChainFlat; }
-    std::vector<VkImage>& GetFlatSwapchainImages() {
-        return swapChainImagesFlat;
-    }
+    std::vector<VkImage>& GetFlatSwapchainImages() { return swapChainImagesFlat; }
     VkFormat GetFlatSwapchainImageFormat() { return swapChainImageFormat; }
-    void SetFlatSwapchainImageFormat(VkFormat format) {
-        this->swapChainImageFormat = format;
-    }
+    void SetFlatSwapchainImageFormat(VkFormat format) { this->swapChainImageFormat = format; }
 
     VkExtent2D& GetSwapchainExtent(bool stereo) {
         if (stereo) {
@@ -41,34 +36,18 @@ class VkCore {
             return swapChainExtentFlat;
         }
     }
-    void SetFlatSwapchainExtent2D(VkExtent2D extent) {
-        this->swapChainExtentFlat = extent;
-    }
-    void SetStereoSwapchainExtent2D(VkExtent2D extent) {
-        this->swapchainExtentStereo = extent;
-    }
+    void SetFlatSwapchainExtent2D(VkExtent2D extent) { this->swapChainExtentFlat = extent; }
+    void SetStereoSwapchainExtent2D(VkExtent2D extent) { this->swapchainExtentStereo = extent; }
 
-    std::vector<VkImageView>& GetSwapchainImageViewsFlat() {
-        return swapChainImageViewsFlat;
-    }
+    std::vector<VkImageView>& GetSwapchainImageViewsFlat() { return swapChainImageViewsFlat; }
 
-    std::vector<VkFramebuffer>& GetSwapchainFrameBuffer() {
-        return swapChainFrameBuffers;
-    }
+    std::vector<VkFramebuffer>& GetSwapchainFrameBuffer() { return swapChainFrameBuffers; }
 
     // steoreo
-    VkFormat GetStereoSwapchainImageFormat() {
-        return stereoSwapchainImageFormat;
-    }
-    void SetStereoSwapchainImageFormat(VkFormat format) {
-        this->stereoSwapchainImageFormat = format;
-    }
-    std::vector<VkImage>& GetStereoSwapchainImages() {
-        return stereoSwapchainImages;
-    }
-    std::vector<VkImageView>& GetStereoSwapchainImageViews() {
-        return stereoSwapchainImageViews;
-    }
+    VkFormat GetStereoSwapchainImageFormat() { return stereoSwapchainImageFormat; }
+    void SetStereoSwapchainImageFormat(VkFormat format) { this->stereoSwapchainImageFormat = format; }
+    std::vector<VkImage>& GetStereoSwapchainImages() { return stereoSwapchainImages; }
+    std::vector<VkImageView>& GetStereoSwapchainImageViews() { return stereoSwapchainImageViews; }
 
     VkExtent2D GetswapchainExtentStereo() { return swapchainExtentStereo; }
     // pools
@@ -111,11 +90,9 @@ class VkCore {
    private:
     void ParseGraphicsQueueFamilyIndex() {
         uint32_t queueFamilyCount;
-        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice,
-                                                 &queueFamilyCount, nullptr);
+        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount, nullptr);
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(
-            vkPhysicalDevice, &queueFamilyCount, queueFamilies.data());
+        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount, queueFamilies.data());
 
         for (int32_t i = 0; i < queueFamilyCount; ++i) {
             if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {

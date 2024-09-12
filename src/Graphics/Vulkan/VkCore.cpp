@@ -4,8 +4,7 @@ namespace XRLib {
 namespace Graphics {
 VkCore::~VkCore() {
     for (auto framebuffer : swapChainFrameBuffers) {
-        VkUtil::VkSafeClean(vkDestroyFramebuffer, vkDevice, framebuffer,
-                            nullptr);
+        VkUtil::VkSafeClean(vkDestroyFramebuffer, vkDevice, framebuffer, nullptr);
     }
     VkUtil::VkSafeClean(vkDestroyCommandPool, vkDevice, commandPool, nullptr);
 
@@ -13,16 +12,12 @@ VkCore::~VkCore() {
     VkUtil::VkSafeClean(vkDestroyInstance, vkInstance, nullptr);
 }
 
-uint32_t VkCore::GetMemoryType(uint32_t typeFilter,
-                               VkMemoryPropertyFlags properties) {
+uint32_t VkCore::GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(GetRenderPhysicalDevice(),
-                                        &memProperties);
+    vkGetPhysicalDeviceMemoryProperties(GetRenderPhysicalDevice(), &memProperties);
 
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if ((typeFilter & (1 << i)) &&
-            (memProperties.memoryTypes[i].propertyFlags & properties) ==
-                properties) {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
             return i;
         }
     }
@@ -34,8 +29,7 @@ uint32_t VkCore::GetMemoryType(uint32_t typeFilter,
 void VkCore::CreateSyncSemaphore(VkSemaphore& semaphore) {
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    if (vkCreateSemaphore(GetRenderDevice(), &semaphoreInfo, nullptr,
-                          &semaphore) != VK_SUCCESS) {
+    if (vkCreateSemaphore(GetRenderDevice(), &semaphoreInfo, nullptr, &semaphore) != VK_SUCCESS) {
 
         Util::ErrorPopup("Failed to create semaphore");
     }
@@ -56,8 +50,7 @@ void VkCore::CreateCommandPool() {
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     poolInfo.queueFamilyIndex = graphicsFamilyIndex;
-    if (vkCreateCommandPool(GetRenderDevice(), &poolInfo, nullptr,
-                            &commandPool) != VK_SUCCESS) {
+    if (vkCreateCommandPool(GetRenderDevice(), &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
         Util::ErrorPopup("failed to create command pool!");
     }
 }
@@ -70,8 +63,7 @@ void VkCore::CreateDescriptorPool() {
     poolInfo.poolSizeCount = 1;
     poolInfo.pPoolSizes = &poolSizes;
     poolInfo.maxSets = 1;
-    if (vkCreateDescriptorPool(GetRenderDevice(), &poolInfo, nullptr,
-                               &descriptorPool) != VK_SUCCESS) {}
+    if (vkCreateDescriptorPool(GetRenderDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {}
 }
 }    // namespace Graphics
 }    // namespace XRLib

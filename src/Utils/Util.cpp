@@ -7,14 +7,11 @@ const char* getCurrentPlatform() {
 #elif defined(_WIN64)
 #define PLATFORM_NAME "windows"
 #elif defined(__CYGWIN__) && !defined(_WIN32)
-#define PLATFORM_NAME                                                          \
-    "windows"    // Windows (Cygwin POSIX under Microsoft Window)
+#define PLATFORM_NAME "windows"    // Windows (Cygwin POSIX under Microsoft Window)
 #elif defined(__ANDROID__)
-#define PLATFORM_NAME                                                          \
-    "android"    // Android (implies Linux, so it must come first)
+#define PLATFORM_NAME "android"    // Android (implies Linux, so it must come first)
 #elif defined(__linux__)
-#define PLATFORM_NAME                                                          \
-    "linux"    // Debian, Ubuntu, Gentoo, Fedora, openSUSE, RedHat, Centos and other
+#define PLATFORM_NAME "linux"    // Debian, Ubuntu, Gentoo, Fedora, openSUSE, RedHat, Centos and other
 #elif defined(__unix__) || !defined(__APPLE__) && defined(__MACH__)
 #include <sys/param.h>
 #if defined(BSD)
@@ -97,8 +94,7 @@ void Util::ErrorPopup(std::string&& message) {
 
 std::string Util::ReadFile(std::string file_path) {
     std::ifstream t(file_path);
-    std::string result = std::string((std::istreambuf_iterator<char>(t)),
-                                     (std::istreambuf_iterator<char>()));
+    std::string result = std::string((std::istreambuf_iterator<char>(t)), (std::istreambuf_iterator<char>()));
     if (result == "") {
         LOGGER(LOGGER::ERR) << "FileReader: FILE IS EMPTY!!";
         return result;

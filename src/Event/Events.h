@@ -18,6 +18,8 @@ class Events {
     inline static std::string XRLIB_EVENT_MOUSE_RIGHT_DOWN_EVENT{"window_mouse_right_down"};
     inline static std::string XRLIB_EVENT_MOUSE_RIGHT_MOVEMENT_EVENT{"window_mouse_right_movement"};
 
+    inline static std::string XRLIB_EVENT_HEAD_MOVED{"head_moved"};
+
     // Controller events
     inline static std::string XRLIB_EVENT_LEFT_TRIGGER_PRESSED{
         "left_trigger_pressed"};
