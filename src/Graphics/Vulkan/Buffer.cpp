@@ -3,20 +3,28 @@
 
 namespace XRLib {
 namespace Graphics {
+
+void ValidateBufferUsage(VkBufferUsageFlags usage) {
+    if (usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT && usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) {
+        LOGGER(LOGGER::WARNING) << "Not defined buffer usage";
+    }
+}
+
 Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size, VkBufferUsageFlags usage,
                VkMemoryPropertyFlags properties, void* data, bool deviceBuffer)
-    : core{core}, bufferSize{size} {
+    : core{core}, bufferSize{size}, usage{usage} {
+    ValidateBufferUsage(usage);
     CreateBuffer(size, usage, properties);
     deviceBuffer ? MapDeviceMemory(data) : MapHostMemory(data);
     if (!(usage & VK_BUFFER_USAGE_TRANSFER_DST_BIT) && deviceBuffer == true) {
-        LOGGER(LOGGER::WARNING) << "You are not sending a transfer destnation "
-                                   "bit with memory mapping, "
-                                   "this may result error!";
+        LOGGER(LOGGER::WARNING)
+            << "You are not sending a transfer destination bit with memory mapping, this may result error!";
     }
 }
 Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size, VkBufferUsageFlags usage,
                VkMemoryPropertyFlags properties)
-    : core{core}, bufferSize{size} {
+    : core{core}, bufferSize{size}, usage{usage} {
+    ValidateBufferUsage(usage);
     CreateBuffer(size, usage, properties);
 }
 

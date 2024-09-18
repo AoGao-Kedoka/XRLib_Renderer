@@ -41,31 +41,38 @@ void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const 
     // prepare shader
     if (passesToAdd.empty()) {
         // default flat render pass
-        viewProj.view = scene->Cam().GetTransform().GetMatrix();
-        viewProj.proj = scene->Cam().GetCameraProjection();
+        viewProj.view = scene->CameraTransform().GetMatrix();
+        viewProj.proj = scene->CameraProjection();
         LOGGER(LOGGER::DEBUG) << "View matrix: \n"
                               << glm::to_string(viewProj.view) << "\n"
                               << "Projection matrix \n"
                               << glm::to_string(viewProj.proj);
 
-        // TODO: adapt to multiple objects
-        Primitives::ModelPos model;
-        model.model = glm::mat4(1);
+        std::vector<glm::mat4> modelPositions(scene->Meshes().size());
+        std::vector<std::shared_ptr<Image>> textures(scene->Meshes().size());
+        for (int i = 0; i < modelPositions.size(); ++i) {
+            modelPositions[i] = scene->Meshes()[i].transform.GetMatrix();
+            textures[i] = std::make_shared<Image>(vkCore, scene->Meshes()[i].textureData,
+                                                  scene->Meshes()[i].textureWidth, scene->Meshes()[i].textureHeight,
+                                                  scene->Meshes()[i].textureChannels, VK_FORMAT_R8G8B8A8_SRGB);
+        }
 
-        auto ViewProjBuffer =
+        // create view projection buffer
+        auto viewProjBuffer =
             std::make_shared<Buffer>(vkCore, sizeof(Primitives::ViewProjection),
                                      VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                      static_cast<void*>(&viewProj), false);
 
-        std::vector<DescriptorLayoutElement> layoutElements{
-            {ViewProjBuffer},
-            {std::make_shared<Buffer>(vkCore, sizeof(Primitives::ModelPos), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                      static_cast<void*>(&model), false)},
-            {std::make_shared<Image>(vkCore, scene->Meshes()[0].textureData, scene->Meshes()[0].textureWidth,
-                                     scene->Meshes()[0].textureHeight, scene->Meshes()[0].textureChannels,
-                                     VK_FORMAT_R8G8B8A8_SRGB)}};
+        // create model positions buffer
+        auto modelPositionsBuffer =
+            std::make_shared<Buffer>(vkCore, sizeof(glm::mat4) * modelPositions.size(),
+                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                     static_cast<void*>(modelPositions.data()), false);
+
+        // layouts, binding 1: view projections, binding 2: models storage, binding 3: model textures
+        std::vector<DescriptorLayoutElement> layoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
 
         std::shared_ptr<DescriptorSet> descriptorSet = std::make_shared<DescriptorSet>(vkCore, layoutElements);
 
@@ -74,17 +81,17 @@ void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const 
         renderPasses.push_back(std::move(graphicsRenderPass));
 
         // register buffers updates when events
-        EventSystem::Callback<int> bufferOnKeyShouldUpdateCallback = [this, ViewProjBuffer](int keyCode) {
-            viewProj.view = scene->Cam().GetTransform().GetMatrix();
-            ViewProjBuffer->UpdateBuffer(sizeof(Primitives::ViewProjection), static_cast<void*>(&viewProj));
+        EventSystem::Callback<int> bufferOnKeyShouldUpdateCallback = [this, viewProjBuffer](int keyCode) {
+            viewProj.view = scene->CameraTransform().GetMatrix();
+            viewProjBuffer->UpdateBuffer(sizeof(Primitives::ViewProjection), static_cast<void*>(&viewProj));
         };
 
         EventSystem::RegisterListener(Events::XRLIB_EVENT_KEY_PRESSED, bufferOnKeyShouldUpdateCallback);
 
         EventSystem::Callback<double, double> bufferOnMouseShouldUpdateCallback =
-            [this, ViewProjBuffer](double deltaX, double deltaY) {
-                viewProj.view = scene->Cam().GetTransform().GetMatrix();
-                ViewProjBuffer->UpdateBuffer(sizeof(Primitives::ViewProjection), static_cast<void*>(&viewProj));
+            [this, viewProjBuffer](double deltaX, double deltaY) {
+                viewProj.view = scene->CameraTransform().GetMatrix();
+                viewProjBuffer->UpdateBuffer(sizeof(Primitives::ViewProjection), static_cast<void*>(&viewProj));
             };
         EventSystem::RegisterListener(Events::XRLIB_EVENT_MOUSE_RIGHT_MOVEMENT_EVENT,
                                       bufferOnMouseShouldUpdateCallback);
@@ -208,36 +215,49 @@ void RenderBackendFlat::CreateFlatSwapChain() {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void RenderBackendFlat::OnMouseMovement(double deltaX, double deltaY) {
-    float sensitivity = 0.01f;
-    float xoffset = deltaX * sensitivity;
-    float yoffset = deltaY * sensitivity;
+    auto& cam = scene->CameraTransform();
+    auto camMatrix = cam.GetMatrix();
 
-    auto cameraUp = scene->Cam().UpVector();
-    auto cameraFront = scene->Cam().FrontVector();
+    float sensitivity = 0.005f;
+    float yaw = deltaX * sensitivity;
+    float pitch = deltaY * sensitivity;
 
-    glm::quat quatX = glm::angleAxis(glm::radians(xoffset), cameraUp);
-    glm::quat quatY = glm::angleAxis(glm::radians(yoffset), glm::cross(cameraFront, cameraUp));
+    glm::mat4 rotationYaw = glm::rotate(glm::mat4(1.0f), glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 rotationPitch = glm::rotate(glm::mat4(1.0f), glm::radians(pitch), cam.RightVector());
 
-    glm::quat rotation = quatX * quatY;
+    camMatrix = {rotationPitch * camMatrix};
+    camMatrix = {rotationYaw * camMatrix};
+    for (int i = 0; i < 3; ++i) {
+        glm::vec3 column(camMatrix[0][i], camMatrix[1][i], camMatrix[2][i]);
+        column = glm::normalize(column);
+        camMatrix[0][i] = column.x;
+        camMatrix[1][i] = column.y;
+        camMatrix[2][i] = column.z;
+    }
 
-    scene->Cam().SetCameraFront(glm::normalize(rotation * cameraFront));
-    scene->Cam().SetCameraUp(glm::normalize(glm::cross(glm::cross(cameraFront, cameraUp), cameraFront)));
+    scene->CameraTransform() = {camMatrix};
 }
 
 void RenderBackendFlat::OnKeyPressed(int keyCode) {
     float movementSensitivity = 0.02;
-    auto& cam = scene->Cam();
+    auto& cam = scene->CameraTransform();
     if (keyCode == GLFW_KEY_W) {
-        cam.SetCameraPos(cam.TranslationVector() + cam.FrontVector() * movementSensitivity);
+        cam = {glm::translate(cam.GetMatrix(), -cam.FrontVector() * movementSensitivity)};
     }
     if (keyCode == GLFW_KEY_S) {
-        cam.SetCameraPos(cam.TranslationVector() + cam.BackVector() * movementSensitivity);
+        cam = {glm::translate(cam.GetMatrix(), -cam.BackVector() * movementSensitivity)};
     }
     if (keyCode == GLFW_KEY_A) {
-        cam.SetCameraPos(cam.TranslationVector() + cam.LeftVector() * movementSensitivity);
+        cam = {glm::translate(cam.GetMatrix(), -cam.LeftVector() * movementSensitivity)};
     }
     if (keyCode == GLFW_KEY_D) {
-        cam.SetCameraPos(cam.TranslationVector() + cam.RightVector() * movementSensitivity);
+        cam = {glm::translate(cam.GetMatrix(), -cam.RightVector() * movementSensitivity)};
+    }
+    if (keyCode == GLFW_KEY_SPACE) {
+        cam = {glm::translate(cam.GetMatrix(), -cam.UpVector() * movementSensitivity)};
+    }
+    if (keyCode == GLFW_KEY_LEFT_CONTROL) {
+        cam = {glm::translate(cam.GetMatrix(), -cam.DownVector() * movementSensitivity)};
     }
 }
 

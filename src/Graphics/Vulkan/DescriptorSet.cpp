@@ -9,7 +9,11 @@ DescriptorSet::DescriptorSet(std::shared_ptr<VkCore> core, std::vector<Descripto
     for (int i = 0; i < elements.size(); ++i) {
         bindings[i].binding = i;
         bindings[i].descriptorType = elements[i].GetType();
-        bindings[i].descriptorCount = 1;
+        if (const auto images = std::get_if<std::vector<std::shared_ptr<Image>>>(&elements[i].data)) {
+            bindings[i].descriptorCount = images->size();
+        } else {
+            bindings[i].descriptorCount = 1;
+        }
         bindings[i].stageFlags = elements[i].stage;
         bindings[i].pImmutableSamplers = nullptr;
     }
@@ -43,24 +47,29 @@ DescriptorSet::DescriptorSet(std::shared_ptr<VkCore> core, std::vector<Descripto
         descriptorWrites[i].dstSet = descriptorSet;
         descriptorWrites[i].dstBinding = i;
         descriptorWrites[i].dstArrayElement = 0;
-        descriptorWrites[i].descriptorCount = 1;
         descriptorWrites[i].descriptorType = elements[i].GetType();
 
-        if (auto bufferPtr = std::get_if<std::shared_ptr<Buffer>>(&elements[i].data)) {
+        if (const auto bufferPtr = std::get_if<std::shared_ptr<Buffer>>(&elements[i].data)) {
             // Store buffer info in bufferInfos vector
             bufferInfos[i].buffer = (*bufferPtr)->GetBuffer();
             bufferInfos[i].offset = 0;
             bufferInfos[i].range = (*bufferPtr)->GetSize();
 
+            descriptorWrites[i].descriptorCount = 1;
             descriptorWrites[i].pBufferInfo = &bufferInfos[i];
 
-        } else if (auto imagePtr = std::get_if<std::shared_ptr<Image>>(&elements[i].data)) {
-            // Store image info in imageInfos vector
-            imageInfos[i].imageView = (*imagePtr)->GetImageView();
-            imageInfos[i].sampler = (*imagePtr)->GetSampler();
-            imageInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        } else if (const auto images = std::get_if<std::vector<std::shared_ptr<Image>>>(&elements[i].data)) {
+            imageInfos.resize(images->size());
+            for (int j = 0; j < imageInfos.size(); ++j) {
+                std::shared_ptr<Image> currentImage = images->at(j);
 
-            descriptorWrites[i].pImageInfo = &imageInfos[i];
+                imageInfos[j].imageView = currentImage->GetImageView();
+                imageInfos[j].sampler = currentImage->GetSampler();
+                imageInfos[j].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
+
+            descriptorWrites[i].descriptorCount = images->size();
+            descriptorWrites[i].pImageInfo = imageInfos.data();
         }
     }
 

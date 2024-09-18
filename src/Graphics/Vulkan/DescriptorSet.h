@@ -10,14 +10,18 @@ namespace Graphics {
 
 struct DescriptorLayoutElement {
 
-    std::variant<std::shared_ptr<Buffer>, std::shared_ptr<Image>> data;
+    std::variant<std::shared_ptr<Buffer>, std::vector<std::shared_ptr<Image>>> data;
     VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    VkDescriptorType GetType() {
-        if (std::holds_alternative<std::shared_ptr<Buffer>>(data)) {
-            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    VkDescriptorType GetType() const {
+        if (auto buffer = std::get_if<std::shared_ptr<Buffer>>(&data)) {
+            if ((*buffer)->IsUniformBuffer())
+                return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            if ((*buffer)->IsStorageBuffer())
+                return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         }
-        if (std::holds_alternative<std::shared_ptr<Image>>(data)) {
+
+        if (auto image = std::get_if<std::vector<std::shared_ptr<Image>>>(&data)) {
             return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         }
         return VK_DESCRIPTOR_TYPE_MAX_ENUM;

@@ -25,33 +25,6 @@ class Scene {
         Transform transform;
     };
 
-    class Camera { //TODO: camera needs to be rewritten into transform class
-       public:
-        Transform& GetTransform() { return camera; }
-
-        glm::vec3 FrontVector() { return cameraFront; }
-        glm::vec3 BackVector() { return -cameraFront; }
-        glm::vec3 UpVector() { return cameraUp; }
-        glm::vec3 DownVector() { return -cameraUp; }
-        glm::vec3 LeftVector() { return -glm::normalize(glm::cross(cameraFront, cameraUp)); }
-        glm::vec3 RightVector() { return glm::normalize(glm::cross(cameraFront, cameraUp)); }
-
-        glm::vec3 TranslationVector() { return cameraPos; }
-
-        void SetCameraFront(glm::vec3 front);
-        void SetCameraUp(glm::vec3 up);
-        void SetCameraPos(glm::vec3 pos);
-
-        glm::mat4 GetCameraProjection();
-
-       private:
-        glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-        glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-        glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-
-        Transform camera{glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp)};
-    };
-
    public:
     Scene();
     ~Scene();
@@ -59,7 +32,8 @@ class Scene {
     void WaitForAllMeshesToLoad();
     bool CheckTaskRunning();
 
-    Camera& Cam() { return cam; };
+    Transform& CameraTransform() { return cameraTransform; }
+    glm::mat4 CameraProjection();
 
     std::vector<Mesh>& Meshes() { return meshes; }
     std::vector<Transform>& Lights() { return lights; }
@@ -69,8 +43,14 @@ class Scene {
     void MeshLoadingThread();
     std::vector<Mesh> meshes;
     std::vector<Transform> lights;
-    Camera cam;
 
+    // camera settings
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+    Transform cameraTransform{glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp)};
+
+    // synchronization
     std::vector<std::future<void>> futures;
     std::queue<MeshLoadInfo> meshQueue;
     std::condition_variable cv;

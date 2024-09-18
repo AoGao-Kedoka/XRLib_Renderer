@@ -47,8 +47,14 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
 
     if (passesToAdd.empty()) {
 
-        Primitives::ModelPos model;
-        model.model = glm::mat4(1);
+        std::vector<glm::mat4> modelPositions(scene->Meshes().size());
+        std::vector<std::shared_ptr<Image>> textures(scene->Meshes().size());
+        for (int i = 0; i < modelPositions.size(); ++i) {
+            modelPositions[i] = scene->Meshes()[i].transform.GetMatrix();
+            textures[i] = std::make_shared<Image>(vkCore, scene->Meshes()[i].textureData,
+                                                  scene->Meshes()[i].textureWidth, scene->Meshes()[i].textureHeight,
+                                                  scene->Meshes()[i].textureChannels, VK_FORMAT_R8G8B8A8_SRGB);
+        }
 
         auto ViewProjBuffer =
             std::make_shared<Buffer>(vkCore, sizeof(Primitives::ViewProjectionStereo),
@@ -73,14 +79,13 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
 
         EventSystem::RegisterListener(Events::XRLIB_EVENT_HEAD_MOVED, bufferCamUpdateCacllback);
 
-        std::vector<DescriptorLayoutElement> layoutElements{
-            {ViewProjBuffer},
-            {std::make_shared<Buffer>(vkCore, sizeof(Primitives::ModelPos), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                      static_cast<void*>(&model), false)},
-            {std::make_shared<Image>(vkCore, scene->Meshes()[0].textureData, scene->Meshes()[0].textureWidth,
-                                     scene->Meshes()[0].textureHeight, scene->Meshes()[0].textureChannels,
-                                     VK_FORMAT_R8G8B8A8_SRGB)}};
+        auto modelPositionsBuffer =
+            std::make_shared<Buffer>(vkCore, sizeof(glm::mat4) * modelPositions.size(),
+                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                     static_cast<void*>(modelPositions.data()), false);
+
+        std::vector<DescriptorLayoutElement> layoutElements{{ViewProjBuffer}, {modelPositionsBuffer}, {textures}};
 
         std::shared_ptr<DescriptorSet> descriptorSet = std::make_shared<DescriptorSet>(vkCore, layoutElements);
 
@@ -201,11 +206,12 @@ void RenderBackend::Run(uint32_t& imageIndex) {
     vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
 
     commandBuffer.StartRecord().StartPass(renderPasses[0], imageIndex).BindDescriptorSets(renderPasses[0], 0);
-    for (int i = 0; i < scene->Meshes().size(); ++i) {
+    for (uint32_t i = 0; i < scene->Meshes().size(); ++i) {
+        vkCmdPushConstants(commandBuffer.GetCommandBuffer(), renderPasses[0]->GetPipeline().GetVkPipelineLayout(),
+                           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(uint32_t), &i);
         commandBuffer.BindVertexBuffer(0, {vertexBuffers[i]->GetBuffer()}, {0})
             .BindIndexBuffer(indexBuffers[i]->GetBuffer(), 0)
             .DrawIndexed(scene->Meshes()[i].indices.size(), 1, 0, 0, 0);
-        //.Draw(3, 1, 0, 0);
     }
 
     commandBuffer.EndPass();
@@ -315,9 +321,7 @@ void RenderBackend::InitVulkan() {
 
         VkValidationFeaturesEXT validationFeatures = {};
         validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-        std::vector<VkValidationFeatureEnableEXT> enabledFeatures = {
-            VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
-        };
+        std::vector<VkValidationFeatureEnableEXT> enabledFeatures = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
         validationFeatures.enabledValidationFeatureCount = static_cast<uint32_t>(enabledFeatures.size());
         validationFeatures.pEnabledValidationFeatures = enabledFeatures.data();
         debugCreateInfo.pNext = &validationFeatures;
@@ -439,12 +443,21 @@ void RenderBackend::InitVulkan() {
     queueCreateInfo.queueCount = 1;
     queueCreateInfo.pQueuePriorities = &queuePriority;
 
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexingFeatures{};
+    indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+    indexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+    indexingFeatures.runtimeDescriptorArray = VK_TRUE;
+    indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+    indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+
     VkDeviceCreateInfo deviceCreateInfo{};
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceCreateInfo.queueCreateInfoCount = 1;
     deviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;
     deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    deviceCreateInfo.pNext = &indexingFeatures;
+
     if (xrCore->IsXRValid()) {
         deviceCreateInfo.pNext = &physicalDeviceMultiviewFeatures;
     }

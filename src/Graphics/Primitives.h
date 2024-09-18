@@ -20,10 +20,6 @@ class Primitives {
         alignas(16) glm::mat4 proj;
     };
 
-    struct ModelPos {
-        alignas(16) glm::mat4 model;
-    };
-
     struct ViewProjectionStereo {
         glm::mat4 views[2];
         glm::mat4 projs[2];

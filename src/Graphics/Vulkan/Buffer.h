@@ -25,6 +25,8 @@ class Buffer {
     VkDeviceMemory GetDeviceMemory() { return bufferMemory; }
     void* GetMappedData() { return data; }
     VkDeviceSize GetSize() { return bufferSize; }
+    bool IsUniformBuffer() { return usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT; }
+    bool IsStorageBuffer() { return usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT; }
 
     void UpdateBuffer(VkDeviceSize size, void* data);
 
@@ -41,6 +43,7 @@ class Buffer {
     VkBuffer buffer{VK_NULL_HANDLE};
     VkDeviceMemory bufferMemory{VK_NULL_HANDLE};
     VkDeviceSize bufferSize{0};
+    VkBufferUsageFlags usage;
     void* data;
 };
 }    // namespace Graphics

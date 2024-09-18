@@ -71,7 +71,7 @@ std::vector<uint32_t> Shader::Compile(std::string content, std::string name) {
     shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(content, shader_kind, name.c_str(), options);
 
     if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
-        Util::ErrorPopup("failed to compile shader");
+        Util::ErrorPopup("Failed to compile shader: " + std::string(module.GetErrorMessage()));
     }
 
     LOGGER(LOGGER::INFO) << "Shader compiled";
