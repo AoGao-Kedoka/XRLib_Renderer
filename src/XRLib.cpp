@@ -71,6 +71,7 @@ void XRLib::Init(bool xr) {
 }
 
 void XRLib::Impl::Init(bool xr) {
+    EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_START);
     if (!xr) {
         xrCore->SetXRValid(false);
     } else {
@@ -92,6 +93,7 @@ void XRLib::Impl::Init(bool xr) {
         Graphics::WindowHandler::ShowWindow();
 
     LOGGER(LOGGER::INFO) << "XRLib Initialized";
+    EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_PREPARE_FINISHED);
 }
 
 void XRLib::Run() {
@@ -99,6 +101,7 @@ void XRLib::Run() {
 }
 
 void XRLib::Impl::Run() {
+    EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING);
     if (!xrCore->IsXRValid())
         Graphics::WindowHandler::Update();
 
@@ -115,6 +118,7 @@ void XRLib::Impl::Run() {
     } else {
         renderBackend->Run(imageIndex);
     }
+    EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_POST_RENDERING);
 }
 
 bool XRLib::ShouldStop() {

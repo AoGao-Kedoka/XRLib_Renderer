@@ -37,10 +37,14 @@ class DescriptorSet {
 
     VkDescriptorSet& GetVkDescriptorSet() { return descriptorSet; }
 
+    void AllocatePushConstant(uint32_t size) { pushConstantSize = size; };
+    uint32_t GetPushConstantSize() { return pushConstantSize; }
+
    private:
     std::shared_ptr<VkCore> core;
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     std::vector<DescriptorLayoutElement> elements;
+    uint32_t pushConstantSize{0};
     VkDescriptorSetLayout descriptorSetLayout;
     VkDescriptorSet descriptorSet;
 };

@@ -26,6 +26,8 @@ class CommandBuffer {
     CommandBuffer& DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset,
                                uint32_t firstInstance);
     CommandBuffer& Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
+    CommandBuffer& PushConstant(std::shared_ptr<GraphicsRenderPass> pass, uint32_t size,
+                                               const void* ptr);
     void EndRecord(VkSubmitInfo* submitInfo, VkFence fence);
 
     VkCommandBuffer& GetCommandBuffer() { return commandBuffer; }

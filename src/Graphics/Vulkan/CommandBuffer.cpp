@@ -108,6 +108,11 @@ CommandBuffer& CommandBuffer::StartPass(std::shared_ptr<GraphicsRenderPass> pass
     currentPass = pass;
     return *this;
 }
+CommandBuffer& CommandBuffer::PushConstant(std::shared_ptr<GraphicsRenderPass> pass, uint32_t size, const void* ptr) {
+    vkCmdPushConstants(this->commandBuffer, pass->GetPipeline().GetVkPipelineLayout(),
+                       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, size, ptr);
+    return *this;
+}
 
 CommandBuffer& CommandBuffer::EndPass() {
     if (currentPass == nullptr) {

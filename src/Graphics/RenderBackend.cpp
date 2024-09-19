@@ -86,8 +86,8 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
                                      static_cast<void*>(modelPositions.data()), false);
 
         std::vector<DescriptorLayoutElement> layoutElements{{ViewProjBuffer}, {modelPositionsBuffer}, {textures}};
-
         std::shared_ptr<DescriptorSet> descriptorSet = std::make_shared<DescriptorSet>(vkCore, layoutElements);
+        descriptorSet->AllocatePushConstant(sizeof(uint32_t));
 
         auto graphicsRenderPass = std::make_shared<GraphicsRenderPass>(vkCore, true, descriptorSet);
 
@@ -207,9 +207,8 @@ void RenderBackend::Run(uint32_t& imageIndex) {
 
     commandBuffer.StartRecord().StartPass(renderPasses[0], imageIndex).BindDescriptorSets(renderPasses[0], 0);
     for (uint32_t i = 0; i < scene->Meshes().size(); ++i) {
-        vkCmdPushConstants(commandBuffer.GetCommandBuffer(), renderPasses[0]->GetPipeline().GetVkPipelineLayout(),
-                           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(uint32_t), &i);
-        commandBuffer.BindVertexBuffer(0, {vertexBuffers[i]->GetBuffer()}, {0})
+        commandBuffer.PushConstant(renderPasses[0], sizeof(uint32_t), &i)
+            .BindVertexBuffer(0, {vertexBuffers[i]->GetBuffer()}, {0})
             .BindIndexBuffer(indexBuffers[i]->GetBuffer(), 0)
             .DrawIndexed(scene->Meshes()[i].indices.size(), 1, 0, 0, 0);
     }

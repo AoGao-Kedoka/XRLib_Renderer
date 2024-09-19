@@ -4,6 +4,12 @@ namespace XRLib {
 class Events {
 
    public:
+    // Application events
+    inline static std::string XRLIB_EVENT_APPLICATION_START{"application_start"};
+    inline static std::string XRLIB_EVENT_APPLICATION_PREPARE_FINISHED{"application_prepare_finished"};
+    inline static std::string XRLIB_EVENT_APPLICATION_PRE_RENDERING{"application_pre_rendering"};
+    inline static std::string XRLIB_EVENT_APPLICATION_POST_RENDERING{"application_post_rendering"};
+
     // Renderbackend events
     inline static std::string XRLIB_EVENT_RENDERBACKEND_INIT_FINISHED{
         "renderbackend_init_finished"};

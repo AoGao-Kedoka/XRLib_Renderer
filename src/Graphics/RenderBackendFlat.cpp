@@ -75,6 +75,7 @@ void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const 
         std::vector<DescriptorLayoutElement> layoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
 
         std::shared_ptr<DescriptorSet> descriptorSet = std::make_shared<DescriptorSet>(vkCore, layoutElements);
+        descriptorSet->AllocatePushConstant(sizeof(uint32_t));
 
         auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(vkCore, false, descriptorSet);
 
