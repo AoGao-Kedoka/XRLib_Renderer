@@ -110,7 +110,6 @@ void XRLib::Impl::Run() {
         XrResult result = xrBackend->StartFrame(imageIndex);
 
         if (result == XR_SUCCESS) {
-            xrBackend->UpdateXrInput();
             renderBackend->Run(imageIndex);
         }
 

@@ -2,6 +2,9 @@
 
 #include <pch.h>
 
+/// <summary>
+/// A simple event system using string as key
+/// </summary>
 namespace XRLib {
 class EventSystem {
    public:

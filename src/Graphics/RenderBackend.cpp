@@ -56,14 +56,14 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
                                                   scene->Meshes()[i].textureChannels, VK_FORMAT_R8G8B8A8_SRGB);
         }
 
-        auto ViewProjBuffer =
+        auto viewProjBuffer =
             std::make_shared<Buffer>(vkCore, sizeof(Primitives::ViewProjectionStereo),
                                      VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                      static_cast<void*>(&viewProj), false);
 
         EventSystem::Callback<std::vector<glm::mat4>, std::vector<glm::mat4>> bufferCamUpdateCacllback = {
-            [this, ViewProjBuffer](std::vector<glm::mat4> views, std::vector<glm::mat4> projs) {
+            [this, viewProjBuffer](std::vector<glm::mat4> views, std::vector<glm::mat4> projs) {
                 if (views.size() != 2 || projs.size() != 2) {
                     Util::ErrorPopup("Unknown view size, please use custom shader");
                     return;
@@ -74,10 +74,10 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
                     viewProj.projs[i] = projs[i];
                 }
 
-                ViewProjBuffer->UpdateBuffer(sizeof(Primitives::ViewProjectionStereo), static_cast<void*>(&viewProj));
+                viewProjBuffer->UpdateBuffer(sizeof(Primitives::ViewProjectionStereo), static_cast<void*>(&viewProj));
             }};
 
-        EventSystem::RegisterListener(Events::XRLIB_EVENT_HEAD_MOVED, bufferCamUpdateCacllback);
+        EventSystem::RegisterListener(Events::XRLIB_EVENT_HEAD_MOVEMENT, bufferCamUpdateCacllback);
 
         auto modelPositionsBuffer =
             std::make_shared<Buffer>(vkCore, sizeof(glm::mat4) * modelPositions.size(),
@@ -85,7 +85,7 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                      static_cast<void*>(modelPositions.data()), false);
 
-        std::vector<DescriptorLayoutElement> layoutElements{{ViewProjBuffer}, {modelPositionsBuffer}, {textures}};
+        std::vector<DescriptorLayoutElement> layoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
         std::shared_ptr<DescriptorSet> descriptorSet = std::make_shared<DescriptorSet>(vkCore, layoutElements);
         descriptorSet->AllocatePushConstant(sizeof(uint32_t));
 

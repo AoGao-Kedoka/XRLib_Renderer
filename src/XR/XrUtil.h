@@ -60,6 +60,16 @@ class XrUtil {
         return XR_FALSE;
     }
 
+    static XrPath CreateXrPath(XrInstance instance, const char* pathString) {
+        XrPath xrPath;
+        XrResult result;
+        if ((result = xrStringToPath(instance, pathString, &xrPath)) != XR_SUCCESS) {
+            LOGGER(LOGGER::ERR) << "Failed to get xr path";
+            exit(-1);
+        }
+        return xrPath;
+    }
+
     static void LogXrRuntimeProperties(XrInstance xrInstance) {
         if (xrInstance == XR_NULL_HANDLE) {
             LOGGER(LOGGER::ERR) << "XR Instance is null";

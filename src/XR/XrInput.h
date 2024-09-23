@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Event/EventSystem.h"
+#include "Event/Events.h"
 #include "Utils/Transform.h"
 #include "XrCore.h"
 
@@ -9,18 +10,15 @@ namespace XR {
 class XrInput {
    public:
     XrInput(std::shared_ptr<XrCore> core);
+    XrInput() = default;
     ~XrInput() = default;
-    void FetchInput();
-
-    Transform GetLeftControllerPosition() { return leftControllerPos; }
-    Transform GetRightControllerPosition() { return rightControllerPos; }
-
+    void UpdateInput();
    private:
     std::shared_ptr<XrCore> core;
 
-    Transform leftControllerPos;
-    Transform rightControllerPos;
-    Transform headPos;
+    XrActionSet actionSet{XR_NULL_HANDLE};
+    XrAction controllerPoseAction{XR_NULL_HANDLE};
+    XrSpace leftHandSpace{XR_NULL_HANDLE}, rightHandSpace{XR_NULL_HANDLE};
 };
 }    // namespace XR
 }    // namespace XRLib

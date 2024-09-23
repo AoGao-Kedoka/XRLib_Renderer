@@ -22,7 +22,6 @@ class XrBackend {
     XrResult EndFrame(uint32_t& imageIndex);
 
     bool XrShouldStop() { return xrShouldStop; };
-    void UpdateXrInput() { xrInput.FetchInput(); }
 
    private:
     void Prepare();
@@ -43,7 +42,7 @@ class XrBackend {
     std::shared_ptr<XRLib::Graphics::VkCore> vkCore{nullptr};
     std::shared_ptr<XrCore> xrCore{nullptr};
 
-    XrInput xrInput;
+    XrInput input;
 
     std::vector<const char*> activeAPILayers = {};
     std::vector<const char*> activeInstanceExtensions = {};

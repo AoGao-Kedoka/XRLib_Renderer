@@ -2,10 +2,68 @@
 
 namespace XRLib {
 namespace XR {
-XrInput::XrInput(std::shared_ptr<XrCore> core) : core{core} {}
+XrInput::XrInput(std::shared_ptr<XrCore> core) : core{core} {
+    XrResult result;
+    XrActionSetCreateInfo actionSetCreateInfo{XR_TYPE_ACTION_SET_CREATE_INFO};
+    std::strcpy(actionSetCreateInfo.actionSetName, "xrlib_action_set");
+    std::strcpy(actionSetCreateInfo.localizedActionSetName, "XRLib Action Set");
+    if ((result = xrCreateActionSet(this->core->GetXRInstance(), &actionSetCreateInfo, &actionSet)) != XR_SUCCESS) {
+        Util::ErrorPopup("Failed to create openxr action set");
+    }
 
-void XrInput::FetchInput() {
-    //TODO
+    XrActionCreateInfo actionCI{XR_TYPE_ACTION_CREATE_INFO};
+    actionCI.actionType = XR_ACTION_TYPE_POSE_INPUT;
+    strcpy(actionCI.actionName, "controller_pose");
+    strcpy(actionCI.localizedActionName, "Controller Pose");
+    actionCI.countSubactionPaths = 2;
+    XrPath subactionPaths[2] = {XrUtil::CreateXrPath(this->core->GetXRInstance(), "/user/hand/left"),
+                                XrUtil::CreateXrPath(this->core->GetXRInstance(), "/user/hand/right")};
+    actionCI.subactionPaths = subactionPaths;
+
+    if ((result = xrCreateAction(actionSet, &actionCI, &controllerPoseAction)) != XR_SUCCESS) {
+        Util::ErrorPopup("Failed to create openxr pose action");
+    }
+
+    XrActionSpaceCreateInfo spaceInfo{XR_TYPE_ACTION_SPACE_CREATE_INFO};
+    spaceInfo.action = controllerPoseAction;
+    spaceInfo.poseInActionSpace.orientation.w = 1.0f;
+
+    spaceInfo.subactionPath = XrUtil::CreateXrPath(this->core->GetXRInstance(), "/user/hand/left");
+    xrCreateActionSpace(this->core->GetXRSession(), &spaceInfo, &leftHandSpace);
+
+    spaceInfo.subactionPath = XrUtil::CreateXrPath(this->core->GetXRInstance(), "/user/hand/right");
+    xrCreateActionSpace(this->core->GetXRSession(), &spaceInfo, &rightHandSpace);
 }
+
+void XrInput::UpdateInput() {
+    XrActiveActionSet activeActionSet{};
+    activeActionSet.actionSet = actionSet;
+    activeActionSet.subactionPath = XR_NULL_PATH;
+
+    XrActionsSyncInfo syncInfo{XR_TYPE_ACTIONS_SYNC_INFO};
+    syncInfo.activeActionSets = &activeActionSet;
+    syncInfo.countActiveActionSets = 1;
+
+    xrSyncActions(core->GetXRSession(), &syncInfo);
+
+    XrSpaceLocation spaceLocation{XR_TYPE_SPACE_LOCATION};
+
+    if (xrLocateSpace(leftHandSpace, core->GetXrSpace(), core->GetXrFrameState().predictedDisplayTime,
+                      &spaceLocation) == XR_SUCCESS) {
+        if (spaceLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) {
+            EventSystem::TriggerEvent(Events::XRLIB_EVENT_LEFT_CONTROLLER_POSITION,
+                                      Transform{LibMath::XrPoseToMatrix(spaceLocation.pose)});
+        }
+    }
+
+    if (xrLocateSpace(rightHandSpace, core->GetXrSpace(), core->GetXrFrameState().predictedDisplayTime,
+                      &spaceLocation) == XR_SUCCESS) {
+        if (spaceLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) {
+            EventSystem::TriggerEvent(Events::XRLIB_EVENT_RIGHT_CONTROLLER_POSITION,
+                                      Transform{LibMath::XrPoseToMatrix(spaceLocation.pose)});
+        }
+    }
+}
+
 }    // namespace XR
 }    // namespace XRLib

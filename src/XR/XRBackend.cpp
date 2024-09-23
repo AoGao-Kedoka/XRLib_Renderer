@@ -4,7 +4,7 @@ namespace XRLib {
 namespace XR {
 XrBackend::XrBackend(std::shared_ptr<Info> info, std::shared_ptr<XRLib::Graphics::VkCore> core,
                      std::shared_ptr<XrCore> xrCore)
-    : info{info}, vkCore{core}, xrCore{xrCore}, xrInput{xrCore} {
+    : info{info}, vkCore{core}, xrCore{xrCore}{
     try {
         for (const auto layer : apiLayers) {
             bool res = XrUtil::XrCheckLayerSupport(layer.c_str());
@@ -27,6 +27,8 @@ XrBackend::XrBackend(std::shared_ptr<Info> info, std::shared_ptr<XRLib::Graphics
         // log system infomation
         XrUtil::LogXrRuntimeProperties(xrCore->GetXRInstance());
         XrUtil::LogXrSystemProperties(xrCore->GetXRInstance(), xrCore->GetSystemID());
+
+        EventSystem::TriggerEvent(Events::XRLIB_EVENT_XRBACKEND_INIT_FINISHED);
 
         EventSystem::Callback callback = [this]() {
             Prepare();
@@ -58,6 +60,7 @@ void XrBackend::Prepare() {
     CreateXrSession();
     CreateXrSwapchain();
     PrepareXrSwapchainImages();
+    input = std::move(XrInput(xrCore));
 }
 
 void XrBackend::CreateXrInstance() {
@@ -325,6 +328,9 @@ XrResult XrBackend::StartFrame(uint32_t& imageIndex) {
         LOGGER(LOGGER::ERR) << "Failed to wait swapchain image";
         return result;
     }
+
+    input.UpdateInput();
+
     return XR_SUCCESS;
 }
 
@@ -457,7 +463,7 @@ void XrBackend::UpdateViews() {
         projectionMatrices[i] = LibMath::XrCreateProjectionMatrix(cpLayerProjectionView.fov, 0.01f, 250.0f);
     }
 
-    EventSystem::TriggerEvent(Events::XRLIB_EVENT_HEAD_MOVED, viewMatrices, projectionMatrices);
+    EventSystem::TriggerEvent(Events::XRLIB_EVENT_HEAD_MOVEMENT, viewMatrices, projectionMatrices);
 }
 }    // namespace XR
 }    // namespace XRLib

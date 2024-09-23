@@ -43,10 +43,6 @@ void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const 
         // default flat render pass
         viewProj.view = scene->CameraTransform().GetMatrix();
         viewProj.proj = scene->CameraProjection();
-        LOGGER(LOGGER::DEBUG) << "View matrix: \n"
-                              << glm::to_string(viewProj.view) << "\n"
-                              << "Projection matrix \n"
-                              << glm::to_string(viewProj.proj);
 
         std::vector<glm::mat4> modelPositions(scene->Meshes().size());
         std::vector<std::shared_ptr<Image>> textures(scene->Meshes().size());

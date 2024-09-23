@@ -54,10 +54,13 @@ class XrCore {
 
     XrSessionState& GetXrSessionState() { return xrSessionState; }
 
+    XrTime& GetXrTime() { return time; }
+
    private:
     void CreatePlaySpace();
 
    private:
+    XrTime time{0};
     XrInstance xrInstance{XR_NULL_HANDLE};
     XrSystemId xrSystemID;
     XrGraphicsRequirementsVulkanKHR graphicsRequirements{
