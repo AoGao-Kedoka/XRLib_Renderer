@@ -63,7 +63,9 @@ class RenderBackend {
 
     void Run(uint32_t& imageIndex);
 
-    std::vector<std::shared_ptr<GraphicsRenderPass>> renderPasses;
+    std::vector<std::shared_ptr<GraphicsRenderPass>> RenderPasses;
+
+    std::shared_ptr<VkCore> GetCore() { return vkCore; }
 
    protected:
     std::shared_ptr<Info> info;

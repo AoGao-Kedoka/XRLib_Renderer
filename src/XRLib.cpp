@@ -1,51 +1,27 @@
-#include "Graphics/RenderBackend.h"
-#include "Graphics/RenderBackendFlat.h"
-#include "Graphics/Window.h"
-#include "XR/XRBackend.h"
-
 #include "XRLib.h"
 
 namespace XRLib {
-class XRLib::Impl {
-   public:
-    Impl()
-        : info(std::make_shared<Info>()), vkCore(std::make_shared<Graphics::VkCore>()),
-          xrCore(std::make_shared<XR::XrCore>()), scene(std::make_shared<Scene>()) {}
 
-    std::shared_ptr<Info> info;
-    std::shared_ptr<Graphics::VkCore> vkCore;
-    std::shared_ptr<XR::XrCore> xrCore;
-    std::shared_ptr<Scene> scene;
-    std::unique_ptr<XR::XrBackend> xrBackend{nullptr};
-    std::unique_ptr<Graphics::RenderBackend> renderBackend{nullptr};
-    std::vector<std::pair<const std::string&, const std::string&>> passesToAdd;
-    bool initialized = false;
-
-    void Init(bool xr);
-    void Run();
-    bool ShouldStop();
-    void InitXRBackend();
-    void InitRenderBackend();
-};
-
-XRLib::XRLib() : impl(std::make_unique<Impl>()) {}
+XRLib::XRLib()
+    : info(std::make_shared<Info>()), vkCore(std::make_shared<Graphics::VkCore>()),
+      xrCore(std::make_shared<XR::XrCore>()), scene(std::make_shared<Scene>()) {}
 
 XRLib::~XRLib() = default;
 
 XRLib& XRLib::SetApplicationName(std::string applicationName) {
-    impl->info->applicationName = std::move(applicationName);
+    info->applicationName = std::move(applicationName);
     return *this;
 }
 
 XRLib& XRLib::SetVersionNumber(unsigned int majorVersion, unsigned int minorVersion, unsigned int patchVersion) {
-    impl->info->majorVersion = majorVersion;
-    impl->info->minorVersion = minorVersion;
-    impl->info->patchVersion = patchVersion;
+    info->majorVersion = majorVersion;
+    info->minorVersion = minorVersion;
+    info->patchVersion = patchVersion;
     return *this;
 }
 
 XRLib& XRLib::EnableValidationLayer() {
-    impl->info->validationLayer = true;
+    info->validationLayer = true;
     return *this;
 }
 
@@ -67,10 +43,6 @@ XRLib& XRLib::SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath) {
 }
 
 void XRLib::Init(bool xr) {
-    impl->Init(xr);
-}
-
-void XRLib::Impl::Init(bool xr) {
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_START);
     if (!xr) {
         xrCore->SetXRValid(false);
@@ -86,24 +58,21 @@ void XRLib::Impl::Init(bool xr) {
     }
 
     renderBackend->Prepare(passesToAdd);
-
     initialized = true;
 
-    if (!xrCore->IsXRValid())
+    if (!xrCore->IsXRValid()) {
         Graphics::WindowHandler::ShowWindow();
+    }
 
     LOGGER(LOGGER::INFO) << "XRLib Initialized";
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_PREPARE_FINISHED);
 }
 
 void XRLib::Run() {
-    impl->Run();
-}
-
-void XRLib::Impl::Run() {
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING);
-    if (!xrCore->IsXRValid())
+    if (!xrCore->IsXRValid()) {
         Graphics::WindowHandler::Update();
+    }
 
     uint32_t imageIndex = 0;
     if (xrCore->IsXRValid()) {
@@ -121,24 +90,20 @@ void XRLib::Impl::Run() {
 }
 
 bool XRLib::ShouldStop() {
-    return impl->ShouldStop();
-}
-
-bool XRLib::Impl::ShouldStop() {
     return xrCore->IsXRValid() ? xrBackend->XrShouldStop() : renderBackend->WindowShouldClose();
 }
 
 XRLib& XRLib::Fullscreen() {
-    impl->info->fullscreen = true;
+    info->fullscreen = true;
     return *this;
 }
 
 XRLib& XRLib::AddRenderPass(const std::string& vertexShaderPath, const std::string& fragmentShaderPath) {
-    impl->passesToAdd.push_back({vertexShaderPath, fragmentShaderPath});
+    passesToAdd.push_back({vertexShaderPath, fragmentShaderPath});
     return *this;
 }
 
-void XRLib::Impl::InitXRBackend() {
+void XRLib::InitXRBackend() {
     if (info->applicationName.empty()) {
         Util::ErrorPopup("No application name specified");
     }
@@ -146,7 +111,7 @@ void XRLib::Impl::InitXRBackend() {
     xrBackend = std::make_unique<XR::XrBackend>(info, vkCore, xrCore);
 }
 
-void XRLib::Impl::InitRenderBackend() {
+void XRLib::InitRenderBackend() {
     if (info->majorVersion == 0 && info->minorVersion == 0 && info->patchVersion == 0) {
         LOGGER(LOGGER::WARNING) << "Version number is 0";
     }
@@ -163,7 +128,15 @@ void XRLib::Impl::InitRenderBackend() {
 }
 
 Scene& XRLib::SceneBackend() {
-    return *(impl->scene);
+    return *scene;
+}
+
+Graphics::RenderBackend& XRLib::RenderBackend() {
+    return *renderBackend;
+}
+
+XR::XrBackend& XRLib::XrBackend() {
+    return *xrBackend;
 }
 
 }    // namespace XRLib

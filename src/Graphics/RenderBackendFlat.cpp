@@ -75,7 +75,7 @@ void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const 
 
         auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(vkCore, false, descriptorSet);
 
-        renderPasses.push_back(std::move(graphicsRenderPass));
+        RenderPasses.push_back(std::move(graphicsRenderPass));
 
         // register buffers updates when events
         EventSystem::Callback<int> bufferOnKeyShouldUpdateCallback = [this, viewProjBuffer](int keyCode) {
@@ -96,7 +96,7 @@ void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const 
         for (auto& pass : passesToAdd) {
             auto graphicsRenderPass =
                 std::make_unique<GraphicsRenderPass>(vkCore, false, nullptr, pass.first, pass.second);
-            renderPasses.push_back(std::move(graphicsRenderPass));
+            RenderPasses.push_back(std::move(graphicsRenderPass));
         }
     }
 
@@ -119,7 +119,7 @@ void RenderBackendFlat::CreateFlatSwapChain() {
     }
     swapChainSurfaceFormat = surfaceFormats[0];
     for (const auto& availableFormat : surfaceFormats) {
-        if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
+        if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM &&
             availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             swapChainSurfaceFormat = availableFormat;
         }

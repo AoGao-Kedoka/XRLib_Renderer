@@ -91,13 +91,13 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
 
         auto graphicsRenderPass = std::make_shared<GraphicsRenderPass>(vkCore, true, descriptorSet);
 
-        renderPasses.push_back(std::move(graphicsRenderPass));
+        RenderPasses.push_back(std::move(graphicsRenderPass));
     } else {
         // custom render pass
         for (auto& pass : passesToAdd) {
             auto graphicsRenderPass =
                 std::make_shared<GraphicsRenderPass>(vkCore, true, nullptr, pass.first, pass.second);
-            renderPasses.push_back(std::move(graphicsRenderPass));
+            RenderPasses.push_back(std::move(graphicsRenderPass));
         }
     }
     InitFrameBuffer();
@@ -172,7 +172,7 @@ void RenderBackend::InitFrameBuffer() {
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = renderPasses[renderPasses.size() - 1]->GetRenderPass().GetVkRenderPass();
+        framebufferInfo.renderPass = RenderPasses[RenderPasses.size() - 1]->GetRenderPass().GetVkRenderPass();
         framebufferInfo.attachmentCount = attachments.size();
         framebufferInfo.pAttachments = attachments.data();
         framebufferInfo.width = vkCore->GetSwapchainExtent(xrCore->IsXRValid()).width;
@@ -205,12 +205,18 @@ void RenderBackend::Run(uint32_t& imageIndex) {
 
     vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
 
-    commandBuffer.StartRecord().StartPass(renderPasses[0], imageIndex).BindDescriptorSets(renderPasses[0], 0);
+    auto currentPass = 0;
+    commandBuffer.StartRecord().StartPass(RenderPasses[currentPass], imageIndex).BindDescriptorSets(RenderPasses[currentPass], 0);
     for (uint32_t i = 0; i < scene->Meshes().size(); ++i) {
-        commandBuffer.PushConstant(renderPasses[0], sizeof(uint32_t), &i)
+        commandBuffer.PushConstant(RenderPasses[currentPass], sizeof(uint32_t), &i)
             .BindVertexBuffer(0, {vertexBuffers[i]->GetBuffer()}, {0})
             .BindIndexBuffer(indexBuffers[i]->GetBuffer(), 0)
             .DrawIndexed(scene->Meshes()[i].indices.size(), 1, 0, 0, 0);
+    }
+
+
+    if (currentPass == RenderPasses.size() - 1) {
+        EventSystem::TriggerEvent(Events::XRLIB_EVENT_RENDERER_PRE_SUBMITTING, &commandBuffer);
     }
 
     commandBuffer.EndPass();

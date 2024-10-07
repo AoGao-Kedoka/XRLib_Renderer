@@ -1,7 +1,7 @@
 #include "Scene.h"
-#
+
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include <stb_image.h>
 
 namespace XRLib {
 Scene::Scene() : done(false), stop(false) {

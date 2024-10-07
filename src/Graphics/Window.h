@@ -23,6 +23,8 @@ class WindowHandler {
 
     static void ActivateInput();
 
+    static GLFWwindow* GetWindow() { return window; }
+
    private:
     static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 
