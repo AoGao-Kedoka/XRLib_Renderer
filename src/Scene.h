@@ -8,6 +8,11 @@
 namespace XRLib {
 class Scene {
    public:
+   enum TAG{
+        MESH_LEFT_CONTROLLER,
+        MESH_RIGHT_CONTROLLER,
+    };
+
     struct Mesh {
         std::vector<Graphics::Primitives::Vertex> vertices;
         std::vector<uint16_t> indices;
@@ -17,6 +22,8 @@ class Scene {
         int textureWidth = 0;
         int textureHeight = 0;
         int textureChannels = 0;
+
+        std::vector<TAG> tags;
     };
 
     struct MeshLoadInfo {
@@ -29,6 +36,10 @@ class Scene {
     Scene();
     ~Scene();
     Scene& LoadMeshAsync(const MeshLoadInfo& loadInfo);
+
+    Scene& SetAsLeftControllerMesh();
+    Scene& SetAsRightControllerMesh();
+
     void WaitForAllMeshesToLoad();
     bool CheckTaskRunning();
 
@@ -41,6 +52,7 @@ class Scene {
    private:
     void LoadMesh(const MeshLoadInfo& meshLoadInfo);
     void MeshLoadingThread();
+    void Validate();
     std::vector<Mesh> meshes;
     std::vector<Transform> lights;
 

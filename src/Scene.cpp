@@ -29,6 +29,16 @@ Scene& Scene::LoadMeshAsync(const MeshLoadInfo& loadInfo) {
     return *this;
 }
 
+void Scene::Validate() {
+    //Validate scene meshes
+    for (const auto& mesh : meshes) {
+        if (Util::VectorContains(mesh.tags, TAG::MESH_LEFT_CONTROLLER) &&
+            Util::VectorContains(mesh.tags, TAG::MESH_RIGHT_CONTROLLER)) {
+            Util::ErrorPopup("Mesh can't be left and right controller and the same time");
+        }
+    }
+}
+
 void Scene::WaitForAllMeshesToLoad() {
     std::unique_lock<std::mutex> lock(queueMutex);
     done = true;
@@ -38,6 +48,7 @@ void Scene::WaitForAllMeshesToLoad() {
     for (auto& future : futures) {
         future.get();
     }
+    Validate();
 }
 
 void Scene::LoadMesh(const MeshLoadInfo& meshLoadInfo) {
@@ -181,4 +192,15 @@ glm::mat4 Scene::CameraProjection() {
     proj[1][1] *= -1;
     return proj;
 }
+
+Scene& Scene::SetAsLeftControllerMesh() {
+    meshes[loadingIndex].tags.push_back(TAG::MESH_LEFT_CONTROLLER);
+    return *this;
+}
+
+Scene& Scene::SetAsRightControllerMesh() {
+    meshes[loadingIndex].tags.push_back(TAG::MESH_RIGHT_CONTROLLER);
+    return *this;
+}
+
 }    // namespace XRLib
