@@ -421,8 +421,10 @@ void XrBackend::PollEvents() {
                 xrCore->GetXrSessionState() = sessionStateChanged->state;
                 break;
             }
+            case XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED:
+                break;
             default:
-                xrShouldStop = true;
+                LOGGER(LOGGER::INFO) << "Unhandled event data received" << eventData.type;
                 break;
         }
     }

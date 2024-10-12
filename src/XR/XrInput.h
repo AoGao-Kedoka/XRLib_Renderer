@@ -15,6 +15,7 @@ class XrInput {
     void UpdateInput();
    private:
     std::shared_ptr<XrCore> core;
+    std::string suggestedInteractionProfile = "/interaction_profiles/khr/simple_controller";
 
     XrActionSet actionSet{XR_NULL_HANDLE};
     XrAction controllerPoseAction{XR_NULL_HANDLE};

@@ -10,6 +10,7 @@ XrInput::XrInput(std::shared_ptr<XrCore> core) : core{core} {
     if ((result = xrCreateActionSet(this->core->GetXRInstance(), &actionSetCreateInfo, &actionSet)) != XR_SUCCESS) {
         Util::ErrorPopup("Failed to create openxr action set");
     }
+    LOGGER(LOGGER::DEBUG) << "XRLib Action Set created";
 
     XrActionCreateInfo actionCI{XR_TYPE_ACTION_CREATE_INFO};
     actionCI.actionType = XR_ACTION_TYPE_POSE_INPUT;
@@ -23,16 +24,55 @@ XrInput::XrInput(std::shared_ptr<XrCore> core) : core{core} {
     if ((result = xrCreateAction(actionSet, &actionCI, &controllerPoseAction)) != XR_SUCCESS) {
         Util::ErrorPopup("Failed to create openxr pose action");
     }
+    LOGGER(LOGGER::DEBUG) << "Controller pose actions created";
+
+    std::vector<XrActionSuggestedBinding> suggestedBindings = {
+        {
+            controllerPoseAction,
+            XrUtil::CreateXrPath(core->GetXRInstance(), "/user/hand/left/input/grip/pose"),
+        },
+        {
+            controllerPoseAction,
+            XrUtil::CreateXrPath(core->GetXRInstance(), "/user/hand/right/input/grip/pose"),
+        }};
+
+    XrInteractionProfileSuggestedBinding suggestedBindingInfo{XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING};
+    suggestedBindingInfo.interactionProfile =
+        XrUtil::CreateXrPath(core->GetXRInstance(), suggestedInteractionProfile.c_str());
+    suggestedBindingInfo.suggestedBindings = suggestedBindings.data();
+    suggestedBindingInfo.countSuggestedBindings = static_cast<uint32_t>(suggestedBindings.size());
+
+    result = xrSuggestInteractionProfileBindings(core->GetXRInstance(), &suggestedBindingInfo);
+    if (result != XR_SUCCESS) {
+        Util::ErrorPopup("Failed to suggest interaction profile bindings");
+    }
+
+    LOGGER(LOGGER::DEBUG) << "Using suggested interaction profile" << suggestedInteractionProfile;
 
     XrActionSpaceCreateInfo spaceInfo{XR_TYPE_ACTION_SPACE_CREATE_INFO};
     spaceInfo.action = controllerPoseAction;
     spaceInfo.poseInActionSpace.orientation.w = 1.0f;
 
     spaceInfo.subactionPath = XrUtil::CreateXrPath(this->core->GetXRInstance(), "/user/hand/left");
-    xrCreateActionSpace(this->core->GetXRSession(), &spaceInfo, &leftHandSpace);
+    result = xrCreateActionSpace(this->core->GetXRSession(), &spaceInfo, &leftHandSpace);
+    if (result != XR_SUCCESS) {
+        Util::ErrorPopup("Failed to create left hand action space");
+    }
 
     spaceInfo.subactionPath = XrUtil::CreateXrPath(this->core->GetXRInstance(), "/user/hand/right");
-    xrCreateActionSpace(this->core->GetXRSession(), &spaceInfo, &rightHandSpace);
+    result = xrCreateActionSpace(this->core->GetXRSession(), &spaceInfo, &rightHandSpace);
+    if (result != XR_SUCCESS) {
+        Util::ErrorPopup("Failed to create right hand action space");
+    }
+
+    XrSessionActionSetsAttachInfo attachInfo{XR_TYPE_SESSION_ACTION_SETS_ATTACH_INFO};
+    attachInfo.actionSets = &actionSet;
+    attachInfo.countActionSets = 1;
+
+    result = xrAttachSessionActionSets(core->GetXRSession(), &attachInfo);
+    if (result != XR_SUCCESS) {
+        Util::ErrorPopup("Failed to attach action sets to the session");
+    }
 }
 
 void XrInput::UpdateInput() {

@@ -58,5 +58,7 @@ class Scene {
     std::atomic<bool> done;
     std::atomic<bool> stop;
     std::thread workerThread;
+    int loadingIndex = -1;
+    bool MeshLoaded() { return loadingIndex != -1; }
 };
 }    // namespace XRLib

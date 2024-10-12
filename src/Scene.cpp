@@ -23,6 +23,7 @@ Scene& Scene::LoadMeshAsync(const MeshLoadInfo& loadInfo) {
     {
         std::lock_guard<std::mutex> lock(queueMutex);
         meshQueue.push(loadInfo);
+        loadingIndex++;
     }
     cv.notify_all();
     return *this;
