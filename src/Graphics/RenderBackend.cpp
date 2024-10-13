@@ -79,20 +79,7 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
 
         EventSystem::RegisterListener(Events::XRLIB_EVENT_HEAD_MOVEMENT, bufferCamUpdateCacllback);
 
-        auto modelPositionsBuffer =
-            std::make_shared<Buffer>(vkCore, sizeof(glm::mat4) * modelPositions.size(),
-                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                     static_cast<void*>(modelPositions.data()), false);
-        EventSystem::Callback<> modelPositionBufferCallback = [this, modelPositionsBuffer]() {
-            std::vector<glm::mat4> modelPositions(scene->Meshes().size());
-            for (int i = 0; i < modelPositions.size(); ++i) {
-                modelPositions[i] = scene->Meshes()[i].transform.GetMatrix();
-            }
-            modelPositionsBuffer->UpdateBuffer(sizeof(glm::mat4) * modelPositions.size(),
-                                               static_cast<void*>(modelPositions.data()));
-        };
-        EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING, modelPositionBufferCallback);
+        auto modelPositionsBuffer = CreateModelPositionsBuffer(modelPositions);
 
         std::vector<DescriptorLayoutElement> layoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
         std::shared_ptr<DescriptorSet> descriptorSet = std::make_shared<DescriptorSet>(vkCore, layoutElements);
@@ -194,6 +181,23 @@ void RenderBackend::InitFrameBuffer() {
         }
     }
 }
+std::shared_ptr<Buffer> RenderBackend::CreateModelPositionsBuffer(std::vector<glm::mat4>& modelPositions) {
+        auto modelPositionsBuffer =
+            std::make_shared<Buffer>(vkCore, sizeof(glm::mat4) * modelPositions.size(),
+                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                     static_cast<void*>(modelPositions.data()), false);
+        EventSystem::Callback<> modelPositionBufferCallback = [this, modelPositionsBuffer]() {
+            std::vector<glm::mat4> modelPositions(scene->Meshes().size());
+            for (int i = 0; i < modelPositions.size(); ++i) {
+                modelPositions[i] = scene->Meshes()[i].transform.GetMatrix();
+            }
+            modelPositionsBuffer->UpdateBuffer(sizeof(glm::mat4) * modelPositions.size(),
+                                               static_cast<void*>(modelPositions.data()));
+        };
+        EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING, modelPositionBufferCallback);
+        return modelPositionsBuffer;
+}
 
 void RenderBackend::Run(uint32_t& imageIndex) {
     CommandBuffer commandBuffer{vkCore};
@@ -226,7 +230,7 @@ void RenderBackend::Run(uint32_t& imageIndex) {
     }
 
     if (currentPass == RenderPasses.size() - 1) {
-        EventSystem::TriggerEvent(Events::XRLIB_EVENT_RENDERER_PRE_SUBMITTING, &commandBuffer);
+        EventSystem::TriggerEvent<CommandBuffer&>(Events::XRLIB_EVENT_RENDERER_PRE_SUBMITTING, commandBuffer);
     }
 
     commandBuffer.EndPass();
