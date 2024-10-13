@@ -19,11 +19,15 @@ Scene::~Scene() {
     }
 }
 
-Scene& Scene::LoadMeshAsync(const MeshLoadInfo& loadInfo) {
+Scene& Scene::LoadMeshAsync(MeshLoadInfo loadInfo) {
     {
         std::lock_guard<std::mutex> lock(queueMutex);
-        meshQueue.push(loadInfo);
+        Mesh meshPlaceHolder;
+        meshes.push_back(std::move(meshPlaceHolder));
+
         loadingIndex++;
+        loadInfo.localLoadingIndex = loadingIndex;
+        meshQueue.push(loadInfo);
     }
     cv.notify_all();
     return *this;
@@ -148,14 +152,22 @@ void Scene::LoadMesh(const MeshLoadInfo& meshLoadInfo) {
 
         // Add the new mesh to the list
         {
+
+            if (newMesh.textureData.empty()) {
+                // create temporary white texture
+                newMesh.textureChannels = 4;
+                newMesh.textureHeight = 1;
+                newMesh.textureWidth = 1;
+                newMesh.textureData.resize(newMesh.textureChannels * newMesh.textureHeight * newMesh.textureWidth, 255);
+            }
+
             newMesh.name = meshLoadInfo.meshPath;
             newMesh.transform = meshLoadInfo.transform;
             std::lock_guard<std::mutex> lock(queueMutex);
-            meshes.push_back(newMesh);
+            meshes[meshLoadInfo.localLoadingIndex] = newMesh;
+            LOGGER(LOGGER::INFO) << "Loaded mesh: " << meshLoadInfo.meshPath;
         }
     }
-
-    LOGGER(LOGGER::INFO) << "Loaded mesh: " << meshLoadInfo.meshPath;
 }
 
 void Scene::MeshLoadingThread() {
@@ -193,13 +205,31 @@ glm::mat4 Scene::CameraProjection() {
     return proj;
 }
 
-Scene& Scene::SetAsLeftControllerMesh() {
-    meshes[loadingIndex].tags.push_back(TAG::MESH_LEFT_CONTROLLER);
+Scene& Scene::AttachLeftControllerPose() {
+    auto currentLoadingIndex = loadingIndex;
+    EventSystem::Callback<> tagCallback = [this, currentLoadingIndex]() {
+        meshes[currentLoadingIndex].tags.push_back(TAG::MESH_LEFT_CONTROLLER);
+    };
+    EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_PREPARE_FINISHED, tagCallback);
+
+    EventSystem::Callback<Transform> positionCallback = [this, currentLoadingIndex](Transform transform) {
+        meshes[currentLoadingIndex].transform = transform;
+    };
+    EventSystem::RegisterListener<Transform>(Events::XRLIB_EVENT_LEFT_CONTROLLER_POSITION, positionCallback);
     return *this;
 }
 
-Scene& Scene::SetAsRightControllerMesh() {
-    meshes[loadingIndex].tags.push_back(TAG::MESH_RIGHT_CONTROLLER);
+Scene& Scene::AttachRightControllerPose() {
+    auto currentLoadingIndex = loadingIndex;
+    EventSystem::Callback<> tagCallback = [this, currentLoadingIndex]() {
+        meshes[loadingIndex].tags.push_back(TAG::MESH_RIGHT_CONTROLLER);
+    };
+    EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_PREPARE_FINISHED, tagCallback);
+
+    EventSystem::Callback<Transform> positionCallback = [this, currentLoadingIndex](Transform transform) {
+        meshes[currentLoadingIndex].transform = transform;
+    };
+    EventSystem::RegisterListener<Transform>(Events::XRLIB_EVENT_RIGHT_CONTROLLER_POSITION, positionCallback);
     return *this;
 }
 

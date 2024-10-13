@@ -84,6 +84,15 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                      static_cast<void*>(modelPositions.data()), false);
+        EventSystem::Callback<> modelPositionBufferCallback = [this, modelPositionsBuffer]() {
+            std::vector<glm::mat4> modelPositions(scene->Meshes().size());
+            for (int i = 0; i < modelPositions.size(); ++i) {
+                modelPositions[i] = scene->Meshes()[i].transform.GetMatrix();
+            }
+            modelPositionsBuffer->UpdateBuffer(sizeof(glm::mat4) * modelPositions.size(),
+                                               static_cast<void*>(modelPositions.data()));
+        };
+        EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING, modelPositionBufferCallback);
 
         std::vector<DescriptorLayoutElement> layoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
         std::shared_ptr<DescriptorSet> descriptorSet = std::make_shared<DescriptorSet>(vkCore, layoutElements);
@@ -93,7 +102,7 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
 
         RenderPasses.push_back(std::move(graphicsRenderPass));
     } else {
-        // custom render pass
+        // TODO: custom render pass
         for (auto& pass : passesToAdd) {
             auto graphicsRenderPass =
                 std::make_shared<GraphicsRenderPass>(vkCore, true, nullptr, pass.first, pass.second);
@@ -206,14 +215,15 @@ void RenderBackend::Run(uint32_t& imageIndex) {
     vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
 
     auto currentPass = 0;
-    commandBuffer.StartRecord().StartPass(RenderPasses[currentPass], imageIndex).BindDescriptorSets(RenderPasses[currentPass], 0);
+    commandBuffer.StartRecord()
+        .StartPass(RenderPasses[currentPass], imageIndex)
+        .BindDescriptorSets(RenderPasses[currentPass], 0);
     for (uint32_t i = 0; i < scene->Meshes().size(); ++i) {
         commandBuffer.PushConstant(RenderPasses[currentPass], sizeof(uint32_t), &i)
             .BindVertexBuffer(0, {vertexBuffers[i]->GetBuffer()}, {0})
             .BindIndexBuffer(indexBuffers[i]->GetBuffer(), 0)
             .DrawIndexed(scene->Meshes()[i].indices.size(), 1, 0, 0, 0);
     }
-
 
     if (currentPass == RenderPasses.size() - 1) {
         EventSystem::TriggerEvent(Events::XRLIB_EVENT_RENDERER_PRE_SUBMITTING, &commandBuffer);
@@ -309,8 +319,15 @@ void RenderBackend::InitVulkan() {
 
     VkInstanceCreateInfo instanceCreateInfo{};
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+    VkValidationFeaturesEXT validationFeatures{};
+    std::vector<VkValidationFeatureEnableEXT> enabledValidationFeatures;
+
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceCreateInfo.pApplicationInfo = &applicationInfo;
+
+    vulkanInstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    vulkanInstanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
     instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(vulkanInstanceExtensions.size());
     instanceCreateInfo.ppEnabledExtensionNames = vulkanInstanceExtensions.data();
 
@@ -324,16 +341,16 @@ void RenderBackend::InitVulkan() {
                                       VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         debugCreateInfo.pfnUserCallback = VkUtil::VkDebugCallback;
 
-        VkValidationFeaturesEXT validationFeatures = {};
         validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-        std::vector<VkValidationFeatureEnableEXT> enabledFeatures = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
-        validationFeatures.enabledValidationFeatureCount = static_cast<uint32_t>(enabledFeatures.size());
-        validationFeatures.pEnabledValidationFeatures = enabledFeatures.data();
-        debugCreateInfo.pNext = &validationFeatures;
+        enabledValidationFeatures.push_back(VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT);
+        validationFeatures.enabledValidationFeatureCount = static_cast<uint32_t>(enabledValidationFeatures.size());
+        validationFeatures.pEnabledValidationFeatures = enabledValidationFeatures.data();
+
+        validationFeatures.pNext = &debugCreateInfo;
+        instanceCreateInfo.pNext = &validationFeatures;
 
         instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validataionLayers.size());
         instanceCreateInfo.ppEnabledLayerNames = validataionLayers.data();
-        instanceCreateInfo.pNext = &validationFeatures;
     } else {
         instanceCreateInfo.enabledLayerCount = 0;
         instanceCreateInfo.pNext = nullptr;

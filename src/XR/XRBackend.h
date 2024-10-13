@@ -14,7 +14,7 @@ namespace XR {
 class XrBackend {
    public:
     XrBackend(std::shared_ptr<Info> info,
-              std::shared_ptr<XRLib::Graphics::VkCore> core,
+              std::shared_ptr<Graphics::VkCore> core,
               std::shared_ptr<XrCore> xrCore);
     ~XrBackend();
 
@@ -39,7 +39,7 @@ class XrBackend {
 
    private:
     std::shared_ptr<Info> info{nullptr};
-    std::shared_ptr<XRLib::Graphics::VkCore> vkCore{nullptr};
+    std::shared_ptr<Graphics::VkCore> vkCore{nullptr};
     std::shared_ptr<XrCore> xrCore{nullptr};
 
     XrInput input;

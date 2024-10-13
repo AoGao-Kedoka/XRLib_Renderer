@@ -67,6 +67,15 @@ void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const 
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                      static_cast<void*>(modelPositions.data()), false);
 
+        EventSystem::Callback<> modelPositionBufferCallback = [this, modelPositionsBuffer]() {
+            std::vector<glm::mat4> modelPositions(scene->Meshes().size());
+            for (int i = 0; i < modelPositions.size(); ++i) {
+                modelPositions[i] = scene->Meshes()[i].transform.GetMatrix();
+            }
+            modelPositionsBuffer->UpdateBuffer(sizeof(glm::mat4) * modelPositions.size(), static_cast<void*>(modelPositions.data()));
+        };
+        EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING, modelPositionBufferCallback);
+
         // layouts, binding 1: view projections, binding 2: models storage, binding 3: model textures
         std::vector<DescriptorLayoutElement> layoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
 
@@ -93,6 +102,7 @@ void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const 
         EventSystem::RegisterListener(Events::XRLIB_EVENT_MOUSE_RIGHT_MOVEMENT_EVENT,
                                       bufferOnMouseShouldUpdateCallback);
     } else {
+        //TODO: Custom renderpass
         for (auto& pass : passesToAdd) {
             auto graphicsRenderPass =
                 std::make_unique<GraphicsRenderPass>(vkCore, false, nullptr, pass.first, pass.second);
@@ -119,7 +129,7 @@ void RenderBackendFlat::CreateFlatSwapChain() {
     }
     swapChainSurfaceFormat = surfaceFormats[0];
     for (const auto& availableFormat : surfaceFormats) {
-        if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM &&
+        if (availableFormat.format == VK_FORMAT_R8G8B8A8_SRGB &&
             availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             swapChainSurfaceFormat = availableFormat;
         }

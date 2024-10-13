@@ -30,15 +30,16 @@ class Scene {
         std::string meshPath{""};
         std::string texturePath{""};
         Transform transform;
+        int localLoadingIndex = -1;
     };
 
    public:
     Scene();
     ~Scene();
-    Scene& LoadMeshAsync(const MeshLoadInfo& loadInfo);
+    Scene& LoadMeshAsync(MeshLoadInfo loadInfo);
 
-    Scene& SetAsLeftControllerMesh();
-    Scene& SetAsRightControllerMesh();
+    Scene& AttachLeftControllerPose();
+    Scene& AttachRightControllerPose();
 
     void WaitForAllMeshesToLoad();
     bool CheckTaskRunning();

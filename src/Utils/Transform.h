@@ -14,8 +14,11 @@ class Transform {
     glm::vec3 RightVector() const;
     glm::vec3 DownVector() const;
     glm::vec3 UpVector() const;
-
     glm::vec3 Position() const;
+
+    Transform& Rotate(glm::vec3 rotation, float rotationRadians);
+    Transform& Translate(glm::vec3 translation);
+    Transform& Scale(glm::vec3 scale);
 
     glm::mat4 GetMatrix() const;
 
