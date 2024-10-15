@@ -40,54 +40,7 @@ void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const 
 
     // prepare shader
     if (passesToAdd.empty()) {
-        // default flat render pass
-        viewProj.view = scene->CameraTransform().GetMatrix();
-        viewProj.proj = scene->CameraProjection();
-
-        std::vector<glm::mat4> modelPositions(scene->Meshes().size());
-        std::vector<std::shared_ptr<Image>> textures(scene->Meshes().size());
-        for (int i = 0; i < modelPositions.size(); ++i) {
-            modelPositions[i] = scene->Meshes()[i].transform.GetMatrix();
-            textures[i] = std::make_shared<Image>(vkCore, scene->Meshes()[i].textureData,
-                                                  scene->Meshes()[i].textureWidth, scene->Meshes()[i].textureHeight,
-                                                  scene->Meshes()[i].textureChannels, VK_FORMAT_R8G8B8A8_SRGB);
-        }
-
-        // create view projection buffer
-        auto viewProjBuffer =
-            std::make_shared<Buffer>(vkCore, sizeof(Primitives::ViewProjection),
-                                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                     static_cast<void*>(&viewProj), false);
-
-        // create model positions buffer
-        auto modelPositionsBuffer = CreateModelPositionsBuffer(modelPositions);
-
-        // layouts, binding 1: view projections, binding 2: models storage, binding 3: model textures
-        std::vector<DescriptorLayoutElement> layoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
-
-        std::shared_ptr<DescriptorSet> descriptorSet = std::make_shared<DescriptorSet>(vkCore, layoutElements);
-        descriptorSet->AllocatePushConstant(sizeof(uint32_t));
-
-        auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(vkCore, false, descriptorSet);
-
-        RenderPasses.push_back(std::move(graphicsRenderPass));
-
-        // register buffers updates when events
-        EventSystem::Callback<int> bufferOnKeyShouldUpdateCallback = [this, viewProjBuffer](int keyCode) {
-            viewProj.view = scene->CameraTransform().GetMatrix();
-            viewProjBuffer->UpdateBuffer(sizeof(Primitives::ViewProjection), static_cast<void*>(&viewProj));
-        };
-
-        EventSystem::RegisterListener(Events::XRLIB_EVENT_KEY_PRESSED, bufferOnKeyShouldUpdateCallback);
-
-        EventSystem::Callback<double, double> bufferOnMouseShouldUpdateCallback =
-            [this, viewProjBuffer](double deltaX, double deltaY) {
-                viewProj.view = scene->CameraTransform().GetMatrix();
-                viewProjBuffer->UpdateBuffer(sizeof(Primitives::ViewProjection), static_cast<void*>(&viewProj));
-            };
-        EventSystem::RegisterListener(Events::XRLIB_EVENT_MOUSE_RIGHT_MOVEMENT_EVENT,
-                                      bufferOnMouseShouldUpdateCallback);
+        VulkanDefaults::PrepareDefaultFlatRenderPasses(vkCore, scene, viewProj, RenderPasses);
     } else {
         //TODO: Custom renderpass
         for (auto& pass : passesToAdd) {
@@ -133,7 +86,7 @@ void RenderBackendFlat::CreateFlatSwapChain() {
     if (presentModes.empty()) {
         LOGGER(LOGGER::WARNING) << "Cannot create swapchain in flat mode";
     }
-    
+
     // vsync default on
     swapChainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
     for (const auto& availablePresentMode : presentModes) {

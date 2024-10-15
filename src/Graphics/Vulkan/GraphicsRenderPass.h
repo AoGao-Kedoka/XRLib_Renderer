@@ -28,6 +28,8 @@ class GraphicsRenderPass {
 
    private:
     std::shared_ptr<VkCore> core;
+
+    //TODO: Change to unique ptr
     std::shared_ptr<RenderPass> renderPass;
     std::shared_ptr<Pipeline> pipeline;
     std::shared_ptr<DescriptorSet> descriptorSet;

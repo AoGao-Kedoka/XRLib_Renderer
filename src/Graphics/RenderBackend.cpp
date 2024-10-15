@@ -46,53 +46,12 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 2);
 
     if (passesToAdd.empty()) {
-
-        std::vector<glm::mat4> modelPositions(scene->Meshes().size());
-        std::vector<std::shared_ptr<Image>> textures(scene->Meshes().size());
-        for (int i = 0; i < modelPositions.size(); ++i) {
-            modelPositions[i] = scene->Meshes()[i].transform.GetMatrix();
-            textures[i] = std::make_shared<Image>(vkCore, scene->Meshes()[i].textureData,
-                                                  scene->Meshes()[i].textureWidth, scene->Meshes()[i].textureHeight,
-                                                  scene->Meshes()[i].textureChannels, VK_FORMAT_R8G8B8A8_SRGB);
-        }
-
-        auto viewProjBuffer =
-            std::make_shared<Buffer>(vkCore, sizeof(Primitives::ViewProjectionStereo),
-                                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                     static_cast<void*>(&viewProj), false);
-
-        EventSystem::Callback<std::vector<glm::mat4>, std::vector<glm::mat4>> bufferCamUpdateCacllback = {
-            [this, viewProjBuffer](std::vector<glm::mat4> views, std::vector<glm::mat4> projs) {
-                if (views.size() != 2 || projs.size() != 2) {
-                    Util::ErrorPopup("Unknown view size, please use custom shader");
-                    return;
-                }
-
-                for (int i = 0; i < 2; ++i) {
-                    viewProj.views[i] = views[i];
-                    viewProj.projs[i] = projs[i];
-                }
-
-                viewProjBuffer->UpdateBuffer(sizeof(Primitives::ViewProjectionStereo), static_cast<void*>(&viewProj));
-            }};
-
-        EventSystem::RegisterListener(Events::XRLIB_EVENT_HEAD_MOVEMENT, bufferCamUpdateCacllback);
-
-        auto modelPositionsBuffer = CreateModelPositionsBuffer(modelPositions);
-
-        std::vector<DescriptorLayoutElement> layoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
-        std::shared_ptr<DescriptorSet> descriptorSet = std::make_shared<DescriptorSet>(vkCore, layoutElements);
-        descriptorSet->AllocatePushConstant(sizeof(uint32_t));
-
-        auto graphicsRenderPass = std::make_shared<GraphicsRenderPass>(vkCore, true, descriptorSet);
-
-        RenderPasses.push_back(std::move(graphicsRenderPass));
+        VulkanDefaults::PrepareDefaultStereoRenderPasses(vkCore, scene, viewProj, RenderPasses);
     } else {
         // TODO: custom render pass
         for (auto& pass : passesToAdd) {
             auto graphicsRenderPass =
-                std::make_shared<GraphicsRenderPass>(vkCore, true, nullptr, pass.first, pass.second);
+                std::make_unique<GraphicsRenderPass>(vkCore, true, nullptr, pass.first, pass.second);
             RenderPasses.push_back(std::move(graphicsRenderPass));
         }
     }
@@ -182,21 +141,21 @@ void RenderBackend::InitFrameBuffer() {
     }
 }
 std::shared_ptr<Buffer> RenderBackend::CreateModelPositionsBuffer(std::vector<glm::mat4>& modelPositions) {
-        auto modelPositionsBuffer =
-            std::make_shared<Buffer>(vkCore, sizeof(glm::mat4) * modelPositions.size(),
-                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                     static_cast<void*>(modelPositions.data()), false);
-        EventSystem::Callback<> modelPositionBufferCallback = [this, modelPositionsBuffer]() {
-            std::vector<glm::mat4> modelPositions(scene->Meshes().size());
-            for (int i = 0; i < modelPositions.size(); ++i) {
-                modelPositions[i] = scene->Meshes()[i].transform.GetMatrix();
-            }
-            modelPositionsBuffer->UpdateBuffer(sizeof(glm::mat4) * modelPositions.size(),
-                                               static_cast<void*>(modelPositions.data()));
-        };
-        EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING, modelPositionBufferCallback);
-        return modelPositionsBuffer;
+    auto modelPositionsBuffer =
+        std::make_shared<Buffer>(vkCore, sizeof(glm::mat4) * modelPositions.size(),
+                                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                 static_cast<void*>(modelPositions.data()), false);
+    EventSystem::Callback<> modelPositionBufferCallback = [this, modelPositionsBuffer]() {
+        std::vector<glm::mat4> modelPositions(scene->Meshes().size());
+        for (int i = 0; i < modelPositions.size(); ++i) {
+            modelPositions[i] = scene->Meshes()[i].transform.GetMatrix();
+        }
+        modelPositionsBuffer->UpdateBuffer(sizeof(glm::mat4) * modelPositions.size(),
+                                           static_cast<void*>(modelPositions.data()));
+    };
+    EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING, modelPositionBufferCallback);
+    return modelPositionsBuffer;
 }
 
 void RenderBackend::Run(uint32_t& imageIndex) {
@@ -218,18 +177,17 @@ void RenderBackend::Run(uint32_t& imageIndex) {
 
     vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
 
-    auto currentPass = 0;
-    commandBuffer.StartRecord()
-        .StartPass(RenderPasses[currentPass], imageIndex)
-        .BindDescriptorSets(RenderPasses[currentPass], 0);
+    auto currentPassIndex = 0;
+    auto currentPass = *RenderPasses[currentPassIndex];
+    commandBuffer.StartRecord().StartPass(currentPass, imageIndex).BindDescriptorSets(currentPass, 0);
     for (uint32_t i = 0; i < scene->Meshes().size(); ++i) {
-        commandBuffer.PushConstant(RenderPasses[currentPass], sizeof(uint32_t), &i)
+        commandBuffer.PushConstant(currentPass, sizeof(uint32_t), &i)
             .BindVertexBuffer(0, {vertexBuffers[i]->GetBuffer()}, {0})
             .BindIndexBuffer(indexBuffers[i]->GetBuffer(), 0)
             .DrawIndexed(scene->Meshes()[i].indices.size(), 1, 0, 0, 0);
     }
 
-    if (currentPass == RenderPasses.size() - 1) {
+    if (currentPassIndex == RenderPasses.size() - 1) {
         EventSystem::TriggerEvent<CommandBuffer&>(Events::XRLIB_EVENT_RENDERER_PRE_SUBMITTING, commandBuffer);
     }
 

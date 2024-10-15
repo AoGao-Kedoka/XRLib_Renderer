@@ -1,5 +1,11 @@
 #pragma once
+#include "Graphics/Vulkan/Buffer.h"
+#include "Graphics/Vulkan/GraphicsRenderPass.h"
+#include "Graphics/Vulkan/VkCore.h"
+#include "Scene.h"
 
+namespace XRLib {
+namespace Graphics {
 class VulkanDefaults {
    public:
     ////////////////////////////////////////////////////
@@ -8,7 +14,6 @@ class VulkanDefaults {
     inline static const std::string defaultVertFlat = R"(
     #version 450
     #extension GL_ARB_separate_shader_objects : enable
-
     layout(set = 0, binding = 0) uniform ViewProj{
         mat4 view;
         mat4 proj;
@@ -89,4 +94,17 @@ class VulkanDefaults {
         fragTexCoord = inTexCoord;
     }
     )";
+
+    ////////////////////////////////////////////////////
+    // Default render passes
+    ////////////////////////////////////////////////////
+    static void PrepareDefaultStereoRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
+                                                 Primitives::ViewProjectionStereo& viewProj,
+                                                 std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses);
+    static void PrepareDefaultFlatRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
+                                                 Primitives::ViewProjection& viewProj,
+                                                 std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses);
+
 };
+}    // namespace Graphics
+}    // namespace XRLib

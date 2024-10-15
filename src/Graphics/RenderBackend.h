@@ -8,6 +8,7 @@
 #include "Graphics/Vulkan/Pipeline.h"
 #include "Graphics/Vulkan/RenderPass.h"
 #include "Graphics/Vulkan/Shader.h"
+#include "Graphics/Vulkan/VulkanDefaults.h"
 #include "Graphics/Vulkan/VkCore.h"
 #include "Graphics/Window.h"
 #include "Logger.h"
@@ -63,7 +64,7 @@ class RenderBackend {
 
     void Run(uint32_t& imageIndex);
 
-    std::vector<std::shared_ptr<GraphicsRenderPass>> RenderPasses;
+    std::vector<std::unique_ptr<GraphicsRenderPass>> RenderPasses;
 
     std::shared_ptr<VkCore> GetCore() { return vkCore; }
 

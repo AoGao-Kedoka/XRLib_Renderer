@@ -92,15 +92,69 @@ void Util::ErrorPopup(std::string&& message) {
     throw std::runtime_error(message.c_str());
 }
 
-std::string Util::ReadFile(std::string file_path) {
-    std::ifstream t(file_path);
+void Util::EnsureDirExists(const std::string& dirPath) {
+    if (!std::filesystem::exists(dirPath)) {
+        if (std::filesystem::create_directories(dirPath)) {
+            LOGGER(LOGGER::INFO) << "Directory created: " << dirPath;
+        } else {
+            ErrorPopup("Directory creation failed: " + dirPath);
+        }
+    }
+}
+
+std::string Util::ReadFile(const std::string& filePath) {
+    std::ifstream t(filePath);
     std::string result = std::string((std::istreambuf_iterator<char>(t)), (std::istreambuf_iterator<char>()));
     if (result == "") {
-        LOGGER(LOGGER::ERR) << "FileReader: FILE IS EMPTY!!";
+        LOGGER(LOGGER::ERR) << "File is empty";
         return result;
     }
     LOGGER(LOGGER::DEBUG) << result;
     return result;
+}
+
+std::vector<uint32_t> Util::ReadBinaryFile(const std::string& filePath) {
+    std::ifstream file(filePath, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) {
+        ErrorPopup("Error opening file");
+        return {};
+    }
+
+    std::ifstream::pos_type fileSize = file.tellg();
+    std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
+
+    file.seekg(0, std::ios::beg);
+    file.read(reinterpret_cast<char*>(buffer.data()), fileSize);
+
+    if (!file.good()) {
+        ErrorPopup("Error reading file");
+        return {};
+    }
+
+    file.close();
+    return buffer;
+}
+
+bool Util::WriteFile(const std::string& filePath, const std::vector<uint32_t>& data) {
+     std::ofstream outFile(filePath, std::ios::binary);
+    if (!outFile.is_open()) {
+        ErrorPopup(std::format("Error: Cannot open file {} for writing", filePath));
+        return false;
+    }
+
+    outFile.write(reinterpret_cast<const char*>(data.data()), data.size() * sizeof(uint32_t));
+    if (!outFile.good()) {
+        ErrorPopup(std::format("Error writing to file: {}", filePath));
+        return false;
+    }
+
+    outFile.close();
+    return true;
+}
+
+std::size_t Util::HashString(const std::string& content) {
+    std::hash<std::string> hashFunction;
+    return hashFunction(content);
 }
 
 std::filesystem::path Util::ResolvePath(const std::filesystem::path& path) {

@@ -12,8 +12,11 @@ class Util {
 
     static bool CheckPlatformSupport();
 
-    static std::string ReadFile(std::string file_path);
-
+    static void EnsureDirExists(const std::string& dirPath);
+    static std::string ReadFile(const std::string& filePath);
+    static std::vector<uint32_t> ReadBinaryFile(const std::string& filePath);
+    static bool WriteFile(const std::string& filePath, const std::vector<uint32_t>& data);
+    static std::size_t HashString(const std::string& content);
     static std::filesystem::path ResolvePath(const std::filesystem::path& path);
 
     static std::vector<const char*> SplitStringToCharPtr(const std::string& input);

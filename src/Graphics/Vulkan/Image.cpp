@@ -189,7 +189,7 @@ void Image::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout 
 
     vkCmdPipelineBarrier(commandBuffer->GetCommandBuffer(), sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1,
                          &barrier);
-    CommandBuffer::EndSingleTimeCommands(commandBuffer);
+    CommandBuffer::EndSingleTimeCommands(std::move(commandBuffer));
 }
 void Image::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
     auto commandBuffer = CommandBuffer::BeginSingleTimeCommands(core);
@@ -209,7 +209,7 @@ void Image::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, ui
     vkCmdCopyBufferToImage(commandBuffer->GetCommandBuffer(), buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                            &region);
 
-    CommandBuffer::EndSingleTimeCommands(commandBuffer);
+    CommandBuffer::EndSingleTimeCommands(std::move(commandBuffer));
 }
 }    // namespace Graphics
 }    // namespace XRLib

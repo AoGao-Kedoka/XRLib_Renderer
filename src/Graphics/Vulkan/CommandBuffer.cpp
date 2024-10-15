@@ -19,13 +19,13 @@ CommandBuffer::~CommandBuffer() {
     vkFreeCommandBuffers(core->GetRenderDevice(), core->GetCommandPool(), 1, &commandBuffer);
 }
 
-std::shared_ptr<CommandBuffer> CommandBuffer::BeginSingleTimeCommands(std::shared_ptr<VkCore> core) {
-    std::shared_ptr<CommandBuffer> commandBuffer = std::make_shared<CommandBuffer>(core);
+std::unique_ptr<CommandBuffer> CommandBuffer::BeginSingleTimeCommands(std::shared_ptr<VkCore> core) {
+    auto commandBuffer = std::make_unique<CommandBuffer>(core);
     commandBuffer->StartRecord();
     return commandBuffer;
 }
 
-void CommandBuffer::EndSingleTimeCommands(std::shared_ptr<CommandBuffer> commandBuffer) {
+void CommandBuffer::EndSingleTimeCommands(std::unique_ptr<CommandBuffer> commandBuffer) {
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
@@ -44,16 +44,16 @@ CommandBuffer& CommandBuffer::BindIndexBuffer(VkBuffer indexBuffer, VkDeviceSize
     return *this;
 }
 
-CommandBuffer& CommandBuffer::BindDescriptorSets(std::shared_ptr<GraphicsRenderPass> pass, uint32_t firstSet,
+CommandBuffer& CommandBuffer::BindDescriptorSets(GraphicsRenderPass& pass, uint32_t firstSet,
                                                  uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets) {
-    if (pass->GetDescriptorSet() == nullptr) {
+    if (pass.GetDescriptorSet() == nullptr) {
         LOGGER(LOGGER::WARNING) << "No descriptor set available, skipping";
         return *this;
     }
 
-    VkPipelineLayout layout = pass->GetPipeline().GetVkPipelineLayout();
+    VkPipelineLayout layout = pass.GetPipeline().GetVkPipelineLayout();
     VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    VkDescriptorSet descriptorSet = pass->GetDescriptorSet()->GetVkDescriptorSet();
+    VkDescriptorSet descriptorSet = pass.GetDescriptorSet()->GetVkDescriptorSet();
     vkCmdBindDescriptorSets(commandBuffer, bindPoint, layout, firstSet, 1, &descriptorSet, dynamicOffsetCount,
                             pDynamicOffsets);
     return *this;
@@ -71,17 +71,17 @@ CommandBuffer& CommandBuffer::StartRecord() {
     return *this;
 }
 
-CommandBuffer& CommandBuffer::StartPass(std::shared_ptr<GraphicsRenderPass> pass, uint32_t imageIndex) {
-    if (pass->GetPipeline().GetVkPipeline() == VK_NULL_HANDLE) {
+CommandBuffer& CommandBuffer::StartPass(GraphicsRenderPass& pass, uint32_t imageIndex) {
+    if (pass.GetPipeline().GetVkPipeline() == VK_NULL_HANDLE) {
         Util::ErrorPopup("Graphics pipeline not initialized");
     }
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = pass->GetRenderPass().GetVkRenderPass();
+    renderPassInfo.renderPass = pass.GetRenderPass().GetVkRenderPass();
     renderPassInfo.framebuffer = core->GetSwapchainFrameBuffer()[imageIndex];
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = core->GetSwapchainExtent(pass->Stereo());
+    renderPassInfo.renderArea.extent = core->GetSwapchainExtent(pass.Stereo());
 
     std::array<VkClearValue, 2> clearValues{};
     clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
@@ -90,7 +90,7 @@ CommandBuffer& CommandBuffer::StartPass(std::shared_ptr<GraphicsRenderPass> pass
     renderPassInfo.pClearValues = clearValues.data();
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pass->GetPipeline().GetVkPipeline());
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pass.GetPipeline().GetVkPipeline());
 
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -105,11 +105,11 @@ CommandBuffer& CommandBuffer::StartPass(std::shared_ptr<GraphicsRenderPass> pass
     scissor.offset = {0, 0};
     scissor.extent = renderPassInfo.renderArea.extent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-    currentPass = pass;
+    currentPass = &pass;
     return *this;
 }
-CommandBuffer& CommandBuffer::PushConstant(std::shared_ptr<GraphicsRenderPass> pass, uint32_t size, const void* ptr) {
-    vkCmdPushConstants(this->commandBuffer, pass->GetPipeline().GetVkPipelineLayout(),
+CommandBuffer& CommandBuffer::PushConstant(GraphicsRenderPass& pass, uint32_t size, const void* ptr) {
+    vkCmdPushConstants(this->commandBuffer, pass.GetPipeline().GetVkPipelineLayout(),
                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, size, ptr);
     return *this;
 }

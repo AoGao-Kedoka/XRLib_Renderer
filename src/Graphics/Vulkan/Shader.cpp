@@ -7,6 +7,7 @@ namespace Graphics {
 Shader::Shader(std::shared_ptr<VkCore> core, const std::filesystem::path& filePath, ShaderStage shaderStage,
                bool stereo)
     : core{core}, stage{shaderStage} {
+    Util::EnsureDirExists(shaderCacheDir);
     std::string rawCode;
     if (filePath.empty()) {
         switch (stage) {
@@ -21,13 +22,25 @@ Shader::Shader(std::shared_ptr<VkCore> core, const std::filesystem::path& filePa
         rawCode = Util::ReadFile(filePath.generic_string());
     }
 
-    if (rawCode == "") {
-        Util::ErrorPopup("Shader file content is empty");
-    }
+    std::string cacheNamePrefix = filePath.empty() ? "defaultMain" : filePath.filename().generic_string();
+    std::string cacheNameSuffix = std::to_string(Util::HashString(rawCode));
+    std::string cacheFilePath = std::format("{}/{}_{}.spv", shaderCacheDir, cacheNamePrefix, cacheNameSuffix);
 
-    auto spirvFuture = std::async(std::launch::async, &Shader::Compile, this, rawCode,
-                                  filePath.empty() ? "main" : filePath.filename().generic_string());
-    Init(spirvFuture.get());
+    std::vector<uint32_t> code;
+    if (std::filesystem::exists(cacheFilePath)) {
+        code = Util::ReadBinaryFile(cacheFilePath);
+        LOGGER(LOGGER::INFO) << "Loaded shader from cache: " << cacheFilePath;
+    } else {
+
+        if (rawCode.empty()) {
+            Util::ErrorPopup("Shader file content is empty");
+        }
+
+        code = Compile(rawCode, cacheNamePrefix);
+        Util::WriteFile(cacheFilePath, code);
+        LOGGER(LOGGER::INFO) << "Compiled and cached shader: " << cacheFilePath;
+    }
+    Init(code);
 }
 
 Shader::~Shader() {
@@ -73,8 +86,6 @@ std::vector<uint32_t> Shader::Compile(std::string content, std::string name) {
     if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
         Util::ErrorPopup("Failed to compile shader: " + std::string(module.GetErrorMessage()));
     }
-
-    LOGGER(LOGGER::INFO) << "Shader compiled";
 
     return {module.cbegin(), module.cend()};
 }
