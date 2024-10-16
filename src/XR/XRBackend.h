@@ -3,7 +3,7 @@
 #include "Graphics/Vulkan/VkCore.h"
 #include "Logger.h"
 #include "Utils/Info.h"
-#include "Utils/LibMath.h"
+#include "Utils/MathUtil.h"
 #include "XR/XrCore.h"
 #include "XR/XrInput.h"
 #include "Event/EventSystem.h"

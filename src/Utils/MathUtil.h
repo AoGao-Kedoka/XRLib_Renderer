@@ -2,7 +2,7 @@
 
 #include <pch.h>
 
-class LibMath {
+class MathUtil{
    public:
     static XrPosef XrIdentity() {
         XrPosef pose{};

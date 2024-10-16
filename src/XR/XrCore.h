@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Utils/LibMath.h"
+#include "Utils/MathUtil.h"
 #include "Utils/Util.h"
 #include "XrUtil.h"
 

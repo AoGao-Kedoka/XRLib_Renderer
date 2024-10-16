@@ -13,6 +13,9 @@ class Events {
     inline static std::string XRLIB_EVENT_RENDERER_PRE_SUBMITTING{"renderer_pre_submitting"};
     inline static std::string XRLIB_EVENT_APPLICATION_POST_RENDERING{"application_post_rendering"};
 
+    // Scene events
+    inline static std::string XRLIB_EVENT_MESHES_LOADING_FINISHED{"meshes_loading_finished"};
+
     // backends events
     inline static std::string XRLIB_EVENT_RENDERBACKEND_INIT_FINISHED{"renderbackend_init_finished"};
     inline static std::string XRLIB_EVENT_XRBACKEND_INIT_FINISHED{"xrbackend_init_finished"};

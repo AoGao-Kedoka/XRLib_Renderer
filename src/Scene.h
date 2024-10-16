@@ -8,7 +8,7 @@
 namespace XRLib {
 class Scene {
    public:
-   enum TAG{
+    enum TAG {
         MESH_LEFT_CONTROLLER,
         MESH_RIGHT_CONTROLLER,
     };
@@ -40,6 +40,7 @@ class Scene {
 
     Scene& AttachLeftControllerPose();
     Scene& AttachRightControllerPose();
+    Scene& BindToPointer(Mesh*& meshPtr);
 
     void WaitForAllMeshesToLoad();
     bool CheckTaskRunning();
@@ -73,5 +74,8 @@ class Scene {
     std::thread workerThread;
     int loadingIndex = -1;
     bool MeshLoaded() { return loadingIndex != -1; }
+
+    // internal events
+    std::string INTERNAL_EVENTS_MESH_LOAD_I_FINISHED{"mesh_load_i_finished"};
 };
 }    // namespace XRLib

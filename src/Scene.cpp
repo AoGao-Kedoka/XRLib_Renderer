@@ -3,6 +3,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+static int LOADING_STATUS_COUNTER{0};
+
 namespace XRLib {
 Scene::Scene() : done(false), stop(false) {
     workerThread = std::thread(&Scene::MeshLoadingThread, this);
@@ -165,8 +167,13 @@ void Scene::LoadMesh(const MeshLoadInfo& meshLoadInfo) {
             newMesh.transform = meshLoadInfo.transform;
             std::lock_guard<std::mutex> lock(queueMutex);
             meshes[meshLoadInfo.localLoadingIndex] = newMesh;
+            LOADING_STATUS_COUNTER++;
             LOGGER(LOGGER::INFO) << "Loaded mesh: " << meshLoadInfo.meshPath;
         }
+    }
+
+    if (LOADING_STATUS_COUNTER == meshes.size()) {
+        EventSystem::TriggerEvent(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED);
     }
 }
 
@@ -207,10 +214,14 @@ glm::mat4 Scene::CameraProjection() {
 
 Scene& Scene::AttachLeftControllerPose() {
     auto currentLoadingIndex = loadingIndex;
+    if (currentLoadingIndex < 0 || currentLoadingIndex > meshes.size()) {
+        LOGGER(LOGGER::WARNING) << "Undefined behavior, ignored";
+        return *this;
+    }
     EventSystem::Callback<> tagCallback = [this, currentLoadingIndex]() {
         meshes[currentLoadingIndex].tags.push_back(TAG::MESH_LEFT_CONTROLLER);
     };
-    EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_PREPARE_FINISHED, tagCallback);
+    EventSystem::RegisterListener(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, tagCallback);
 
     EventSystem::Callback<Transform> positionCallback = [this, currentLoadingIndex](Transform transform) {
         meshes[currentLoadingIndex].transform = transform;
@@ -221,15 +232,32 @@ Scene& Scene::AttachLeftControllerPose() {
 
 Scene& Scene::AttachRightControllerPose() {
     auto currentLoadingIndex = loadingIndex;
+    if (currentLoadingIndex < 0 || currentLoadingIndex > meshes.size()) {
+        LOGGER(LOGGER::WARNING) << "Undefined behavior, ignored";
+        return *this;
+    }
     EventSystem::Callback<> tagCallback = [this, currentLoadingIndex]() {
-        meshes[loadingIndex].tags.push_back(TAG::MESH_RIGHT_CONTROLLER);
+        meshes[currentLoadingIndex].tags.push_back(TAG::MESH_RIGHT_CONTROLLER);
     };
-    EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_PREPARE_FINISHED, tagCallback);
+    EventSystem::RegisterListener(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, tagCallback);
 
     EventSystem::Callback<Transform> positionCallback = [this, currentLoadingIndex](Transform transform) {
         meshes[currentLoadingIndex].transform = transform;
     };
     EventSystem::RegisterListener<Transform>(Events::XRLIB_EVENT_RIGHT_CONTROLLER_POSITION, positionCallback);
+    return *this;
+}
+
+Scene& Scene::BindToPointer(Mesh*& meshPtr) {
+    auto currentLoadingIndex = loadingIndex;
+    if (currentLoadingIndex < 0 || currentLoadingIndex > meshes.size()) {
+        LOGGER(LOGGER::WARNING) << "Undefined behavior, ignored";
+        return *this;
+    }
+    EventSystem::Callback<> callback = [this, &meshPtr, currentLoadingIndex]() {
+        meshPtr = &meshes[currentLoadingIndex];
+    };
+    EventSystem::RegisterListener(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, callback);
     return *this;
 }
 

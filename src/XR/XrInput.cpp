@@ -92,7 +92,7 @@ void XrInput::UpdateInput() {
                       &spaceLocation) == XR_SUCCESS) {
         if (spaceLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) {
             EventSystem::TriggerEvent(Events::XRLIB_EVENT_LEFT_CONTROLLER_POSITION,
-                                      Transform{LibMath::XrPoseToMatrix(spaceLocation.pose)});
+                                      Transform{MathUtil::XrPoseToMatrix(spaceLocation.pose)});
         }
     }
 
@@ -100,7 +100,7 @@ void XrInput::UpdateInput() {
                       &spaceLocation) == XR_SUCCESS) {
         if (spaceLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) {
             EventSystem::TriggerEvent(Events::XRLIB_EVENT_RIGHT_CONTROLLER_POSITION,
-                                      Transform{LibMath::XrPoseToMatrix(spaceLocation.pose)});
+                                      Transform{MathUtil::XrPoseToMatrix(spaceLocation.pose)});
         }
     }
 }
