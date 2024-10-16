@@ -4,11 +4,13 @@ namespace XRLib {
 
 XRLib::XRLib()
     : info(std::make_shared<Info>()), vkCore(std::make_shared<Graphics::VkCore>()),
-      xrCore(std::make_shared<XR::XrCore>()), scene(std::make_shared<Scene>()) {}
+      xrCore(std::make_shared<XR::XrCore>()), scene(std::make_shared<Scene>()) {
+    Util::CheckPlatformSupport();
+}
 
 XRLib::~XRLib() = default;
 
-XRLib& XRLib::SetApplicationName(std::string applicationName) {
+XRLib& XRLib::SetApplicationName(const std::string& applicationName) {
     info->applicationName = std::move(applicationName);
     return *this;
 }

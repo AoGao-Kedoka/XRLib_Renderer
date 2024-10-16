@@ -12,7 +12,7 @@ class XRLib {
    public:
     XRLib();
     ~XRLib();
-    XRLib& SetApplicationName(std::string applicationName);
+    XRLib& SetApplicationName(const std::string& applicationName);
     XRLib& SetVersionNumber(unsigned int majorVersion, unsigned int minorVersion, unsigned int patchVersion);
     XRLib& EnableValidationLayer();
     XRLib& SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath);
