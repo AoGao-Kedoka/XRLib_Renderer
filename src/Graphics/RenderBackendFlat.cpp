@@ -42,6 +42,7 @@ void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const 
     if (passesToAdd.empty()) {
         VulkanDefaults::PrepareDefaultFlatRenderPasses(vkCore, scene, viewProj, RenderPasses);
     } else {
+        LOGGER(LOGGER::INFO) << "Using custom render pass";
         //TODO: Custom renderpass
         for (auto& pass : passesToAdd) {
             auto graphicsRenderPass =

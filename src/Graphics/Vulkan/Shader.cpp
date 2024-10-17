@@ -15,7 +15,7 @@ Shader::Shader(std::shared_ptr<VkCore> core, const std::filesystem::path& filePa
                 rawCode = stereo ? VulkanDefaults::defaultVertStereo : VulkanDefaults::defaultVertFlat;
                 break;
             case ShaderStage::FRAGMENT_SHADER:
-                rawCode = VulkanDefaults::defaultFrag;
+                rawCode = VulkanDefaults::defaultPhongFrag;
                 break;
         }
     } else {

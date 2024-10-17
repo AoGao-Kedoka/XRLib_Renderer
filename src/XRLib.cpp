@@ -11,7 +11,7 @@ XRLib::XRLib()
 XRLib::~XRLib() = default;
 
 XRLib& XRLib::SetApplicationName(const std::string& applicationName) {
-    info->applicationName = std::move(applicationName);
+    info->applicationName = applicationName;
     return *this;
 }
 
@@ -45,7 +45,7 @@ XRLib& XRLib::SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath) {
 }
 
 void XRLib::Init(bool xr) {
-    EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_START);
+    EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_INIT_STARTED);
     if (!xr) {
         xrCore->SetXRValid(false);
     } else {
@@ -67,7 +67,7 @@ void XRLib::Init(bool xr) {
     }
 
     LOGGER(LOGGER::INFO) << "XRLib Initialized";
-    EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_PREPARE_FINISHED);
+    EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_INIT_FINISHED);
 }
 
 void XRLib::Run() {

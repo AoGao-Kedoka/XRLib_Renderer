@@ -33,6 +33,12 @@ class Scene {
         int localLoadingIndex = -1;
     };
 
+    struct Light {
+        Transform transform;
+        glm::vec4 color;
+        float intensity;
+    };
+
    public:
     Scene();
     ~Scene();
@@ -41,6 +47,7 @@ class Scene {
     Scene& AttachLeftControllerPose();
     Scene& AttachRightControllerPose();
     Scene& BindToPointer(Mesh*& meshPtr);
+    Scene& AddLights(const Light& light);
 
     void WaitForAllMeshesToLoad();
     bool CheckTaskRunning();
@@ -49,14 +56,15 @@ class Scene {
     glm::mat4 CameraProjection();
 
     std::vector<Mesh>& Meshes() { return meshes; }
-    std::vector<Transform>& Lights() { return lights; }
+
+    std::vector<Light>& Lights() { return lights; }
 
    private:
     void LoadMesh(const MeshLoadInfo& meshLoadInfo);
     void MeshLoadingThread();
     void Validate();
     std::vector<Mesh> meshes;
-    std::vector<Transform> lights;
+    std::vector<Light> lights;
 
     // camera settings
     glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
@@ -74,8 +82,5 @@ class Scene {
     std::thread workerThread;
     int loadingIndex = -1;
     bool MeshLoaded() { return loadingIndex != -1; }
-
-    // internal events
-    std::string INTERNAL_EVENTS_MESH_LOAD_I_FINISHED{"mesh_load_i_finished"};
 };
 }    // namespace XRLib

@@ -10,8 +10,8 @@ void ValidateBufferUsage(VkBufferUsageFlags usage) {
     }
 }
 
-Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size, VkBufferUsageFlags usage,
-               VkMemoryPropertyFlags properties, void* data, bool deviceBuffer)
+Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size, VkBufferUsageFlags usage, void* data,
+               bool deviceBuffer, VkMemoryPropertyFlags properties)
     : core{core}, bufferSize{size}, usage{usage} {
     ValidateBufferUsage(usage);
     CreateBuffer(size, usage, properties);
@@ -75,12 +75,8 @@ void Buffer::MapDeviceMemory(void* dataInput) {
         LOGGER(LOGGER::ERR) << "Invalid buffer or buffer size for memory mapping";
         return;
     }
-    Buffer stagingBuffer{
-        this->core,
-        bufferSize,
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-    };
+    Buffer stagingBuffer{this->core, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
 
     vkMapMemory(core->GetRenderDevice(), stagingBuffer.GetDeviceMemory(), 0, bufferSize, 0, &data);
     std::memcpy(data, dataInput, (size_t)bufferSize);

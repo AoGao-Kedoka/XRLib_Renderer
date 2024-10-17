@@ -8,6 +8,19 @@ static int LOADING_STATUS_COUNTER{0};
 namespace XRLib {
 Scene::Scene() : done(false), stop(false) {
     workerThread = std::thread(&Scene::MeshLoadingThread, this);
+
+    EventSystem::Callback<> allMeshesLoadCallback = [this]() {
+        // validate meshes
+        Validate();
+
+        // validate lights. if no light, add a default white light
+        if (lights.empty()) {
+            LOGGER(LOGGER::WARNING) << "No light in the scene is defined, creating default light at location (0,0,0)";
+            Transform defaultTransform;
+            lights.emplace_back(defaultTransform, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.5f);
+        }
+    };
+    EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_INIT_STARTED, allMeshesLoadCallback);
 }
 
 Scene::~Scene() {
@@ -36,7 +49,6 @@ Scene& Scene::LoadMeshAsync(MeshLoadInfo loadInfo) {
 }
 
 void Scene::Validate() {
-    //Validate scene meshes
     for (const auto& mesh : meshes) {
         if (Util::VectorContains(mesh.tags, TAG::MESH_LEFT_CONTROLLER) &&
             Util::VectorContains(mesh.tags, TAG::MESH_RIGHT_CONTROLLER)) {
@@ -54,7 +66,6 @@ void Scene::WaitForAllMeshesToLoad() {
     for (auto& future : futures) {
         future.get();
     }
-    Validate();
 }
 
 void Scene::LoadMesh(const MeshLoadInfo& meshLoadInfo) {
@@ -258,6 +269,11 @@ Scene& Scene::BindToPointer(Mesh*& meshPtr) {
         meshPtr = &meshes[currentLoadingIndex];
     };
     EventSystem::RegisterListener(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, callback);
+    return *this;
+}
+
+Scene& Scene::AddLights(const Light& light) {
+    lights.push_back(light);
     return *this;
 }
 

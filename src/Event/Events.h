@@ -7,8 +7,8 @@ namespace XRLib {
 class Events {
    public:
     // Application events
-    inline static std::string XRLIB_EVENT_APPLICATION_START{"application_start"};
-    inline static std::string XRLIB_EVENT_APPLICATION_PREPARE_FINISHED{"application_prepare_finished"};
+    inline static std::string XRLIB_EVENT_APPLICATION_INIT_STARTED{"application_prepare_started"};
+    inline static std::string XRLIB_EVENT_APPLICATION_INIT_FINISHED{"application_prepare_finished"};
     inline static std::string XRLIB_EVENT_APPLICATION_PRE_RENDERING{"application_pre_rendering"};
     inline static std::string XRLIB_EVENT_RENDERER_PRE_SUBMITTING{"renderer_pre_submitting"};
     inline static std::string XRLIB_EVENT_APPLICATION_POST_RENDERING{"application_post_rendering"};

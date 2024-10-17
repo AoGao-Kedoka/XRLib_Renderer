@@ -48,6 +48,7 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
     if (passesToAdd.empty()) {
         VulkanDefaults::PrepareDefaultStereoRenderPasses(vkCore, scene, viewProj, RenderPasses);
     } else {
+        LOGGER(LOGGER::INFO) << "Using custom render pass";
         // TODO: custom render pass
         for (auto& pass : passesToAdd) {
             auto graphicsRenderPass =
@@ -97,13 +98,13 @@ void RenderBackend::InitVertexIndexBuffers() {
         void* indicesData = static_cast<void*>(mesh.indices.data());
         vertexBuffers.push_back(
             std::make_unique<Buffer>(vkCore, sizeof(mesh.vertices[0]) * mesh.vertices.size(),
-                                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, verticesData, true));
+                                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verticesData, true,
+                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
         indexBuffers.push_back(
             std::make_unique<Buffer>(vkCore, sizeof(mesh.indices[0]) * mesh.indices.size(),
-                                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                                     VK_MEMORY_HEAP_DEVICE_LOCAL_BIT, indicesData, true));
+                                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicesData, true,
+                                     VK_MEMORY_HEAP_DEVICE_LOCAL_BIT));
     }
 }
 
@@ -140,24 +141,6 @@ void RenderBackend::InitFrameBuffer() {
         }
     }
 }
-std::shared_ptr<Buffer> RenderBackend::CreateModelPositionsBuffer(std::vector<glm::mat4>& modelPositions) {
-    auto modelPositionsBuffer =
-        std::make_shared<Buffer>(vkCore, sizeof(glm::mat4) * modelPositions.size(),
-                                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                 static_cast<void*>(modelPositions.data()), false);
-    EventSystem::Callback<> modelPositionBufferCallback = [this, modelPositionsBuffer]() {
-        std::vector<glm::mat4> modelPositions(scene->Meshes().size());
-        for (int i = 0; i < modelPositions.size(); ++i) {
-            modelPositions[i] = scene->Meshes()[i].transform.GetMatrix();
-        }
-        modelPositionsBuffer->UpdateBuffer(sizeof(glm::mat4) * modelPositions.size(),
-                                           static_cast<void*>(modelPositions.data()));
-    };
-    EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING, modelPositionBufferCallback);
-    return modelPositionsBuffer;
-}
-
 void RenderBackend::Run(uint32_t& imageIndex) {
     CommandBuffer commandBuffer{vkCore};
     vkWaitForFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence(), VK_TRUE, UINT64_MAX);

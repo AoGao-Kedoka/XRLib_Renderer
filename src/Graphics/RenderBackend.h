@@ -78,9 +78,6 @@ class RenderBackend {
     std::vector<std::unique_ptr<Buffer>> indexBuffers;
     std::unique_ptr<Image> depthImage{nullptr};
 
-   protected:
-    std::shared_ptr<Buffer> CreateModelPositionsBuffer(std::vector<glm::mat4>& modelPositions);
-
    private:
     void InitVulkan();
     void GetSwapchainInfo();

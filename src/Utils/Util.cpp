@@ -41,9 +41,9 @@ const char* getCurrentPlatform() {
 bool Util::CheckPlatformSupport() {
     auto platform = getCurrentPlatform();
     LOGGER(LOGGER::INFO) << "Current platform " << platform;
-    if (std::strcmp("windows", platform))
+    if (std::strcmp("windows", platform) == 0)
         return true;
-    if (std::strcmp("linux", platform)) {
+    if (std::strcmp("linux", platform) != 0) {
         LOGGER(LOGGER::WARNING) << "Linux is not fully tested yet";
         return true;
     } else
