@@ -2,7 +2,8 @@
 
 namespace XRLib {
 namespace XR {
-XrInput::XrInput(std::shared_ptr<XrCore> core) : core{core} {
+XrInput::XrInput(std::shared_ptr<XrCore> core, const std::string& interactionProfile)
+    : core{core}, suggestedInteractionProfile{interactionProfile} {
     XrResult result;
     XrActionSetCreateInfo actionSetCreateInfo{XR_TYPE_ACTION_SET_CREATE_INFO};
     std::strcpy(actionSetCreateInfo.actionSetName, "xrlib_action_set");
@@ -12,29 +13,42 @@ XrInput::XrInput(std::shared_ptr<XrCore> core) : core{core} {
     }
     LOGGER(LOGGER::DEBUG) << "XRLib Action Set created";
 
-    XrActionCreateInfo actionCI{XR_TYPE_ACTION_CREATE_INFO};
-    actionCI.actionType = XR_ACTION_TYPE_POSE_INPUT;
-    strcpy(actionCI.actionName, "controller_pose");
-    strcpy(actionCI.localizedActionName, "Controller Pose");
-    actionCI.countSubactionPaths = 2;
+    if (interactionProfile == "") {
+        CreateDefaultInteractionActionBindings();
+    } 
+}
+
+void XrInput::CreateDefaultInteractionActionBindings() {
+    XrResult result;
     XrPath subactionPaths[2] = {XrUtil::CreateXrPath(this->core->GetXRInstance(), "/user/hand/left"),
                                 XrUtil::CreateXrPath(this->core->GetXRInstance(), "/user/hand/right")};
-    actionCI.subactionPaths = subactionPaths;
+    auto createAction = [&](const char* actionName, XrActionType actionType, XrAction& action,
+                            const char* localizedName) {
+        XrActionCreateInfo actionCI{XR_TYPE_ACTION_CREATE_INFO};
+        actionCI.actionType = actionType;
+        std::strcpy(actionCI.actionName, actionName);
+        std::strcpy(actionCI.localizedActionName, localizedName);
+        actionCI.countSubactionPaths = 2;
+        actionCI.subactionPaths = subactionPaths;
 
-    if ((result = xrCreateAction(actionSet, &actionCI, &controllerPoseAction)) != XR_SUCCESS) {
-        Util::ErrorPopup("Failed to create openxr pose action");
-    }
-    LOGGER(LOGGER::DEBUG) << "Controller pose actions created";
+        if ((result = xrCreateAction(actionSet, &actionCI, &action)) != XR_SUCCESS) {
+            Util::ErrorPopup(std::string("Failed to create ") + actionName + " action");
+        }
+        LOGGER(LOGGER::DEBUG) << actionName << " action created";
+    };
+
+    // TODO: extend this to other interaction profiles
+    createAction("controller_pose", XR_ACTION_TYPE_POSE_INPUT, controllerPoseAction, "ControllerPose");
+    createAction("trigger", XR_ACTION_TYPE_BOOLEAN_INPUT, triggerAction, "Trigger");
+    createAction("grip", XR_ACTION_TYPE_BOOLEAN_INPUT, gripAction, "Grip");
 
     std::vector<XrActionSuggestedBinding> suggestedBindings = {
-        {
-            controllerPoseAction,
-            XrUtil::CreateXrPath(core->GetXRInstance(), "/user/hand/left/input/grip/pose"),
-        },
-        {
-            controllerPoseAction,
-            XrUtil::CreateXrPath(core->GetXRInstance(), "/user/hand/right/input/grip/pose"),
-        }};
+        {controllerPoseAction, XrUtil::CreateXrPath(core->GetXRInstance(), "/user/hand/left/input/grip/pose")},
+        {controllerPoseAction, XrUtil::CreateXrPath(core->GetXRInstance(), "/user/hand/right/input/grip/pose")},
+        {triggerAction, XrUtil::CreateXrPath(core->GetXRInstance(), "/user/hand/left/input/menu/click")},
+        {triggerAction, XrUtil::CreateXrPath(core->GetXRInstance(), "/user/hand/right/input/menu/click")},
+        {gripAction, XrUtil::CreateXrPath(core->GetXRInstance(), "/user/hand/left/input/select/click")},
+        {gripAction, XrUtil::CreateXrPath(core->GetXRInstance(), "/user/hand/right/input/select/click")}};
 
     XrInteractionProfileSuggestedBinding suggestedBindingInfo{XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING};
     suggestedBindingInfo.interactionProfile =
@@ -86,6 +100,12 @@ void XrInput::UpdateInput() {
 
     xrSyncActions(core->GetXRSession(), &syncInfo);
 
+    UpdatePosePosition();
+    UpdateTriggerValue();
+    UpdateGripValue();
+}
+
+void XrInput::UpdatePosePosition() {
     XrSpaceLocation spaceLocation{XR_TYPE_SPACE_LOCATION};
 
     if (xrLocateSpace(leftHandSpace, core->GetXrSpace(), core->GetXrFrameState().predictedDisplayTime,
@@ -101,6 +121,46 @@ void XrInput::UpdateInput() {
         if (spaceLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) {
             EventSystem::TriggerEvent(Events::XRLIB_EVENT_RIGHT_CONTROLLER_POSITION,
                                       Transform{MathUtil::XrPoseToMatrix(spaceLocation.pose)});
+        }
+    }
+}
+
+void XrInput::UpdateTriggerValue() {
+    XrActionStateBoolean triggerState{XR_TYPE_ACTION_STATE_BOOLEAN};
+    XrActionStateGetInfo getInfo{XR_TYPE_ACTION_STATE_GET_INFO};
+    getInfo.action = triggerAction;
+
+    getInfo.subactionPath = XrUtil::CreateXrPath(core->GetXRInstance(), "/user/hand/left");
+    if (xrGetActionStateBoolean(core->GetXRSession(), &getInfo, &triggerState) == XR_SUCCESS) {
+        if (triggerState.isActive && triggerState.currentState) {
+            EventSystem::TriggerEvent(Events::XRLIB_EVENT_LEFT_TRIGGER_PRESSED);
+        }
+    }
+
+    getInfo.subactionPath = XrUtil::CreateXrPath(core->GetXRInstance(), "/user/hand/right");
+    if (xrGetActionStateBoolean(core->GetXRSession(), &getInfo, &triggerState) == XR_SUCCESS) {
+        if (triggerState.isActive && triggerState.currentState) {
+            EventSystem::TriggerEvent(Events::XRLIB_EVENT_RIGHT_TRIGGER_PRESSED);
+        }
+    }
+}
+
+void XrInput::UpdateGripValue() {
+    XrActionStateBoolean gripState{XR_TYPE_ACTION_STATE_BOOLEAN};
+    XrActionStateGetInfo getInfo{XR_TYPE_ACTION_STATE_GET_INFO};
+    getInfo.action = gripAction;
+
+    getInfo.subactionPath = XrUtil::CreateXrPath(core->GetXRInstance(), "/user/hand/left");
+    if (xrGetActionStateBoolean(core->GetXRSession(), &getInfo, &gripState) == XR_SUCCESS) {
+        if (gripState.isActive && gripState.currentState) {
+            EventSystem::TriggerEvent(Events::XRLIB_EVENT_LEFT_GRIP_PRESSED, true);
+        }
+    }
+
+    getInfo.subactionPath = XrUtil::CreateXrPath(core->GetXRInstance(), "/user/hand/right");
+    if (xrGetActionStateBoolean(core->GetXRSession(), &getInfo, &gripState) == XR_SUCCESS) {
+        if (gripState.isActive && gripState.currentState) {
+            EventSystem::TriggerEvent(Events::XRLIB_EVENT_RIGHT_GRIP_PRESSED, true);
         }
     }
 }
