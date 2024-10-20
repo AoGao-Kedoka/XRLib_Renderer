@@ -45,8 +45,9 @@ void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const 
         LOGGER(LOGGER::INFO) << "Using custom render pass";
         //TODO: Custom renderpass
         for (auto& pass : passesToAdd) {
+            std::vector<std::shared_ptr<DescriptorSet>> sets;
             auto graphicsRenderPass =
-                std::make_unique<GraphicsRenderPass>(vkCore, false, nullptr, pass.first, pass.second);
+                std::make_unique<GraphicsRenderPass>(vkCore, false, sets, pass.first, pass.second);
             RenderPasses.push_back(std::move(graphicsRenderPass));
         }
     }

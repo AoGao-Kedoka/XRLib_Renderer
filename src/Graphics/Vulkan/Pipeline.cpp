@@ -3,7 +3,7 @@
 namespace XRLib {
 namespace Graphics {
 Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fragmentShader,
-                   std::shared_ptr<RenderPass> renderPass, std::shared_ptr<DescriptorSet> descriptorSet)
+                   std::shared_ptr<RenderPass> renderPass, std::vector<std::shared_ptr<DescriptorSet>> descriptorSets)
     : core{core} {
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShader.GetShaderStageInfo(),
                                                       fragmentShader.GetShaderStageInfo()};
@@ -69,22 +69,25 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fra
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.pushConstantRangeCount = 1;
-    if (descriptorSet != nullptr && descriptorSet->GetPushConstantSize() != 0) {
-        VkPushConstantRange pushConstantRange{};
-        pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-        pushConstantRange.offset = 0;
-        pushConstantRange.size = descriptorSet->GetPushConstantSize();
 
-        pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+    for (const auto& descriptorSet : descriptorSets) {
+        if (descriptorSet != nullptr && descriptorSet->GetPushConstantSize() != 0) {
+            VkPushConstantRange pushConstantRange{};
+            pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+            pushConstantRange.offset = 0;
+            pushConstantRange.size = descriptorSet->GetPushConstantSize();
+
+            pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+        }
     }
 
 
-    if (descriptorSet != nullptr) {
-        pipelineLayoutInfo.setLayoutCount = 1;
-        pipelineLayoutInfo.pSetLayouts = &descriptorSet->GetDescriptorSetLayout();
-    } else {
-        pipelineLayoutInfo.setLayoutCount = 0;
+    std::vector<VkDescriptorSetLayout> layouts(descriptorSets.size());
+    pipelineLayoutInfo.setLayoutCount = descriptorSets.size();
+    for (auto i = 0; i < descriptorSets.size(); ++i) {
+        layouts[i] = descriptorSets[i]->GetDescriptorSetLayout();
     }
+    pipelineLayoutInfo.pSetLayouts = layouts.data();
 
     if (vkCreatePipelineLayout(core->GetRenderDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");

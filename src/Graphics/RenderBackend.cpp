@@ -50,9 +50,9 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
     } else {
         LOGGER(LOGGER::INFO) << "Using custom render pass";
         // TODO: custom render pass
+        std::vector<std::shared_ptr<DescriptorSet>> sets;
         for (auto& pass : passesToAdd) {
-            auto graphicsRenderPass =
-                std::make_unique<GraphicsRenderPass>(vkCore, true, nullptr, pass.first, pass.second);
+            auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(vkCore, true, sets, pass.first, pass.second);
             RenderPasses.push_back(std::move(graphicsRenderPass));
         }
     }
@@ -98,13 +98,13 @@ void RenderBackend::InitVertexIndexBuffers() {
         void* indicesData = static_cast<void*>(mesh.indices.data());
         vertexBuffers.push_back(
             std::make_unique<Buffer>(vkCore, sizeof(mesh.vertices[0]) * mesh.vertices.size(),
-                                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verticesData, true,
-                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+                                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verticesData,
+                                     true, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
         indexBuffers.push_back(
             std::make_unique<Buffer>(vkCore, sizeof(mesh.indices[0]) * mesh.indices.size(),
-                                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicesData, true,
-                                     VK_MEMORY_HEAP_DEVICE_LOCAL_BIT));
+                                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicesData,
+                                     true, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT));
     }
 }
 

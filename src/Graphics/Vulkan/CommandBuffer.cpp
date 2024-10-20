@@ -46,16 +46,23 @@ CommandBuffer& CommandBuffer::BindIndexBuffer(VkBuffer indexBuffer, VkDeviceSize
 
 CommandBuffer& CommandBuffer::BindDescriptorSets(GraphicsRenderPass& pass, uint32_t firstSet,
                                                  uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets) {
-    if (pass.GetDescriptorSet() == nullptr) {
+    if (pass.GetDescriptorSets().empty()) {
         LOGGER(LOGGER::WARNING) << "No descriptor set available, skipping";
         return *this;
     }
 
+    std::vector<VkDescriptorSet> descriptorSets;
+    descriptorSets.reserve(pass.GetDescriptorSets().size());
+    for (const auto descriptorSet : pass.GetDescriptorSets()) {
+        if (descriptorSet != nullptr) {
+            descriptorSets.push_back(descriptorSet->GetVkDescriptorSet());
+        }
+    }
     VkPipelineLayout layout = pass.GetPipeline().GetVkPipelineLayout();
     VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    VkDescriptorSet descriptorSet = pass.GetDescriptorSet()->GetVkDescriptorSet();
-    vkCmdBindDescriptorSets(commandBuffer, bindPoint, layout, firstSet, 1, &descriptorSet, dynamicOffsetCount,
-                            pDynamicOffsets);
+    vkCmdBindDescriptorSets(commandBuffer, bindPoint, layout, firstSet, descriptorSets.size(),
+                            descriptorSets.data(),
+                            dynamicOffsetCount, pDynamicOffsets);
     return *this;
 }
 

@@ -76,7 +76,6 @@ const std::string VulkanDefaults::defaultVertStereo = R"(
     }
 )";
 
-
 const std::string VulkanDefaults::defaultPhongFrag = R"(
     #version 450
     #extension GL_ARB_separate_shader_objects : enable
@@ -90,10 +89,11 @@ const std::string VulkanDefaults::defaultPhongFrag = R"(
     };
 
     layout(set = 0, binding = 2) uniform sampler2D texSamplers[];
-    layout(set = 0, binding = 3) uniform LightsCount{
+
+    layout(set = 1, binding = 0) uniform LightsCount{
         int lightsCount;
     };
-    layout(set = 0, binding = 4) readonly buffer Lights{
+    layout(set = 1, binding = 1) readonly buffer Lights{
         Light lights[];
     };
 
@@ -227,12 +227,17 @@ void RegisterViewProjUpdateCallback(std::shared_ptr<Buffer> viewProjBuffer,
 
 void PrepareRenderPassesCommon(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
                                std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
-                               const std::vector<DescriptorLayoutElement>& layoutElements, bool isStereo) {
+                               const std::vector<std::vector<DescriptorLayoutElement>>& layoutElementsVec,
+                               bool isStereo) {
 
-    auto descriptorSet = std::make_shared<DescriptorSet>(core, layoutElements);
-    descriptorSet->AllocatePushConstant(sizeof(uint32_t));
+    std::vector<std::shared_ptr<DescriptorSet>> descriptorSets;
+    for (auto& layoutElements : layoutElementsVec) {
+        auto descriptorSet = std::make_shared<DescriptorSet>(core, layoutElements);
+        descriptorSet->AllocatePushConstant(sizeof(uint32_t));
+        descriptorSets.push_back(descriptorSet);
+    }
 
-    auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(core, isStereo, descriptorSet);
+    auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(core, isStereo, descriptorSets);
     renderPasses.push_back(std::move(graphicsRenderPass));
 }
 
@@ -246,9 +251,9 @@ void VulkanDefaults::PrepareDefaultStereoRenderPasses(std::shared_ptr<VkCore> co
     auto textures = CreateTextures(core, scene);
     RegisterViewProjUpdateCallback(viewProjBuffer, viewProj);
 
-    std::vector<DescriptorLayoutElement> layoutElements{
-        {viewProjBuffer}, {modelPositionsBuffer}, {textures}, {lightsCountBuffer}, {lightsBuffer}};
-    PrepareRenderPassesCommon(core, scene, renderPasses, layoutElements, true);
+    std::vector<DescriptorLayoutElement> modelLayoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
+    std::vector<DescriptorLayoutElement> lightsLayoutElements{{lightsCountBuffer}, {lightsBuffer}};
+    PrepareRenderPassesCommon(core, scene, renderPasses, {modelLayoutElements, lightsLayoutElements}, true);
 }
 
 void VulkanDefaults::PrepareDefaultFlatRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
@@ -263,9 +268,9 @@ void VulkanDefaults::PrepareDefaultFlatRenderPasses(std::shared_ptr<VkCore> core
     auto [lightsCountBuffer, lightsBuffer] = CreateLightBuffer(core, scene);
     auto textures = CreateTextures(core, scene);
 
-    std::vector<DescriptorLayoutElement> layoutElements{
-        {viewProjBuffer}, {modelPositionsBuffer}, {textures}, {lightsCountBuffer}, {lightsBuffer}};
-    PrepareRenderPassesCommon(core, scene, renderPasses, layoutElements, false);
+    std::vector<DescriptorLayoutElement> modelLayoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
+    std::vector<DescriptorLayoutElement> lightsLayoutElements{{lightsCountBuffer}, {lightsBuffer}};
+    PrepareRenderPassesCommon(core, scene, renderPasses, {modelLayoutElements, lightsLayoutElements}, false);
 
     EventSystem::Callback<int> bufferOnKeyShouldUpdateCallback = [scene, &viewProj, viewProjBuffer](int keyCode) {
         viewProj.view = scene->CameraTransform().GetMatrix();
