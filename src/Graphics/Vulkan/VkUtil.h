@@ -72,7 +72,7 @@ class VkUtil {
         return candidates[0];
     }
 
-    static VkFormat FindDepthFormat(VkPhysicalDevice physicalDevice) {
+    static VkFormat FindDepthFormat(const VkPhysicalDevice physicalDevice) {
         return FindSupportedFormat(physicalDevice,
                                    {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
                                    VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);

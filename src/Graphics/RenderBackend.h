@@ -28,10 +28,7 @@ class RenderBackend {
     RenderBackend(RenderBackend&& src) noexcept
         : info(std::exchange(src.info, nullptr)),
           vkCore(std::exchange(src.vkCore, nullptr)),
-          xrCore(std::exchange(src.xrCore, nullptr)),
-          vkDebugMessenger(std::exchange(src.vkDebugMessenger, VK_NULL_HANDLE)),
-          vkCreateDebugUtilsMessengerEXT(
-              std::exchange(src.vkCreateDebugUtilsMessengerEXT, nullptr)) {
+          xrCore(std::exchange(src.xrCore, nullptr)){
         LOGGER(LOGGER::DEBUG) << "Move constructor called";
     }
 
@@ -43,9 +40,6 @@ class RenderBackend {
         info = std::exchange(rhs.info, nullptr);
         vkCore = std::exchange(rhs.vkCore, nullptr);
         xrCore = std::exchange(rhs.xrCore, nullptr);
-        vkDebugMessenger = std::exchange(rhs.vkDebugMessenger, VK_NULL_HANDLE);
-        vkCreateDebugUtilsMessengerEXT =
-            std::exchange(rhs.vkCreateDebugUtilsMessengerEXT, nullptr);
         return *this;
     }
 
@@ -81,12 +75,6 @@ class RenderBackend {
    private:
     void InitVulkan();
     void GetSwapchainInfo();
-
-    const std::vector<const char*> validataionLayers = {
-        "VK_LAYER_KHRONOS_validation"};
-    VkDebugUtilsMessengerEXT vkDebugMessenger{};
-
-    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT{nullptr};
 
    private:
     Primitives::ViewProjectionStereo viewProj;

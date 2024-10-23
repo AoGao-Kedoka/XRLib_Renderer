@@ -16,17 +16,11 @@ class XrCore {
     XrSession& GetXRSession() { return xrSession; }
     XrSystemId& GetSystemID() { return xrSystemID; }
 
-    XrViewConfigurationType& GetXrViewConfigurationType() {
-        return viewConfigurationType;
-    }
+    XrViewConfigurationType& GetXrViewConfigurationType() { return viewConfigurationType; }
 
-    std::vector<XrViewConfigurationView>& GetXRViewConfigurationView() {
-        return xrViewsConfiguration;
-    }
+    std::vector<XrViewConfigurationView>& GetXRViewConfigurationView() { return xrViewsConfiguration; }
 
-    XrGraphicsRequirementsVulkanKHR& GetGraphicsRequirements() {
-        return graphicsRequirements;
-    }
+    XrGraphicsRequirementsVulkanKHR& GetGraphicsRequirements() { return graphicsRequirements; }
 
     XrSwapchain& GetXrSwapchain() { return xrSwapchain; }
 
@@ -34,9 +28,7 @@ class XrCore {
 
     XrFrameState& GetXrFrameState() { return frameState; }
 
-    std::vector<XrSwapchainImageVulkanKHR>& GetSwapchainImages() {
-        return swapchainImages;
-    }
+    std::vector<XrSwapchainImageVulkanKHR>& GetSwapchainImages() { return swapchainImages; }
 
     std::vector<XrView>& GetXrViews() { return xrViews; }
 
@@ -47,14 +39,18 @@ class XrCore {
         return xrSceneSpace;
     }
 
-    std::vector<XrCompositionLayerProjectionView>&
-    GetCompositionLayerProjectionViews() {
+    std::vector<XrCompositionLayerProjectionView>& GetCompositionLayerProjectionViews() {
         return compositionLayerProjectionViews;
     }
 
     XrSessionState& GetXrSessionState() { return xrSessionState; }
 
     XrTime& GetXrTime() { return time; }
+
+    // Vulkan
+    std::vector<const char*> VkAdditionalInstanceExts();
+    std::vector<const char*> VkAdditionalDeviceExts();
+    void VkSetPhysicalDevice(VkInstance instance, VkPhysicalDevice* physicalDevice);
 
    private:
     void CreatePlaySpace();
@@ -63,8 +59,7 @@ class XrCore {
     XrTime time{0};
     XrInstance xrInstance{XR_NULL_HANDLE};
     XrSystemId xrSystemID;
-    XrGraphicsRequirementsVulkanKHR graphicsRequirements{
-        XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR};
+    XrGraphicsRequirementsVulkanKHR graphicsRequirements{XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR};
 
     XrSession xrSession{XR_NULL_HANDLE};
     XrSessionState xrSessionState{XR_SESSION_STATE_UNKNOWN};
@@ -77,16 +72,14 @@ class XrCore {
 
     std::vector<XrView> xrViews;
 
-    XrViewConfigurationType viewConfigurationType =
-        XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+    XrViewConfigurationType viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
 
     std::vector<XrViewConfigurationView> xrViewsConfiguration;
 
     XrSwapchain xrSwapchain;
     std::vector<XrSwapchainImageVulkanKHR> swapchainImages;
 
-    std::vector<XrCompositionLayerProjectionView>
-        compositionLayerProjectionViews;
+    std::vector<XrCompositionLayerProjectionView> compositionLayerProjectionViews;
 };
 }    // namespace XR
 }    // namespace XRLib

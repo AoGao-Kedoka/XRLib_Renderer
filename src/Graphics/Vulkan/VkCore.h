@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Graphics/Window.h"
+#include "Utils/Info.h"
 #include "Utils/Util.h"
 #include "VkUtil.h"
 
@@ -10,10 +12,18 @@ class VkCore {
     VkCore() = default;
     ~VkCore();
 
-    VkInstance& GetRenderInstance() { return vkInstance; }
-    VkPhysicalDevice& GetRenderPhysicalDevice() { return vkPhysicalDevice; }
-    VkDevice& GetRenderDevice() { return vkDevice; }
-    VkQueue& GetGraphicsQueue() { return graphicsQueue; }
+    // basis
+    void CreateVkInstance(Info& info, const std::vector<const char*>& additionalInstanceExts);
+    const VkInstance& GetRenderInstance() { return vkInstance; }
+
+    void SelectPhysicalDevice();
+    VkPhysicalDevice& VkPhysicalDeviceRef() { return vkPhysicalDevice; }
+    const VkPhysicalDevice& GetRenderPhysicalDevice() { return vkPhysicalDevice; }
+
+    void CreateVkDevice(Info& info, const std::vector<const char*>& additionalDeviceExts, bool xr);
+    const VkDevice& GetRenderDevice() { return vkDevice; }
+
+    const VkQueue& GetGraphicsQueue() { return graphicsQueue; }
     int32_t GetGraphicsQueueFamilyIndex() {
         if (graphicsQueueIndex == -1)
             ParseGraphicsQueueFamilyIndex();
@@ -139,6 +149,11 @@ class VkCore {
 
     int32_t graphicsQueueIndex = -1;
     uint8_t maxFramesInFlight = 3;
+
+    // validataion layer
+    const std::vector<const char*> validataionLayers = {"VK_LAYER_KHRONOS_validation"};
+    VkDebugUtilsMessengerEXT vkDebugMessenger{};
+    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT{nullptr};
 };
 }    // namespace Graphics
 }    // namespace XRLib
