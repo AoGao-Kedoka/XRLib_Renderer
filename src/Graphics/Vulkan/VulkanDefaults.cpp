@@ -1,4 +1,3 @@
-#pragma once
 #include "VulkanDefaults.h"
 
 namespace XRLib {
