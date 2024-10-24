@@ -145,7 +145,7 @@ void RenderBackend::Run(uint32_t& imageIndex) {
     vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
 
     auto currentPassIndex = 0;
-    auto currentPass = *RenderPasses[currentPassIndex];
+    auto& currentPass = *RenderPasses[currentPassIndex];
     commandBuffer.StartRecord().StartPass(currentPass, imageIndex).BindDescriptorSets(currentPass, 0);
     for (uint32_t i = 0; i < scene->Meshes().size(); ++i) {
         commandBuffer.PushConstant(currentPass, sizeof(uint32_t), &i)
@@ -154,9 +154,9 @@ void RenderBackend::Run(uint32_t& imageIndex) {
             .DrawIndexed(scene->Meshes()[i].indices.size(), 1, 0, 0, 0);
     }
 
-    if (currentPassIndex == RenderPasses.size() - 1) {
-        EventSystem::TriggerEvent<CommandBuffer&>(Events::XRLIB_EVENT_RENDERER_PRE_SUBMITTING, commandBuffer);
-    }
+    // represents how many passes left to draw
+    EventSystem::TriggerEvent<int, CommandBuffer&>(Events::XRLIB_EVENT_RENDERER_PRE_SUBMITTING,
+                                                   (RenderPasses.size() - 1) - currentPassIndex, commandBuffer);
 
     commandBuffer.EndPass();
 
