@@ -1,4 +1,6 @@
 #pragma once
+
+#include "Graphics/Vulkan/Image.h"
 #include "Logger.h"
 #include "Utils/Util.h"
 #include "VkCore.h"
@@ -25,6 +27,7 @@ class RenderPass {
         return *this;
     }
 
+    void SetRenderTarget(std::vector<std::unique_ptr<Image>> images);
     VkRenderPass& GetVkRenderPass() { return pass; }
     void SetGraphicPipeline(VkPipeline* pipeline) { graphicsPipeline = pipeline; }
 
@@ -32,6 +35,9 @@ class RenderPass {
     std::shared_ptr<VkCore> core{nullptr};
     VkRenderPass pass{VK_NULL_HANDLE};
     VkPipeline* graphicsPipeline{nullptr};
+
+    std::vector<VkFramebuffer> frameBuffers;
+    std::unique_ptr<Image> depthImage;
 
     bool multiview = false;
 };

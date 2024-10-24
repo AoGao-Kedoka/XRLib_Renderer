@@ -23,11 +23,10 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
     GetSwapchainInfo();
     InitVertexIndexBuffers();
 
-    auto stereoExtent =
-        std::make_pair(vkCore->GetswapchainExtentStereo().width, vkCore->GetswapchainExtentStereo().height);
+    auto stereoExtent = vkCore->GetswapchainExtentStereo();
     depthImage = std::make_unique<Image>(
-        vkCore, stereoExtent, VkUtil::FindDepthFormat(vkCore->GetRenderPhysicalDevice()), VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 2);
+        vkCore, stereoExtent.width, stereoExtent.height, VkUtil::FindDepthFormat(vkCore->GetRenderPhysicalDevice()),
+        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 2);
 
     if (passesToAdd.empty()) {
         VulkanDefaults::PrepareDefaultStereoRenderPasses(vkCore, scene, viewProj, RenderPasses);

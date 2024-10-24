@@ -86,5 +86,28 @@ RenderPass::~RenderPass() {
         return;
     VkUtil::VkSafeClean(vkDestroyRenderPass, core->GetRenderDevice(), pass, nullptr);
 }
+
+void RenderPass::SetRenderTarget(std::vector<std::unique_ptr<Image>> images) {
+    // init frame buffer
+    VkResult result;
+    frameBuffers.resize(images.size());
+    for (int i = 0; i < images.size(); ++i) {
+        std::vector<VkImageView> attachments;
+        attachments.push_back(images[i]->GetImageView());
+        attachments.push_back(depthImage->GetImageView(VK_IMAGE_ASPECT_DEPTH_BIT));
+
+        VkFramebufferCreateInfo framebufferCreateInfo{VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO};
+        framebufferCreateInfo.renderPass = GetVkRenderPass();
+        framebufferCreateInfo.attachmentCount = attachments.size();
+        framebufferCreateInfo.pAttachments = attachments.data();
+        framebufferCreateInfo.width = images[i]->Width();
+        framebufferCreateInfo.height = images[i]->Height();
+        framebufferCreateInfo.layers = 1;
+        if ((result = vkCreateFramebuffer(core->GetRenderDevice(), &framebufferCreateInfo, nullptr,
+                                          &frameBuffers[i])) != VK_SUCCESS) {
+            Util::ErrorPopup("Failed to create frame buffer");
+        }
+    }
+}
 }    // namespace Graphics
 }    // namespace XRLib
