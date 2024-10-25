@@ -31,7 +31,8 @@ Image::Image(std::shared_ptr<VkCore> core, int width, int height, VkFormat forma
     CreateImage(width, height, format, tiling, usage, properties, image, imageMemorry);
 }
 
-Image::Image(std::shared_ptr<VkCore> core, VkImage image, int width, int height) {}
+Image::Image(std::shared_ptr<VkCore> core, VkImage image, VkFormat format, int width, int height, uint32_t layerCount)
+    : core{core}, image{image}, format{format}, width{width}, height{height}, layerCount{layerCount} {}
 
 Image::~Image() {
     VkUtil::VkSafeClean(vkFreeMemory, core->GetRenderDevice(), imageMemorry, nullptr);

@@ -15,8 +15,9 @@ RenderBackendFlat::~RenderBackendFlat() {
 
 void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const std::string&>> passesToAdd) {
     PrepareFlatWindow();
-    CreateFlatSwapChain();
     InitVertexIndexBuffers();
+    // CreateFlatSwapChain();
+    std::unique_ptr<Swapchain> swapchain = std::make_unique<Swapchain>(vkCore);
 
     // register window resize callback
     EventSystem::Callback<int, int> windowResizeCallback =
@@ -34,21 +35,17 @@ void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const 
 
     WindowHandler::ActivateInput();
 
-    depthImage = std::make_unique<Image>(
-        vkCore, WindowHandler::GetFrameBufferSize(), VkUtil::FindDepthFormat(vkCore->GetRenderPhysicalDevice()),
-        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
     // prepare shader
     if (passesToAdd.empty()) {
-        VulkanDefaults::PrepareDefaultFlatRenderPasses(vkCore, scene, viewProj, RenderPasses);
+        VulkanDefaults::PrepareDefaultFlatRenderPasses(vkCore, scene, viewProj, RenderPasses, *swapchain);
     } else {
         LOGGER(LOGGER::INFO) << "Using custom render pass";
         //TODO: Custom renderpass
         for (auto& pass : passesToAdd) {
-            std::vector<std::shared_ptr<DescriptorSet>> sets;
-            auto graphicsRenderPass =
-                std::make_unique<GraphicsRenderPass>(vkCore, false, sets, pass.first, pass.second);
-            RenderPasses.push_back(std::move(graphicsRenderPass));
+            //std::vector<std::shared_ptr<DescriptorSet>> sets;
+            //auto graphicsRenderPass =
+            //    std::make_unique<GraphicsRenderPass>(vkCore, false, sets, pass.first, pass.second);
+            //RenderPasses.push_back(std::move(graphicsRenderPass));
         }
     }
 
@@ -224,14 +221,14 @@ void RenderBackendFlat::OnWindowResized(int width, int height) {
         vkDestroyImageView(vkCore->GetRenderDevice(), imageView, nullptr);
     }
 
-    vkDestroySwapchainKHR(vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(), nullptr);
+    //vkDestroySwapchainKHR(vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(), nullptr);
 
-    depthImage = std::make_unique<Image>(
-        vkCore, WindowHandler::GetFrameBufferSize(), VkUtil::FindDepthFormat(vkCore->GetRenderPhysicalDevice()),
-        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    //depthImage = std::make_unique<Image>(
+    //    vkCore, WindowHandler::GetFrameBufferSize(), VkUtil::FindDepthFormat(vkCore->GetRenderPhysicalDevice()),
+    //    VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    this->CreateFlatSwapChain();
-    this->InitFrameBuffer();
+    //this->CreateFlatSwapChain();
+    //this->InitFrameBuffer();
 
     LOGGER(LOGGER::DEBUG) << "Window resized";
 }

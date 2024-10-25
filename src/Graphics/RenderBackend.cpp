@@ -33,11 +33,11 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
     } else {
         LOGGER(LOGGER::INFO) << "Using custom render pass";
         // TODO: custom render pass
-        std::vector<std::shared_ptr<DescriptorSet>> sets;
-        for (auto& pass : passesToAdd) {
-            auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(vkCore, true, sets, pass.first, pass.second);
-            RenderPasses.push_back(std::move(graphicsRenderPass));
-        }
+        //std::vector<std::shared_ptr<DescriptorSet>> sets;
+        //for (auto& pass : passesToAdd) {
+        //    auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(vkCore, true, sets, pass.first, pass.second);
+        //    RenderPasses.push_back(std::move(graphicsRenderPass));
+        //}
     }
     InitFrameBuffer();
 }

@@ -10,7 +10,7 @@ namespace Graphics {
 class RenderPass {
    public:
     RenderPass() = default;
-    RenderPass(std::shared_ptr<VkCore> core, bool multiview);
+    RenderPass(std::shared_ptr<VkCore> core, std::vector<std::unique_ptr<Image>>& renderTargets, bool multiview);
     ~RenderPass();
 
     RenderPass(RenderPass&& other) noexcept
@@ -27,9 +27,13 @@ class RenderPass {
         return *this;
     }
 
-    void SetRenderTarget(std::vector<std::unique_ptr<Image>> images);
     VkRenderPass& GetVkRenderPass() { return pass; }
+    const std::vector<VkFramebuffer>& GetFrameBuffers() { return frameBuffers; }
+
     void SetGraphicPipeline(VkPipeline* pipeline) { graphicsPipeline = pipeline; }
+
+   private:
+    void SetRenderTarget(std::vector<std::unique_ptr<Image>>& images);
 
    private:
     std::shared_ptr<VkCore> core{nullptr};

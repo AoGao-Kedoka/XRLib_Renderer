@@ -32,14 +32,17 @@ void Swapchain::CreateSwapchain() {
     }
 }
 
-void Swapchain::GetSwapchainImages() {
+std::vector<std::unique_ptr<Image>>& Swapchain::GetSwapchainImages() {
     uint32_t imageCount;
     std::vector<VkImage> swapchainRawImages;
     vkGetSwapchainImagesKHR(core->GetRenderDevice(), swapchain, &imageCount, nullptr);
+    swapchainRawImages.resize(imageCount);
     vkGetSwapchainImagesKHR(core->GetRenderDevice(), swapchain, &imageCount, swapchainRawImages.data());
     for (const auto image : swapchainRawImages) {
-        swapchainImages.push_back(std::make_unique<Image>(core, image));
+        swapchainImages.push_back(std::make_unique<Image>(core, image, swapchainImageFormat, swapchainExtent.width,
+                                                          swapchainExtent.height, 1));
     }
+    return swapchainImages;
 }
 
 VkSurfaceFormatKHR Swapchain::ChooseSwapchainImageFormat() {

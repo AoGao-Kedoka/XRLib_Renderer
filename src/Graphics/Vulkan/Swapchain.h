@@ -6,17 +6,18 @@ namespace XRLib {
 namespace Graphics {
 class Swapchain {
    public:
+    Swapchain() = default;
     Swapchain(std::shared_ptr<VkCore> core);
+    std::vector<std::unique_ptr<Image>>& GetSwapchainImages();
 
    private:
     void CreateSwapchain();
-    void GetSwapchainImages();
     VkSurfaceFormatKHR ChooseSwapchainImageFormat();
     VkPresentModeKHR ChooseSwapchainPresentMode();
     VkSurfaceCapabilitiesKHR GetSurfaceCapabilities();
 
    private:
-    std::shared_ptr<VkCore> core;
+    std::shared_ptr<VkCore> core{nullptr};
     VkSurfaceKHR surface{VK_NULL_HANDLE};
     VkFormat swapchainImageFormat{VK_FORMAT_UNDEFINED};
     VkSwapchainKHR swapchain{VK_NULL_HANDLE};
