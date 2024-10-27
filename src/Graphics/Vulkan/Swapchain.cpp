@@ -4,9 +4,21 @@ namespace XRLib {
 namespace Graphics {
 Swapchain::Swapchain(std::shared_ptr<VkCore> core) : core{core} {
     CreateSwapchain();
+    EventSystem::Callback<int, int> onWindowResizedCallback = [this](int width, int height) {
+        vkDeviceWaitIdle(this->core->GetRenderDevice());
+        swapchainImages.clear();
+        vkDestroySwapchainKHR(this->core->GetRenderDevice(), swapchain, nullptr);
+        this->CreateSwapchain();
+    };
+    EventSystem::RegisterListener<int, int>(Events::XRLIB_EVENT_WINDOW_RESIZED, onWindowResizedCallback);
+}
+
+Swapchain::~Swapchain() {
+    VkUtil::VkSafeClean(vkDestroySwapchainKHR, core->GetRenderDevice(), swapchain, nullptr);
 }
 
 void Swapchain::CreateSwapchain() {
+    VkResult result;
     VkSurfaceCapabilitiesKHR capabilities = GetSurfaceCapabilities();
     VkSurfaceFormatKHR surfaceFormat = ChooseSwapchainImageFormat();
     VkPresentModeKHR presentMode = ChooseSwapchainPresentMode();
@@ -27,7 +39,8 @@ void Swapchain::CreateSwapchain() {
     swapchainCreateInfo.presentMode = presentMode;
     swapchainCreateInfo.clipped = VK_TRUE;
     swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
-    if (vkCreateSwapchainKHR(core->GetRenderDevice(), &swapchainCreateInfo, nullptr, &swapchain) != VK_SUCCESS) {
+    if ((result = vkCreateSwapchainKHR(core->GetRenderDevice(), &swapchainCreateInfo, nullptr, &swapchain)) !=
+        VK_SUCCESS) {
         Util::ErrorPopup("Failed to create swapchain");
     }
 }
@@ -93,7 +106,7 @@ VkPresentModeKHR Swapchain::ChooseSwapchainPresentMode() {
 VkSurfaceCapabilitiesKHR Swapchain::GetSurfaceCapabilities() {
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(core->GetRenderPhysicalDevice(), core->GetFlatSurface(), &capabilities);
-    auto [width, height] = WindowHandler::GetFrameBufferSize();
+    auto [width, height] = WindowHandler::GetFrameBufferSize();    //TODO: Need to be adjusted for stereo
 
     swapchainExtent = {
         std::clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),

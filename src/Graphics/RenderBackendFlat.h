@@ -28,7 +28,6 @@ class RenderBackendFlat : public RenderBackend {
 
    private:
     Primitives::ViewProjection viewProj;
-    std::unique_ptr<Swapchain> swapchain{nullptr};
 };
 }    // namespace Graphics
 }    // namespace XRLib

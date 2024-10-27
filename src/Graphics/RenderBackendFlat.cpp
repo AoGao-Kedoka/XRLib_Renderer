@@ -17,7 +17,7 @@ void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const 
     PrepareFlatWindow();
     InitVertexIndexBuffers();
     // CreateFlatSwapChain();
-    std::unique_ptr<Swapchain> swapchain = std::make_unique<Swapchain>(vkCore);
+    swapchain = std::make_unique<Swapchain>(vkCore);
 
     // register window resize callback
     EventSystem::Callback<int, int> windowResizeCallback =
@@ -211,24 +211,23 @@ void RenderBackendFlat::OnKeyPressed(int keyCode) {
 
 void RenderBackendFlat::OnWindowResized(int width, int height) {
     vkDeviceWaitIdle(vkCore->GetRenderDevice());
+    //for (auto framebuffer : vkCore->GetSwapchainFrameBuffer()) {
+    //    //TODO: Change to save clean
+    //    vkDestroyFramebuffer(vkCore->GetRenderDevice(), framebuffer, nullptr);
+    //}
 
-    for (auto framebuffer : vkCore->GetSwapchainFrameBuffer()) {
-        //TODO: Change to save clean
-        vkDestroyFramebuffer(vkCore->GetRenderDevice(), framebuffer, nullptr);
-    }
+    //for (auto imageView : vkCore->GetSwapchainImageViewsFlat()) {
+    //    vkDestroyImageView(vkCore->GetRenderDevice(), imageView, nullptr);
+    //}
 
-    for (auto imageView : vkCore->GetSwapchainImageViewsFlat()) {
-        vkDestroyImageView(vkCore->GetRenderDevice(), imageView, nullptr);
-    }
+    ////vkDestroySwapchainKHR(vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(), nullptr);
 
-    //vkDestroySwapchainKHR(vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(), nullptr);
+    ////depthImage = std::make_unique<Image>(
+    ////    vkCore, WindowHandler::GetFrameBufferSize(), VkUtil::FindDepthFormat(vkCore->GetRenderPhysicalDevice()),
+    ////    VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    //depthImage = std::make_unique<Image>(
-    //    vkCore, WindowHandler::GetFrameBufferSize(), VkUtil::FindDepthFormat(vkCore->GetRenderPhysicalDevice()),
-    //    VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    //this->CreateFlatSwapChain();
-    //this->InitFrameBuffer();
+    ////this->CreateFlatSwapChain();
+    ////this->InitFrameBuffer();
 
     LOGGER(LOGGER::DEBUG) << "Window resized";
 }

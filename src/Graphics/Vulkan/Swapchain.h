@@ -8,7 +8,9 @@ class Swapchain {
    public:
     Swapchain() = default;
     Swapchain(std::shared_ptr<VkCore> core);
+    ~Swapchain();
     std::vector<std::unique_ptr<Image>>& GetSwapchainImages();
+    VkSwapchainKHR GetSwaphcain() { return swapchain; }
 
    private:
     void CreateSwapchain();
@@ -22,7 +24,6 @@ class Swapchain {
     VkFormat swapchainImageFormat{VK_FORMAT_UNDEFINED};
     VkSwapchainKHR swapchain{VK_NULL_HANDLE};
     std::vector<std::unique_ptr<Image>> swapchainImages;
-    std::vector<VkFramebuffer> swapchainFrameBuffers;
     VkExtent2D swapchainExtent;
 };
 }    // namespace Graphics

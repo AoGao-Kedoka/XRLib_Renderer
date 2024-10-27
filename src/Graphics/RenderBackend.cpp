@@ -130,7 +130,7 @@ void RenderBackend::Run(uint32_t& imageIndex) {
     vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
 
     if (!xrCore->IsXRValid()) {
-        auto result = vkAcquireNextImageKHR(vkCore->GetRenderDevice(), vkCore->GetFlatSwapchain(), UINT64_MAX,
+        auto result = vkAcquireNextImageKHR(vkCore->GetRenderDevice(), swapchain->GetSwaphcain(), UINT64_MAX,
                                             vkCore->GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             auto [width, height] = WindowHandler::GetFrameBufferSize();
@@ -188,7 +188,7 @@ void RenderBackend::Run(uint32_t& imageIndex) {
 
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = signalSemaphores;
-        VkSwapchainKHR swapChains[] = {vkCore->GetFlatSwapchain()};
+        VkSwapchainKHR swapChains[] = {swapchain->GetSwaphcain()};
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &imageIndex;

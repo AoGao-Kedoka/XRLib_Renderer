@@ -92,34 +92,45 @@ RenderPass::~RenderPass() {
     VkUtil::VkSafeClean(vkDestroyRenderPass, core->GetRenderDevice(), pass, nullptr);
 }
 
+void RenderPass::CreateFramebuffer(VkFramebuffer& framebuffer, const std::unique_ptr<Image>& image, int width,
+                                   int height) {
+    std::vector<VkImageView> attachments = {image->GetImageView(), depthImage->GetImageView(VK_IMAGE_ASPECT_DEPTH_BIT)};
+
+    VkFramebufferCreateInfo framebufferCreateInfo{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
+    framebufferCreateInfo.renderPass = GetVkRenderPass();
+    framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+    framebufferCreateInfo.pAttachments = attachments.data();
+    framebufferCreateInfo.width = width;
+    framebufferCreateInfo.height = height;
+    framebufferCreateInfo.layers = 1;
+
+    VkResult result = vkCreateFramebuffer(core->GetRenderDevice(), &framebufferCreateInfo, nullptr, &framebuffer);
+    if (result != VK_SUCCESS) {
+        Util::ErrorPopup("Failed to create frame buffer");
+    }
+}
+
 void RenderPass::SetRenderTarget(std::vector<std::unique_ptr<Image>>& images) {
     // validate render targets
     VkFormat format = images[0]->GetFormat();
     for (const auto& image : images) {
         if (image->GetFormat() != format) {
-            Util::ErrorPopup("All render targets should have same image format");
+            Util::ErrorPopup("All render targets should have the same image format");
+            return;
         }
     }
 
-    // init frame buffer
-    VkResult result;
+    // cleanup framebuffers if it's not empty
+    if (!frameBuffers.empty()) {
+        for (int i = 0; i < images.size(); ++i) {
+            vkDestroyFramebuffer(core->GetRenderDevice(), frameBuffers[i], nullptr);
+        }
+        frameBuffers.clear();
+    }
+
     frameBuffers.resize(images.size());
     for (int i = 0; i < images.size(); ++i) {
-        std::vector<VkImageView> attachments;
-        attachments.push_back(images[i]->GetImageView());
-        attachments.push_back(depthImage->GetImageView(VK_IMAGE_ASPECT_DEPTH_BIT));
-
-        VkFramebufferCreateInfo framebufferCreateInfo{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
-        framebufferCreateInfo.renderPass = GetVkRenderPass();
-        framebufferCreateInfo.attachmentCount = attachments.size();
-        framebufferCreateInfo.pAttachments = attachments.data();
-        framebufferCreateInfo.width = images[i]->Width();
-        framebufferCreateInfo.height = images[i]->Height();
-        framebufferCreateInfo.layers = 1;
-        if ((result = vkCreateFramebuffer(core->GetRenderDevice(), &framebufferCreateInfo, nullptr,
-                                          &frameBuffers[i])) != VK_SUCCESS) {
-            Util::ErrorPopup("Failed to create frame buffer");
-        }
+        CreateFramebuffer(frameBuffers[i], images[i], images[i]->Width(), images[i]->Height());
     }
 }
 }    // namespace Graphics
