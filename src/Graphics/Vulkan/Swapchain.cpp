@@ -4,13 +4,6 @@ namespace XRLib {
 namespace Graphics {
 Swapchain::Swapchain(std::shared_ptr<VkCore> core) : core{core} {
     CreateSwapchain();
-    EventSystem::Callback<int, int> onWindowResizedCallback = [this](int width, int height) {
-        vkDeviceWaitIdle(this->core->GetRenderDevice());
-        swapchainImages.clear();
-        vkDestroySwapchainKHR(this->core->GetRenderDevice(), swapchain, nullptr);
-        this->CreateSwapchain();
-    };
-    EventSystem::RegisterListener<int, int>(Events::XRLIB_EVENT_WINDOW_RESIZED, onWindowResizedCallback);
 }
 
 Swapchain::~Swapchain() {
@@ -38,7 +31,7 @@ void Swapchain::CreateSwapchain() {
     swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     swapchainCreateInfo.presentMode = presentMode;
     swapchainCreateInfo.clipped = VK_TRUE;
-    swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
+    swapchainCreateInfo.oldSwapchain = swapchain;
     if ((result = vkCreateSwapchainKHR(core->GetRenderDevice(), &swapchainCreateInfo, nullptr, &swapchain)) !=
         VK_SUCCESS) {
         Util::ErrorPopup("Failed to create swapchain");
@@ -46,6 +39,10 @@ void Swapchain::CreateSwapchain() {
 }
 
 std::vector<std::unique_ptr<Image>>& Swapchain::GetSwapchainImages() {
+    if (!swapchainImages.empty()) {
+        return swapchainImages;
+    }
+
     uint32_t imageCount;
     std::vector<VkImage> swapchainRawImages;
     vkGetSwapchainImagesKHR(core->GetRenderDevice(), swapchain, &imageCount, nullptr);
@@ -106,7 +103,7 @@ VkPresentModeKHR Swapchain::ChooseSwapchainPresentMode() {
 VkSurfaceCapabilitiesKHR Swapchain::GetSurfaceCapabilities() {
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(core->GetRenderPhysicalDevice(), core->GetFlatSurface(), &capabilities);
-    auto [width, height] = WindowHandler::GetFrameBufferSize();    //TODO: Need to be adjusted for stereo
+    auto [width, height] = WindowHandler::GetFrameBufferSize();    //TODO: only flat surface will be created manually, so it should be fine for now
 
     swapchainExtent = {
         std::clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
@@ -114,6 +111,12 @@ VkSurfaceCapabilitiesKHR Swapchain::GetSurfaceCapabilities() {
                    capabilities.maxImageExtent.height)};
 
     return capabilities;
+}
+
+void Swapchain::RecreateSwapchain() {
+    swapchainImages.clear();
+    this->CreateSwapchain();
+    swapchainImages.clear();
 }
 }    // namespace Graphics
 }    // namespace XRLib

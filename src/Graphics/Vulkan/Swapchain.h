@@ -11,6 +11,7 @@ class Swapchain {
     ~Swapchain();
     std::vector<std::unique_ptr<Image>>& GetSwapchainImages();
     VkSwapchainKHR GetSwaphcain() { return swapchain; }
+    void RecreateSwapchain();
 
    private:
     void CreateSwapchain();

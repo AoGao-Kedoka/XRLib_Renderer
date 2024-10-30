@@ -34,22 +34,11 @@ class VkCore {
 
     // flat renderer
     VkSurfaceKHR& GetFlatSurface() { return surfaceFlat; }
-    VkSwapchainKHR& GetFlatSwapchain() { return swapChainFlat; }
-    std::vector<VkImage>& GetFlatSwapchainImages() { return swapChainImagesFlat; }
-    VkFormat GetFlatSwapchainImageFormat() { return swapChainImageFormat; }
-    void SetFlatSwapchainImageFormat(VkFormat format) { this->swapChainImageFormat = format; }
-
     VkExtent2D& GetSwapchainExtent(bool stereo) {
-        if (stereo) {
+        if (stereo)
             return swapchainExtentStereo;
-        } else {
-            return swapChainExtentFlat;
-        }
     }
-    void SetFlatSwapchainExtent2D(VkExtent2D extent) { this->swapChainExtentFlat = extent; }
     void SetStereoSwapchainExtent2D(VkExtent2D extent) { this->swapchainExtentStereo = extent; }
-
-    std::vector<VkImageView>& GetSwapchainImageViewsFlat() { return swapChainImageViewsFlat; }
 
     std::vector<VkFramebuffer>& GetSwapchainFrameBuffer() { return swapChainFrameBuffers; }
 
@@ -125,11 +114,6 @@ class VkCore {
 
     //Flat surface swapchain
     VkSurfaceKHR surfaceFlat{VK_NULL_HANDLE};
-    VkSwapchainKHR swapChainFlat{VK_NULL_HANDLE};
-    std::vector<VkImage> swapChainImagesFlat;
-    VkFormat swapChainImageFormat{VK_FORMAT_UNDEFINED};
-    VkExtent2D swapChainExtentFlat{0, 0};
-    std::vector<VkImageView> swapChainImageViewsFlat;
     std::vector<VkFramebuffer> swapChainFrameBuffers;
 
     //stereo swapchain

@@ -226,7 +226,7 @@ void RegisterViewProjUpdateCallback(std::shared_ptr<Buffer> viewProjBuffer,
 
 void PrepareRenderPassesCommon(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
                                std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
-                               std::vector<std::unique_ptr<Image>>& renderTargets,
+                               Swapchain& swapchain,
                                const std::vector<std::vector<DescriptorLayoutElement>>& layoutElementsVec,
                                bool isStereo) {
 
@@ -237,7 +237,7 @@ void PrepareRenderPassesCommon(std::shared_ptr<VkCore> core, std::shared_ptr<Sce
         descriptorSets.push_back(descriptorSet);
     }
 
-    auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(core, isStereo, renderTargets, descriptorSets);
+    auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(core, isStereo, swapchain, descriptorSets);
     renderPasses.push_back(std::move(graphicsRenderPass));
 }
 
@@ -270,7 +270,7 @@ void VulkanDefaults::PrepareDefaultFlatRenderPasses(std::shared_ptr<VkCore> core
 
     std::vector<DescriptorLayoutElement> modelLayoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
     std::vector<DescriptorLayoutElement> lightsLayoutElements{{lightsCountBuffer}, {lightsBuffer}};
-    PrepareRenderPassesCommon(core, scene, renderPasses, swapchain.GetSwapchainImages(),
+    PrepareRenderPassesCommon(core, scene, renderPasses, swapchain,
                               {modelLayoutElements, lightsLayoutElements}, false);
 
     EventSystem::Callback<int> bufferOnKeyShouldUpdateCallback = [scene, &viewProj, viewProjBuffer](int keyCode) {

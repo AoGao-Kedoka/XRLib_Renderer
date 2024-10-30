@@ -95,18 +95,14 @@ void RenderBackend::InitFrameBuffer() {
     // create frame buffer
     if (xrCore->IsXRValid()) {
         vkCore->GetSwapchainFrameBuffer().resize(vkCore->GetStereoSwapchainImageViews().size());
-    } else {
-        vkCore->GetSwapchainFrameBuffer().resize(vkCore->GetSwapchainImageViewsFlat().size());
-    }
+    } 
 
     for (size_t i = 0; i < vkCore->GetSwapchainFrameBuffer().size(); i++) {
         std::vector<VkImageView> attachments;
 
         if (xrCore->IsXRValid()) {
             attachments.push_back(vkCore->GetStereoSwapchainImageViews()[i]);
-        } else {
-            attachments.push_back(vkCore->GetSwapchainImageViewsFlat()[i]);
-        }
+        } 
         attachments.push_back(depthImage->GetImageView(VK_IMAGE_ASPECT_DEPTH_BIT));
 
         VkFramebufferCreateInfo framebufferInfo{};
