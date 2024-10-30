@@ -2,27 +2,6 @@
 
 namespace XRLib {
 namespace Graphics {
-RenderPass::RenderPass(std::shared_ptr<VkCore> core, Swapchain& swapchain, bool multiview)
-    : core{core}, multiview{multiview}, swapchainPtr{&swapchain}, renderTargets{swapchain.GetSwapchainImages()} {
-    depthImage = std::make_unique<Image>(core, renderTargets[0]->Width(), renderTargets[0]->Height(),
-                                         VkUtil::FindDepthFormat(core->GetRenderPhysicalDevice()),
-                                         VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, multiview ? 2 : 1);
-    CreateRenderPass();
-    SetRenderTarget(swapchain.GetSwapchainImages());
-
-    EventSystem::Callback<int, int> windowResizeCallback = [this, core, &swapchain, multiview](int width, int height) {
-        vkDeviceWaitIdle(core->GetRenderDevice());
-        CleanupFrameBuffers();
-        swapchain.RecreateSwapchain();
-        depthImage = std::make_unique<Image>(
-            core, swapchain.GetSwapchainImages()[0]->Width(), swapchain.GetSwapchainImages()[0]->Height(),
-            VkUtil::FindDepthFormat(core->GetRenderPhysicalDevice()), VK_IMAGE_TILING_OPTIMAL,
-            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, multiview ? 2 : 1);
-        SetRenderTarget(swapchain.GetSwapchainImages());
-    };
-    EventSystem::RegisterListener<int, int>(Events::XRLIB_EVENT_WINDOW_RESIZED, windowResizeCallback);
-}
 RenderPass::RenderPass(std::shared_ptr<VkCore> core, std::vector<std::unique_ptr<Image>>& renderTargets, bool multiview)
     : core{core}, multiview{multiview}, renderTargets{renderTargets} {
     depthImage = std::make_unique<Image>(core, renderTargets[0]->Width(), renderTargets[0]->Height(),
@@ -32,7 +11,23 @@ RenderPass::RenderPass(std::shared_ptr<VkCore> core, std::vector<std::unique_ptr
     CreateRenderPass();
     SetRenderTarget(renderTargets);
 
-    // TODO: Register on window resize events on images
+    EventSystem::Callback<int, int> windowResizeCallback = [this, core, multiview](int width, int height) {
+        vkDeviceWaitIdle(core->GetRenderDevice());
+        CleanupFrameBuffers();
+        depthImage = std::make_unique<Image>(
+            core, width, height, VkUtil::FindDepthFormat(core->GetRenderPhysicalDevice()), VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, multiview ? 2 : 1);
+
+        // when render target is not swapchain
+        for (const auto& renderTarget : this->GetRenderTargets()) {
+            if (renderTarget->Width() != width || renderTarget->Height() != height) {
+                //TODO resize image
+            }
+        }
+
+        SetRenderTarget(this->GetRenderTargets());
+    };
+    EventSystem::RegisterListener<int, int>(Events::XRLIB_EVENT_WINDOW_RESIZED, windowResizeCallback);
 }
 
 RenderPass::~RenderPass() {

@@ -4,6 +4,14 @@ namespace XRLib {
 namespace Graphics {
 Swapchain::Swapchain(std::shared_ptr<VkCore> core) : core{core} {
     CreateSwapchain();
+
+    // since swapchain is only manually created in flat rendering mode, we can ignore the case of multivew
+    EventSystem::Callback<int, int> windowResizeCallback = [this, core](int width, int height) {
+        vkDeviceWaitIdle(core->GetRenderDevice());
+        RecreateSwapchain();
+        GetSwapchainImages();
+    };
+    EventSystem::RegisterListener<int, int>(Events::XRLIB_EVENT_WINDOW_RESIZED, windowResizeCallback);
 }
 
 Swapchain::~Swapchain() {
@@ -103,7 +111,7 @@ VkPresentModeKHR Swapchain::ChooseSwapchainPresentMode() {
 VkSurfaceCapabilitiesKHR Swapchain::GetSurfaceCapabilities() {
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(core->GetRenderPhysicalDevice(), core->GetFlatSurface(), &capabilities);
-    auto [width, height] = WindowHandler::GetFrameBufferSize();    //TODO: only flat surface will be created manually, so it should be fine for now
+    auto [width, height] = WindowHandler::GetFrameBufferSize();
 
     swapchainExtent = {
         std::clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
@@ -114,7 +122,6 @@ VkSurfaceCapabilitiesKHR Swapchain::GetSurfaceCapabilities() {
 }
 
 void Swapchain::RecreateSwapchain() {
-    swapchainImages.clear();
     this->CreateSwapchain();
     swapchainImages.clear();
 }

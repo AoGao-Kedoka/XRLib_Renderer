@@ -20,17 +20,6 @@ class GraphicsRenderPass {
                                               descriptorSets);
     }
 
-    GraphicsRenderPass(std::shared_ptr<VkCore> core, bool multiview, Swapchain& swapchain,
-                       std::vector<std::shared_ptr<DescriptorSet>> descriptorSets = {},
-                       std::string vertexShaderPath = "", std::string fragmentShaderPath = "")
-        : core{core}, multiview{multiview}, descriptorSets{descriptorSets}{
-        Shader vertexShader{core, vertexShaderPath, Shader::VERTEX_SHADER, multiview};
-        Shader fragmentShader{core, fragmentShaderPath, Shader::FRAGMENT_SHADER, multiview};
-        renderPass = std::make_shared<RenderPass>(core, swapchain, multiview);
-        pipeline = std::make_shared<Pipeline>(core, std::move(vertexShader), std::move(fragmentShader), renderPass,
-                                              descriptorSets);
-    }
-
     RenderPass& GetRenderPass() { return *renderPass; }
     Pipeline& GetPipeline() { return *pipeline; }
     std::vector<std::shared_ptr<DescriptorSet>> GetDescriptorSets() { return descriptorSets; }

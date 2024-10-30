@@ -12,7 +12,6 @@ class RenderPass {
    public:
     RenderPass() = default;
     RenderPass(std::shared_ptr<VkCore> core, std::vector<std::unique_ptr<Image>>& renderTargets, bool multiview);
-    RenderPass(std::shared_ptr<VkCore> core, Swapchain& swapchain, bool multiview);
     ~RenderPass();
 
     VkRenderPass& GetVkRenderPass() { return pass; }
