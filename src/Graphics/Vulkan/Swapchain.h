@@ -1,15 +1,18 @@
 #pragma once
 
-#include "Graphics/Vulkan/Image.h"
+#include "Image.h"
 
 namespace XRLib {
 namespace Graphics {
 class Swapchain {
    public:
     Swapchain() = default;
+
+    // normal flat swapchain
     Swapchain(std::shared_ptr<VkCore> core);
+
     ~Swapchain();
-    std::vector<std::unique_ptr<Image>>& GetSwapchainImages();
+    std::vector<std::unique_ptr<Image>>& GetSwapchainImages(bool ignoreEmpty = false);
     VkSwapchainKHR GetSwaphcain() { return swapchain; }
     void RecreateSwapchain();
 

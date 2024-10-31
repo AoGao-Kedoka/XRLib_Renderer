@@ -1,19 +1,8 @@
 #pragma once
 
-#include "Event/EventSystem.h"
-#include "Event/Events.h"
-#include "Graphics/Vulkan/Buffer.h"
 #include "Graphics/Vulkan/CommandBuffer.h"
-#include "Graphics/Vulkan/GraphicsRenderPass.h"
-#include "Graphics/Vulkan/Pipeline.h"
-#include "Graphics/Vulkan/RenderPass.h"
-#include "Graphics/Vulkan/Shader.h"
-#include "Graphics/Vulkan/VkCore.h"
 #include "Graphics/Vulkan/VulkanDefaults.h"
-#include "Graphics/Window.h"
-#include "Logger.h"
 #include "Scene.h"
-#include "Utils/Info.h"
 #include "XR/XrCore.h"
 
 namespace XRLib {
@@ -48,7 +37,6 @@ class RenderBackend {
     virtual void OnWindowResized(int width, int height) { Util::ErrorPopup("Undefined image resize"); };
 
     void InitVertexIndexBuffers();
-    virtual void InitFrameBuffer();
 
     void Run(uint32_t& imageIndex);
 
@@ -64,7 +52,7 @@ class RenderBackend {
 
     std::vector<std::unique_ptr<Buffer>> vertexBuffers;
     std::vector<std::unique_ptr<Buffer>> indexBuffers;
-    std::unique_ptr<Image> depthImage{nullptr};
+
     std::unique_ptr<Swapchain> swapchain{nullptr};
 
    private:

@@ -34,21 +34,7 @@ class VkCore {
 
     // flat renderer
     VkSurfaceKHR& GetFlatSurface() { return surfaceFlat; }
-    VkExtent2D& GetSwapchainExtent(bool stereo) {
-        if (stereo)
-            return swapchainExtentStereo;
-    }
-    void SetStereoSwapchainExtent2D(VkExtent2D extent) { this->swapchainExtentStereo = extent; }
 
-    std::vector<VkFramebuffer>& GetSwapchainFrameBuffer() { return swapChainFrameBuffers; }
-
-    // steoreo
-    VkFormat GetStereoSwapchainImageFormat() { return stereoSwapchainImageFormat; }
-    void SetStereoSwapchainImageFormat(VkFormat format) { this->stereoSwapchainImageFormat = format; }
-    std::vector<VkImage>& GetStereoSwapchainImages() { return stereoSwapchainImages; }
-    std::vector<VkImageView>& GetStereoSwapchainImageViews() { return stereoSwapchainImageViews; }
-
-    VkExtent2D GetswapchainExtentStereo() { return swapchainExtentStereo; }
     // pools
     VkCommandPool& GetCommandPool() {
         if (commandPool == VK_NULL_HANDLE) {
@@ -112,15 +98,7 @@ class VkCore {
     VkDevice vkDevice{VK_NULL_HANDLE};
     VkQueue graphicsQueue{VK_NULL_HANDLE};
 
-    //Flat surface swapchain
     VkSurfaceKHR surfaceFlat{VK_NULL_HANDLE};
-    std::vector<VkFramebuffer> swapChainFrameBuffers;
-
-    //stereo swapchain
-    VkFormat stereoSwapchainImageFormat{VK_FORMAT_UNDEFINED};
-    std::vector<VkImage> stereoSwapchainImages;
-    std::vector<VkImageView> stereoSwapchainImageViews;
-    VkExtent2D swapchainExtentStereo{0, 0};
 
     // pools
     VkCommandPool commandPool{VK_NULL_HANDLE};

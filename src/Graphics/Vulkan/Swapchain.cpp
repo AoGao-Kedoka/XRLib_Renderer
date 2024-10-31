@@ -15,6 +15,9 @@ Swapchain::Swapchain(std::shared_ptr<VkCore> core) : core{core} {
 }
 
 Swapchain::~Swapchain() {
+    if (core == nullptr) {
+        return;
+    }
     VkUtil::VkSafeClean(vkDestroySwapchainKHR, core->GetRenderDevice(), swapchain, nullptr);
 }
 
@@ -46,8 +49,8 @@ void Swapchain::CreateSwapchain() {
     }
 }
 
-std::vector<std::unique_ptr<Image>>& Swapchain::GetSwapchainImages() {
-    if (!swapchainImages.empty()) {
+std::vector<std::unique_ptr<Image>>& Swapchain::GetSwapchainImages(bool ignoreEmpty) {
+    if (!swapchainImages.empty() || ignoreEmpty) {
         return swapchainImages;
     }
 

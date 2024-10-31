@@ -37,6 +37,7 @@ class Buffer {
     void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 
     void MapHostMemory(void* dataInput);
+
     /*
      * Create a staging buffer and send the current buffer to GPU, if it's a device buffer
      */

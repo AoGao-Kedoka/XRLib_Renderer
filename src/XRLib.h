@@ -1,11 +1,11 @@
 #pragma once
 
+#include "pch.h"
+
 #include "Graphics/RenderBackend.h"
 #include "Graphics/RenderBackendFlat.h"
-#include "Graphics/Window.h"
 #include "Scene.h"
 #include "XR/XRBackend.h"
-#include "pch.h"
 
 namespace XRLib {
 class XRLib {

@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Buffer.h"
-#include "Logger.h"
-#include "VkCore.h"
 
 namespace XRLib {
 namespace Graphics {

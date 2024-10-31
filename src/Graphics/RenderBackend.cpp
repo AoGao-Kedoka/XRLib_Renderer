@@ -23,51 +23,29 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
     GetSwapchainInfo();
     InitVertexIndexBuffers();
 
-    auto stereoExtent = vkCore->GetswapchainExtentStereo();
-
     if (passesToAdd.empty()) {
-        VulkanDefaults::PrepareDefaultStereoRenderPasses(vkCore, scene, viewProj, RenderPasses);
+        VulkanDefaults::PrepareDefaultStereoRenderPasses(vkCore, scene, viewProj, RenderPasses, swapchain->GetSwapchainImages());
     } else {
         LOGGER(LOGGER::INFO) << "Using custom render pass";
         // TODO: custom render pass
-        //std::vector<std::shared_ptr<DescriptorSet>> sets;
         //for (auto& pass : passesToAdd) {
         //    auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(vkCore, true, sets, pass.first, pass.second);
         //    RenderPasses.push_back(std::move(graphicsRenderPass));
         //}
     }
-    InitFrameBuffer();
 }
 
 void RenderBackend::GetSwapchainInfo() {
+    swapchain = std::make_unique<Swapchain>();
+    std::vector<std::unique_ptr<Image>>& swapchainImages = swapchain->GetSwapchainImages(true);
     uint8_t swapchainImageCount = xrCore->GetSwapchainImages().size();
-    vkCore->GetStereoSwapchainImages().resize(swapchainImageCount);
-    vkCore->GetStereoSwapchainImageViews().resize(swapchainImageCount);
-    for (uint32_t i = 0; i < xrCore->GetSwapchainImages().size(); ++i) {
-        // create image view
-        vkCore->GetStereoSwapchainImages()[i] = xrCore->GetSwapchainImages()[i].image;
-        VkImageViewCreateInfo imageViewCreateInfo{};
-        imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        imageViewCreateInfo.image = vkCore->GetStereoSwapchainImages()[i];
-        imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-        imageViewCreateInfo.format = vkCore->GetStereoSwapchainImageFormat();
-        imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-        imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-        imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-        imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-        imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-        imageViewCreateInfo.subresourceRange.levelCount = 1;
-        imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-        imageViewCreateInfo.subresourceRange.layerCount = 2;
-        if (vkCreateImageView(vkCore->GetRenderDevice(), &imageViewCreateInfo, nullptr,
-                              &vkCore->GetStereoSwapchainImageViews()[i]) != VK_SUCCESS) {
-            Util::ErrorPopup("Failed to create image view");
-        }
+    swapchainImages.resize(swapchainImageCount);
+    for (uint32_t i = 0; i < swapchainImageCount; ++i) {
+        auto [width, height] = xrCore->SwapchainExtent();
+        swapchainImages[i] = std::make_unique<Image>(vkCore, xrCore->GetSwapchainImages()[i].image,
+                                                     static_cast<VkFormat>(xrCore->SwapchainFormats()[0]), width, height, 2);
     }
 
-    vkCore->SetStereoSwapchainExtent2D({xrCore->GetXRViewConfigurationView()[0].recommendedImageRectWidth,
-                                        xrCore->GetXRViewConfigurationView()[0].recommendedImageRectHeight});
 }
 
 void RenderBackend::InitVertexIndexBuffers() {
@@ -88,35 +66,6 @@ void RenderBackend::InitVertexIndexBuffers() {
     }
 }
 
-void RenderBackend::InitFrameBuffer() {
-    // create frame buffer
-    if (xrCore->IsXRValid()) {
-        vkCore->GetSwapchainFrameBuffer().resize(vkCore->GetStereoSwapchainImageViews().size());
-    } 
-
-    for (size_t i = 0; i < vkCore->GetSwapchainFrameBuffer().size(); i++) {
-        std::vector<VkImageView> attachments;
-
-        if (xrCore->IsXRValid()) {
-            attachments.push_back(vkCore->GetStereoSwapchainImageViews()[i]);
-        } 
-        attachments.push_back(depthImage->GetImageView(VK_IMAGE_ASPECT_DEPTH_BIT));
-
-        VkFramebufferCreateInfo framebufferInfo{};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = RenderPasses[RenderPasses.size() - 1]->GetRenderPass().GetVkRenderPass();
-        framebufferInfo.attachmentCount = attachments.size();
-        framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width = vkCore->GetSwapchainExtent(xrCore->IsXRValid()).width;
-        framebufferInfo.height = vkCore->GetSwapchainExtent(xrCore->IsXRValid()).height;
-        framebufferInfo.layers = 1;
-
-        if (vkCreateFramebuffer(vkCore->GetRenderDevice(), &framebufferInfo, nullptr,
-                                &vkCore->GetSwapchainFrameBuffer()[i]) != VK_SUCCESS) {
-            Util::ErrorPopup("Failed to create frame buffer");
-        }
-    }
-}
 void RenderBackend::Run(uint32_t& imageIndex) {
     CommandBuffer commandBuffer{vkCore};
     vkWaitForFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence(), VK_TRUE, UINT64_MAX);

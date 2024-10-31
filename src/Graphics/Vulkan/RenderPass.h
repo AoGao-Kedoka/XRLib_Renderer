@@ -1,10 +1,7 @@
 #pragma once
 
-#include "Graphics/Vulkan/Image.h"
-#include "Graphics/Vulkan/Swapchain.h"
-#include "Logger.h"
-#include "Utils/Util.h"
-#include "VkCore.h"
+#include "Image.h"
+#include "Swapchain.h"
 
 namespace XRLib {
 namespace Graphics {

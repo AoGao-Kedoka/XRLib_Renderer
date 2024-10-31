@@ -2,8 +2,6 @@
 
 #include "Buffer.h"
 #include "Image.h"
-#include "Logger.h"
-#include "VkCore.h"
 
 namespace XRLib {
 namespace Graphics {

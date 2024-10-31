@@ -32,7 +32,7 @@ void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const 
 
     // prepare shader
     if (passesToAdd.empty()) {
-        VulkanDefaults::PrepareDefaultFlatRenderPasses(vkCore, scene, viewProj, RenderPasses, *swapchain);
+        VulkanDefaults::PrepareDefaultFlatRenderPasses(vkCore, scene, viewProj, RenderPasses, swapchain->GetSwapchainImages());
     } else {
         LOGGER(LOGGER::INFO) << "Using custom render pass";
         //TODO: Custom renderpass

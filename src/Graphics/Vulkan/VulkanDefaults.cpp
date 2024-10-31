@@ -243,23 +243,24 @@ void PrepareRenderPassesCommon(std::shared_ptr<VkCore> core, std::shared_ptr<Sce
 
 void VulkanDefaults::PrepareDefaultStereoRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
                                                       Primitives::ViewProjectionStereo& viewProj,
-                                                      std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses) {
+                                                      std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
+    std::vector<std::unique_ptr<Image>>& swapchainImages) {
 
-    //auto viewProjBuffer = CreateViewProjBuffer(core, viewProj);
-    //auto modelPositionsBuffer = CreateModelPositionsBuffer(core, scene);
-    //auto [lightsCountBuffer, lightsBuffer] = CreateLightBuffer(core, scene);
-    //auto textures = CreateTextures(core, scene);
-    //RegisterViewProjUpdateCallback(viewProjBuffer, viewProj);
+    auto viewProjBuffer = CreateViewProjBuffer(core, viewProj);
+    auto modelPositionsBuffer = CreateModelPositionsBuffer(core, scene);
+    auto [lightsCountBuffer, lightsBuffer] = CreateLightBuffer(core, scene);
+    auto textures = CreateTextures(core, scene);
+    RegisterViewProjUpdateCallback(viewProjBuffer, viewProj);
 
-    //std::vector<DescriptorLayoutElement> modelLayoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
-    //std::vector<DescriptorLayoutElement> lightsLayoutElements{{lightsCountBuffer}, {lightsBuffer}};
-    //PrepareRenderPassesCommon(core, scene, renderPasses, {modelLayoutElements, lightsLayoutElements}, true);
+    std::vector<DescriptorLayoutElement> modelLayoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
+    std::vector<DescriptorLayoutElement> lightsLayoutElements{{lightsCountBuffer}, {lightsBuffer}};
+    PrepareRenderPassesCommon(core, scene, renderPasses, swapchainImages, {modelLayoutElements, lightsLayoutElements}, true);
 }
 
 void VulkanDefaults::PrepareDefaultFlatRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
                                                     Primitives::ViewProjection& viewProj,
                                                     std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
-                                                    Swapchain& swapchain) {
+                                                    std::vector<std::unique_ptr<Image>>& swapchainImages) {
     viewProj.view = scene->CameraTransform().GetMatrix();
     viewProj.proj = scene->CameraProjection();
 
@@ -270,7 +271,7 @@ void VulkanDefaults::PrepareDefaultFlatRenderPasses(std::shared_ptr<VkCore> core
 
     std::vector<DescriptorLayoutElement> modelLayoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
     std::vector<DescriptorLayoutElement> lightsLayoutElements{{lightsCountBuffer}, {lightsBuffer}};
-    PrepareRenderPassesCommon(core, scene, renderPasses, swapchain.GetSwapchainImages(),
+    PrepareRenderPassesCommon(core, scene, renderPasses, swapchainImages,
                               {modelLayoutElements, lightsLayoutElements}, false);
 
     EventSystem::Callback<int> bufferOnKeyShouldUpdateCallback = [scene, &viewProj, viewProjBuffer](int keyCode) {

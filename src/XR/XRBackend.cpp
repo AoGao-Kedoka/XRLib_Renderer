@@ -200,10 +200,10 @@ void XrBackend::CreateXrSwapchain() {
         Util::ErrorPopup("Failed to get swapchain formats");
     }
 
-    swapchainFormats.resize(swapchainFormatCount);
+    xrCore->SwapchainFormats().resize(swapchainFormatCount);
 
     if (xrEnumerateSwapchainFormats(xrCore->GetXRSession(), swapchainFormatCount, &swapchainFormatCount,
-                                    swapchainFormats.data()) != XR_SUCCESS) {
+                                    xrCore->SwapchainFormats().data()) != XR_SUCCESS) {
         Util::ErrorPopup("Failed to get swapchain formats");
     }
 
@@ -234,7 +234,7 @@ void XrBackend::CreateXrSwapchain() {
     XrSwapchainCreateInfo swapchainCreateInfo{};
     swapchainCreateInfo.type = XR_TYPE_SWAPCHAIN_CREATE_INFO;
     swapchainCreateInfo.usageFlags = XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT | XR_SWAPCHAIN_USAGE_SAMPLED_BIT;
-    swapchainCreateInfo.format = swapchainFormats.at(0);
+    swapchainCreateInfo.format = xrCore->SwapchainFormats().at(0);
     swapchainCreateInfo.sampleCount = xrCore->GetXRViewConfigurationView()[0].recommendedSwapchainSampleCount;
     swapchainCreateInfo.width = xrCore->GetXRViewConfigurationView()[0].recommendedImageRectWidth;
     swapchainCreateInfo.height = xrCore->GetXRViewConfigurationView()[0].recommendedImageRectHeight;
