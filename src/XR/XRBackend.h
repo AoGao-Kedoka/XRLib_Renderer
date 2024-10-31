@@ -23,6 +23,13 @@ class XrBackend {
 
     bool XrShouldStop() { return xrShouldStop; };
 
+    int64_t& SwapchainFormat() { return swapchainFormats[0]; }
+
+    std::pair<uint32_t, uint32_t> SwapchainExtent() { 
+        return {xrCore->GetXRViewConfigurationView()[0].recommendedImageRectWidth,
+                xrCore->GetXRViewConfigurationView()[0].recommendedImageRectHeight};
+    }
+
    private:
     void Prepare();
     void CreateXrInstance();
@@ -43,6 +50,8 @@ class XrBackend {
     std::shared_ptr<XrCore> xrCore{nullptr};
 
     XrInput input;
+
+    std::vector<int64_t> swapchainFormats;
 
     std::vector<const char*> activeAPILayers = {};
     std::vector<const char*> activeInstanceExtensions = {};

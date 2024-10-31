@@ -199,13 +199,13 @@ void XrBackend::CreateXrSwapchain() {
     if (xrEnumerateSwapchainFormats(xrCore->GetXRSession(), 0, &swapchainFormatCount, nullptr) != XR_SUCCESS) {
         Util::ErrorPopup("Failed to get swapchain formats");
     }
-    std::vector<int64_t> swapchainFormats(swapchainFormatCount);
+
+    swapchainFormats.resize(swapchainFormatCount);
+
     if (xrEnumerateSwapchainFormats(xrCore->GetXRSession(), swapchainFormatCount, &swapchainFormatCount,
                                     swapchainFormats.data()) != XR_SUCCESS) {
         Util::ErrorPopup("Failed to get swapchain formats");
     }
-
-    vkCore->SetStereoSwapchainImageFormat(static_cast<VkFormat>(swapchainFormats.at(0)));
 
     if (xrEnumerateViewConfigurationViews(xrCore->GetXRInstance(), xrCore->GetSystemID(),
                                           xrCore->GetXrViewConfigurationType(), 0, &viewCount, nullptr) != XR_SUCCESS) {
@@ -234,7 +234,7 @@ void XrBackend::CreateXrSwapchain() {
     XrSwapchainCreateInfo swapchainCreateInfo{};
     swapchainCreateInfo.type = XR_TYPE_SWAPCHAIN_CREATE_INFO;
     swapchainCreateInfo.usageFlags = XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT | XR_SWAPCHAIN_USAGE_SAMPLED_BIT;
-    swapchainCreateInfo.format = static_cast<uint32_t>(vkCore->GetStereoSwapchainImageFormat());
+    swapchainCreateInfo.format = swapchainFormats.at(0);
     swapchainCreateInfo.sampleCount = xrCore->GetXRViewConfigurationView()[0].recommendedSwapchainSampleCount;
     swapchainCreateInfo.width = xrCore->GetXRViewConfigurationView()[0].recommendedImageRectWidth;
     swapchainCreateInfo.height = xrCore->GetXRViewConfigurationView()[0].recommendedImageRectHeight;
