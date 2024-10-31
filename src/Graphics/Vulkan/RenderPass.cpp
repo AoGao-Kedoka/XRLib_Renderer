@@ -2,10 +2,44 @@
 
 namespace XRLib {
 namespace Graphics {
-RenderPass::RenderPass(std::shared_ptr<VkCore> core, bool multiview) : core{core}, multiview{multiview} {
+RenderPass::RenderPass(std::shared_ptr<VkCore> core, std::vector<std::unique_ptr<Image>>& renderTargets, bool multiview)
+    : core{core}, multiview{multiview}, renderTargets{renderTargets} {
+    depthImage = std::make_unique<Image>(core, renderTargets[0]->Width(), renderTargets[0]->Height(),
+                                         VkUtil::FindDepthFormat(core->GetRenderPhysicalDevice()),
+                                         VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, multiview ? 2 : 1);
+    CreateRenderPass();
+    SetRenderTarget(renderTargets);
 
+    EventSystem::Callback<int, int> windowResizeCallback = [this, core, multiview](int width, int height) {
+        vkDeviceWaitIdle(core->GetRenderDevice());
+        CleanupFrameBuffers();
+        depthImage = std::make_unique<Image>(
+            core, width, height, VkUtil::FindDepthFormat(core->GetRenderPhysicalDevice()), VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, multiview ? 2 : 1);
+
+        // when render target is not swapchain
+        for (const auto& renderTarget : this->GetRenderTargets()) {
+            if (renderTarget->Width() != width || renderTarget->Height() != height) {
+                //TODO resize image
+            }
+        }
+
+        SetRenderTarget(this->GetRenderTargets());
+    };
+    EventSystem::RegisterListener<int, int>(Events::XRLIB_EVENT_WINDOW_RESIZED, windowResizeCallback);
+}
+
+RenderPass::~RenderPass() {
+    LOGGER(LOGGER::DEBUG) << "render pass destructor called";
+    if (!core)
+        return;
+    CleanupFrameBuffers();
+    VkUtil::VkSafeClean(vkDestroyRenderPass, core->GetRenderDevice(), pass, nullptr);
+}
+void RenderPass::CreateRenderPass() {
     VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = multiview ? core->GetStereoSwapchainImageFormat() : core->GetFlatSwapchainImageFormat();
+    colorAttachment.format = renderTargets[0]->GetFormat();
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -20,10 +54,7 @@ RenderPass::RenderPass(std::shared_ptr<VkCore> core, bool multiview) : core{core
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkAttachmentDescription depthAttachment{};
-    depthAttachment.format =
-        VkUtil::FindSupportedFormat(core->GetRenderPhysicalDevice(),
-                                    {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
-                                    VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    depthAttachment.format = depthImage->GetFormat();
     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -80,11 +111,37 @@ RenderPass::RenderPass(std::shared_ptr<VkCore> core, bool multiview) : core{core
     }
 }
 
-RenderPass::~RenderPass() {
-    LOGGER(LOGGER::DEBUG) << "render pass destructor called";
-    if (!core)
-        return;
-    VkUtil::VkSafeClean(vkDestroyRenderPass, core->GetRenderDevice(), pass, nullptr);
+void RenderPass::SetRenderTarget(std::vector<std::unique_ptr<Image>>& images) {
+    frameBuffers.resize(images.size());
+    for (int i = 0; i < images.size(); ++i) {
+        std::vector<VkImageView> attachments = {images[i]->GetImageView(),
+                                                depthImage->GetImageView(VK_IMAGE_ASPECT_DEPTH_BIT)};
+
+        VkFramebufferCreateInfo framebufferCreateInfo{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
+        framebufferCreateInfo.renderPass = GetVkRenderPass();
+        framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+        framebufferCreateInfo.pAttachments = attachments.data();
+        framebufferCreateInfo.width = images[i]->Width();
+        framebufferCreateInfo.height = images[i]->Height();
+        framebufferCreateInfo.layers = 1;
+
+        VkResult result =
+            vkCreateFramebuffer(core->GetRenderDevice(), &framebufferCreateInfo, nullptr, &frameBuffers[i]);
+        if (result != VK_SUCCESS) {
+            Util::ErrorPopup("Failed to create frame buffer");
+        }
+    }
 }
+
+void RenderPass::CleanupFrameBuffers() {
+    for (const auto& frameBuffer : frameBuffers) {
+        VkUtil::VkSafeClean(vkDestroyFramebuffer, core->GetRenderDevice(), frameBuffer, nullptr);
+    }
+    frameBuffers.clear();
+}
+std::vector<std::unique_ptr<Image>>& RenderPass::GetRenderTargets() {
+    return renderTargets;
+}
+
 }    // namespace Graphics
 }    // namespace XRLib

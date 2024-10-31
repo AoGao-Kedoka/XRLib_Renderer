@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GraphicsRenderPass.h"
-#include "VkCore.h"
 
 namespace XRLib {
 namespace Graphics {

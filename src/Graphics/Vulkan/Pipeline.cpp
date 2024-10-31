@@ -70,12 +70,12 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fra
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.pushConstantRangeCount = 1;
 
+    VkPushConstantRange pushConstantRange{};
     for (const auto& descriptorSet : descriptorSets) {
         if (descriptorSet != nullptr && descriptorSet->GetPushConstantSize() != 0) {
-            VkPushConstantRange pushConstantRange{};
-            pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
             pushConstantRange.offset = 0;
             pushConstantRange.size = descriptorSet->GetPushConstantSize();
+            pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
             pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
         }

@@ -1,7 +1,8 @@
 #pragma once
-#include "Graphics/Vulkan/Buffer.h"
-#include "Graphics/Vulkan/GraphicsRenderPass.h"
-#include "Graphics/Vulkan/VkCore.h"
+
+#include "Buffer.h"
+#include "GraphicsRenderPass.h"
+#include "Swapchain.h"
 #include "Scene.h"
 
 namespace XRLib {
@@ -20,11 +21,12 @@ class VulkanDefaults {
     ////////////////////////////////////////////////////
     static void PrepareDefaultStereoRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
                                                  Primitives::ViewProjectionStereo& viewProj,
-                                                 std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses);
+                                                 std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
+                                                 std::vector<std::unique_ptr<Image>>& swapchainImages);
     static void PrepareDefaultFlatRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
-                                                 Primitives::ViewProjection& viewProj,
-                                                 std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses);
-
+                                               Primitives::ViewProjection& viewProj,
+                                               std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
+                                               std::vector<std::unique_ptr<Image>>& swapchainImages);
 };
 }    // namespace Graphics
 }    // namespace XRLib

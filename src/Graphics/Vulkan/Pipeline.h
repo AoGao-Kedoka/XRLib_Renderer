@@ -3,9 +3,6 @@
 #include "DescriptorSet.h"
 #include "RenderPass.h"
 #include "Shader.h"
-#include "Utils/Util.h"
-#include "VkCore.h"
-#include "VkUtil.h"
 
 namespace XRLib {
 namespace Graphics {

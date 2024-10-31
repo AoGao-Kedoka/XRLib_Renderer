@@ -47,6 +47,12 @@ class XrCore {
 
     XrTime& GetXrTime() { return time; }
 
+    std::vector<int64_t>& SwapchainFormats() { return swapchainFormats; }
+
+    std::pair<uint32_t, uint32_t> SwapchainExtent() { 
+        return {GetXRViewConfigurationView()[0].recommendedImageRectWidth,
+                GetXRViewConfigurationView()[0].recommendedImageRectHeight};
+    }
     // Vulkan
     std::vector<const char*> VkAdditionalInstanceExts();
     std::vector<const char*> VkAdditionalDeviceExts();
@@ -67,6 +73,8 @@ class XrCore {
     XrViewState xrViewState{};
     XrFrameState frameState{XR_TYPE_FRAME_STATE};
     XrSpace xrSceneSpace{XR_NULL_HANDLE};
+
+    std::vector<int64_t> swapchainFormats;
 
     bool xrValid = true;
 

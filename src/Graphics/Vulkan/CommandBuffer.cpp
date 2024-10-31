@@ -60,8 +60,7 @@ CommandBuffer& CommandBuffer::BindDescriptorSets(GraphicsRenderPass& pass, uint3
     }
     VkPipelineLayout layout = pass.GetPipeline().GetVkPipelineLayout();
     VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    vkCmdBindDescriptorSets(commandBuffer, bindPoint, layout, firstSet, descriptorSets.size(),
-                            descriptorSets.data(),
+    vkCmdBindDescriptorSets(commandBuffer, bindPoint, layout, firstSet, descriptorSets.size(), descriptorSets.data(),
                             dynamicOffsetCount, pDynamicOffsets);
     return *this;
 }
@@ -86,9 +85,10 @@ CommandBuffer& CommandBuffer::StartPass(GraphicsRenderPass& pass, uint32_t image
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = pass.GetRenderPass().GetVkRenderPass();
-    renderPassInfo.framebuffer = core->GetSwapchainFrameBuffer()[imageIndex];
+    renderPassInfo.framebuffer = pass.GetRenderPass().GetFrameBuffers()[imageIndex];
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = core->GetSwapchainExtent(pass.Stereo());
+    renderPassInfo.renderArea.extent = {static_cast<uint32_t>(pass.GetRenderPass().GetRenderTargets()[imageIndex]->Width()),
+                                        static_cast<uint32_t>(pass.GetRenderPass().GetRenderTargets()[imageIndex]->Height())};
 
     std::array<VkClearValue, 2> clearValues{};
     clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};

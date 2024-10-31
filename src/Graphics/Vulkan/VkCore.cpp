@@ -11,9 +11,6 @@ VkCore::~VkCore() {
         vkDestroyDebugUtilsMessengerEXT(GetRenderInstance(), vkDebugMessenger, nullptr);
     }
 
-    for (auto framebuffer : swapChainFrameBuffers) {
-        VkUtil::VkSafeClean(vkDestroyFramebuffer, vkDevice, framebuffer, nullptr);
-    }
     VkUtil::VkSafeClean(vkDestroyCommandPool, vkDevice, commandPool, nullptr);
 
     VkUtil::VkSafeClean(vkDestroyDevice, vkDevice, nullptr);

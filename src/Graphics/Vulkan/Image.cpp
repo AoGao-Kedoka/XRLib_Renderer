@@ -6,7 +6,7 @@ namespace XRLib {
 namespace Graphics {
 Image::Image(std::shared_ptr<VkCore> core, std::vector<uint8_t> textureData, int width, int height, int channels,
              VkFormat format)
-    : core{core}, format{format} {
+    : core{core}, format{format}, width(width), height{height} {
     size = width * height * channels;
 
     std::unique_ptr<Buffer> imageBuffer = std::make_unique<Buffer>(core, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -25,13 +25,14 @@ Image::Image(std::shared_ptr<VkCore> core, std::vector<uint8_t> textureData, int
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-Image::Image(std::shared_ptr<VkCore> core, std::pair<int, int> frameSize, VkFormat format, VkImageTiling tiling,
+Image::Image(std::shared_ptr<VkCore> core, int width, int height, VkFormat format, VkImageTiling tiling,
              VkImageUsageFlags usage, VkMemoryPropertyFlags properties, uint32_t layerCount)
     : core{core}, format{format}, layerCount{layerCount} {
-    CreateImage(frameSize.first, frameSize.second, format, tiling, usage, properties, image, imageMemorry);
+    CreateImage(width, height, format, tiling, usage, properties, image, imageMemorry);
 }
 
-Image::Image(std::shared_ptr<VkCore> core, VkImage image) {}
+Image::Image(std::shared_ptr<VkCore> core, VkImage image, VkFormat format, int width, int height, uint32_t layerCount)
+    : core{core}, image{image}, format{format}, width{width}, height{height}, layerCount{layerCount} {}
 
 Image::~Image() {
     VkUtil::VkSafeClean(vkFreeMemory, core->GetRenderDevice(), imageMemorry, nullptr);
