@@ -1,4 +1,4 @@
-#include "XRBackend.h"
+#include "XrBackend.h"
 
 namespace XRLib {
 namespace XR {
@@ -30,7 +30,7 @@ XrBackend::XrBackend(std::shared_ptr<Info> info, std::shared_ptr<XRLib::Graphics
 
         EventSystem::TriggerEvent(Events::XRLIB_EVENT_XRBACKEND_INIT_FINISHED);
 
-        EventSystem::Callback callback = [this]() {
+        EventSystem::Callback<> callback = [this]() {
             Prepare();
         };
 

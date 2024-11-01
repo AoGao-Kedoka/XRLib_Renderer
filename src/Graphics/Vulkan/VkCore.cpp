@@ -54,6 +54,10 @@ void VkCore::CreateVkInstance(Info& info, const std::vector<const char*>& additi
     for (const auto& exts : additionalInstanceExts) {
         vulkanInstanceExtensions.push_back(exts);
     }
+#ifdef __APPLE__
+    vulkanInstanceExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    vulkanInstanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+#endif
 
     VkInstanceCreateInfo instanceCreateInfo{};
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
@@ -68,6 +72,10 @@ void VkCore::CreateVkInstance(Info& info, const std::vector<const char*>& additi
 
     instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(vulkanInstanceExtensions.size());
     instanceCreateInfo.ppEnabledExtensionNames = vulkanInstanceExtensions.data();
+#ifdef __APPLE__
+    instanceCreateInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
+
 
     if (info.validationLayer) {
         debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -169,6 +177,10 @@ void VkCore::CreateVkDevice(Info& info, const std::vector<const char*>& addition
         deviceExtensions.push_back(exts);
     }
 
+#ifdef __APPLE__
+    deviceExtensions.push_back("VK_KHR_portability_subset");
+#endif
+
     float queuePriority = 1;
 
     VkDeviceQueueCreateInfo queueCreateInfo{};
@@ -250,13 +262,22 @@ void VkCore::CreateCommandPool() {
     }
 }
 void VkCore::CreateDescriptorPool() {
-    VkDescriptorPoolSize poolSizes{};
-    poolSizes.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes.descriptorCount = 100;
+    VkDescriptorPoolSize poolSizes[] = {
+    {VK_DESCRIPTOR_TYPE_SAMPLER, 20},
+    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 20},
+    {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 20},
+    {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 20},
+    {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 20},
+    {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 20},
+    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 20},
+    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 20},
+    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 20},
+    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 20},
+    {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 20}};
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSizes;
+    poolInfo.poolSizeCount = std::size(poolSizes);
+    poolInfo.pPoolSizes = poolSizes;
     poolInfo.maxSets = 100;
     if (vkCreateDescriptorPool(GetRenderDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {}
 }

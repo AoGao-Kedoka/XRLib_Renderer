@@ -25,7 +25,7 @@ Shader::Shader(std::shared_ptr<VkCore> core, const std::filesystem::path& filePa
     std::string cacheNamePrefix = filePath.empty() ? "defaultMain" : filePath.filename().generic_string();
     std::string cacheNameSuffix = std::to_string(Util::HashString(rawCode));
 
-#ifdef __cpp_lib_format
+#if __has_include(<format>)
     std::string cacheFilePath = std::format("{}/{}_{}.spv", shaderCacheDir, cacheNamePrefix, cacheNameSuffix);
 #else
     std::string cacheFilePath = fmt::format("{}/{}_{}.spv", shaderCacheDir, cacheNamePrefix, cacheNameSuffix);

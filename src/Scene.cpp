@@ -17,7 +17,7 @@ Scene::Scene() : done(false), stop(false) {
         if (lights.empty()) {
             LOGGER(LOGGER::WARNING) << "No light in the scene is defined, creating default light at location (0,0,0)";
             Transform defaultTransform;
-            lights.emplace_back(defaultTransform, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.5f);
+            lights.push_back({defaultTransform, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.5f});
         }
     };
     EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_INIT_STARTED, allMeshesLoadCallback);

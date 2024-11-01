@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.15)
-project(XRLib VERSION 1.0.0)
+
+if(APPLE)
+    set(LANGUAGES C CXX OBJC OBJCXX)
+else()
+    set(LANGUAGES C CXX)
+endif()
+project(XRLib VERSION 1.0.0 LANGUAGES ${LANGUAGES})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
@@ -10,7 +16,10 @@ file(DOWNLOAD
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/stb_image.h
 )
 
-if (UNIX)
+add_library(${PROJECT_NAME} STATIC)
+add_library(XRLib::XRLib ALIAS XRLib)
+
+if (LINUX)
     message( STATUS "Platform: Linux" )
 
     FIND_PACKAGE( PkgConfig REQUIRED)
@@ -19,7 +28,11 @@ if (UNIX)
     LINK_DIRECTORIES(${GTK_LIBRARY_DIRS})
     ADD_DEFINITIONS(${GTK_CFLAGS_OTHER})
     link_libraries( ${GTK_LIBRARIES} )
+elseif (APPLE)
+    find_library(COCOA_LIBRARY Cocoa)
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${COCOA_LIBRARY})
 endif()
+
 
 
 set(MESSAGE_BOX "---------------------------")
@@ -32,9 +45,7 @@ include(cmake/glfw.cmake)
 include(cmake/assimp.cmake)
 include(cmake/shaderc.cmake)
 include(cmake/format.cmake)
-
-add_library(${PROJECT_NAME} STATIC)
-add_library(XRLib::XRLib ALIAS XRLib)
+target_compile_definitions(${PROJECT_NAME} PRIVATE USE_STD_FORMAT)
 
 # Precompile header
 set(PCH_HEADER "src/pch.h")
@@ -54,6 +65,7 @@ file(GLOB_RECURSE XRLIB_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/*.mm
 )
 
 target_sources(${PROJECT_NAME} PRIVATE ${XRLIB_SOURCES})

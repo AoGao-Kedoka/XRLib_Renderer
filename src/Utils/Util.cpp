@@ -43,11 +43,18 @@ bool Util::CheckPlatformSupport() {
     LOGGER(LOGGER::INFO) << "Current platform " << platform;
     if (std::strcmp("windows", platform) == 0)
         return true;
-    if (std::strcmp("linux", platform) != 0) {
-        LOGGER(LOGGER::WARNING) << "Linux is not fully tested yet";
+    if (std::strcmp("linux", platform) == 0) {
+        LOGGER(LOGGER::WARNING) << "Linux is not fully tested yet.";
         return true;
-    } else
-        return false;
+    }
+    if (std::strcmp("osx", platform) == 0) {
+        std::string message{"OSX is currently very buggy, use at your own risk!"};
+        LOGGER(LOGGER::WARNING) << message;
+        boxer::show(message.c_str(), "WARNING", boxer::Style::Warning);
+        return true;
+    } 
+    LOGGER(LOGGER::ERR) << "Unsuppored platform";
+    return false;
 }
 
 static std::filesystem::path GetUserHomeDirectory() {
@@ -88,7 +95,7 @@ std::vector<const char*> Util::SplitStringToCharPtr(const std::string& input) {
 
 void Util::ErrorPopup(std::string&& message) {
     LOGGER(LOGGER::ERR) << message;
-    boxer::show(message.c_str(), "OK", boxer::Style::Error);
+    boxer::show(message.c_str(), "ERROR", boxer::Style::Error);
     throw std::runtime_error(message.c_str());
 }
 
@@ -138,7 +145,7 @@ std::vector<uint32_t> Util::ReadBinaryFile(const std::string& filePath) {
 bool Util::WriteFile(const std::string& filePath, const std::vector<uint32_t>& data) {
      std::ofstream outFile(filePath, std::ios::binary);
     if (!outFile.is_open()) {
-#ifdef __cpp_lib_format
+#if __has_include(<format>)
         ErrorPopup(std::format("Error: Cannot open file {} for writing", filePath));
 #else
         ErrorPopup(fmt::format("Error: Cannot open file {} for writing", filePath));
@@ -149,7 +156,7 @@ bool Util::WriteFile(const std::string& filePath, const std::vector<uint32_t>& d
 
     outFile.write(reinterpret_cast<const char*>(data.data()), data.size() * sizeof(uint32_t));
     if (!outFile.good()) {
-#ifdef __cpp_lib_format
+#if __has_include(<format>)
         ErrorPopup(std::format("Error writing to file: {}", filePath));
 #else
         ErrorPopup(fmt::format("Error writing to file: {}", filePath));

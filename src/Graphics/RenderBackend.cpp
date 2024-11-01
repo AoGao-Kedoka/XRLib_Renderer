@@ -74,7 +74,7 @@ void RenderBackend::Run(uint32_t& imageIndex) {
     if (!xrCore->IsXRValid()) {
         auto result = vkAcquireNextImageKHR(vkCore->GetRenderDevice(), swapchain->GetSwaphcain(), UINT64_MAX,
                                             vkCore->GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
             auto [width, height] = WindowHandler::GetFrameBufferSize();
             EventSystem::TriggerEvent(Events::XRLIB_EVENT_WINDOW_RESIZED, width, height);
             return;
