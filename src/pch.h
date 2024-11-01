@@ -19,7 +19,12 @@
 #include <utility>
 #include <variant>
 #include <vector>
+
+#if __has_include(<format>)
 #include <format>
+#else
+#include "fmt/format.h"
+#endif
 
 #include <vulkan/vulkan.h>
 

@@ -31,6 +31,7 @@ include(cmake/glm.cmake)
 include(cmake/glfw.cmake)
 include(cmake/assimp.cmake)
 include(cmake/shaderc.cmake)
+include(cmake/format.cmake)
 
 add_library(${PROJECT_NAME} STATIC)
 add_library(XRLib::XRLib ALIAS XRLib)
@@ -65,6 +66,9 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     glfw
     ${ASSIMP_DEPS}
 )
+if (NOT HAS_STD_FORMAT)
+    target_link_libraries( ${PROJECT_NAME} PUBLIC fmt::fmt)
+endif()
 
 # Export targets for use in other projects
 include(CMakePackageConfigHelpers)

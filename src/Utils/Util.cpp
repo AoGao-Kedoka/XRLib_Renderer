@@ -138,13 +138,22 @@ std::vector<uint32_t> Util::ReadBinaryFile(const std::string& filePath) {
 bool Util::WriteFile(const std::string& filePath, const std::vector<uint32_t>& data) {
      std::ofstream outFile(filePath, std::ios::binary);
     if (!outFile.is_open()) {
+#ifdef __cpp_lib_format
         ErrorPopup(std::format("Error: Cannot open file {} for writing", filePath));
+#else
+        ErrorPopup(fmt::format("Error: Cannot open file {} for writing", filePath));
+#endif
+
         return false;
     }
 
     outFile.write(reinterpret_cast<const char*>(data.data()), data.size() * sizeof(uint32_t));
     if (!outFile.good()) {
+#ifdef __cpp_lib_format
         ErrorPopup(std::format("Error writing to file: {}", filePath));
+#else
+        ErrorPopup(fmt::format("Error writing to file: {}", filePath));
+#endif
         return false;
     }
 
