@@ -19,6 +19,7 @@ Scene::Scene() : done(false), stop(false) {
             Transform defaultTransform;
             lights.push_back({defaultTransform, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.5f});
         }
+
     };
     EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_INIT_STARTED, allMeshesLoadCallback);
 }
@@ -67,6 +68,18 @@ void Scene::WaitForAllMeshesToLoad() {
         future.get();
     }
 }
+void Scene::AddNewMesh(const Mesh& newMesh, const MeshLoadInfo& meshLoadInfo) {
+    std::lock_guard<std::mutex> lock(queueMutex);
+    meshes[meshLoadInfo.localLoadingIndex] = newMesh;
+    LOADING_STATUS_COUNTER++;
+}
+
+void CreateTempTexture(XRLib::Scene::Mesh& newMesh, uint8_t color) {
+    newMesh.textureChannels = 4;
+    newMesh.textureHeight = 1;
+    newMesh.textureWidth = 1;
+    newMesh.textureData.resize(newMesh.textureChannels * newMesh.textureHeight * newMesh.textureWidth, color);
+}
 
 void Scene::LoadMesh(const MeshLoadInfo& meshLoadInfo) {
     Assimp::Importer importer;
@@ -75,14 +88,19 @@ void Scene::LoadMesh(const MeshLoadInfo& meshLoadInfo) {
         importer.ReadFile(meshLoadInfo.meshPath, aiProcess_Triangulate | aiProcess_FlipUVs |
                                                      aiProcess_JoinIdenticalVertices | aiProcess_PreTransformVertices);
 
+    Mesh newMesh;
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         LOGGER(LOGGER::ERR) << importer.GetErrorString();
+        Transform transform;
+        newMesh.transform = transform;
+        newMesh.name = meshLoadInfo.meshPath;
+        CreateTempTexture(newMesh, 255);
+        AddNewMesh(newMesh, meshLoadInfo);
         return;
     }
 
     for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
         aiMesh* aiMesh = scene->mMeshes[i];
-        Mesh newMesh;
 
         // Process vertices
         for (unsigned int j = 0; j < aiMesh->mNumVertices; j++) {
@@ -167,19 +185,13 @@ void Scene::LoadMesh(const MeshLoadInfo& meshLoadInfo) {
         {
 
             if (newMesh.textureData.empty()) {
-                // create temporary white texture
-                newMesh.textureChannels = 4;
-                newMesh.textureHeight = 1;
-                newMesh.textureWidth = 1;
-                newMesh.textureData.resize(newMesh.textureChannels * newMesh.textureHeight * newMesh.textureWidth, 255);
+                CreateTempTexture(newMesh, 255);
             }
 
             newMesh.name = meshLoadInfo.meshPath;
             newMesh.transform = meshLoadInfo.transform;
-            std::lock_guard<std::mutex> lock(queueMutex);
-            meshes[meshLoadInfo.localLoadingIndex] = newMesh;
-            LOADING_STATUS_COUNTER++;
-            LOGGER(LOGGER::INFO) << "Loaded mesh: " << meshLoadInfo.meshPath;
+            AddNewMesh(newMesh, meshLoadInfo);
+            LOGGER(LOGGER::INFO) << "Loaded mesh: " << aiMesh->mName.C_Str();
         }
     }
 

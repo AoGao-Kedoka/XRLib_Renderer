@@ -34,6 +34,9 @@ Buffer::~Buffer() {
 }
 
 void Buffer::UpdateBuffer(VkDeviceSize size, void* data) {
+    if (size == 0)
+        return;
+
     auto cb = CommandBuffer::BeginSingleTimeCommands(core);
     vkCmdUpdateBuffer(cb->GetCommandBuffer(), buffer, 0, size, data);
     CommandBuffer::EndSingleTimeCommands(std::move(cb));

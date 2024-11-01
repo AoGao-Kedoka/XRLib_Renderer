@@ -24,7 +24,8 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
     InitVertexIndexBuffers();
 
     if (passesToAdd.empty()) {
-        VulkanDefaults::PrepareDefaultStereoRenderPasses(vkCore, scene, viewProj, RenderPasses, swapchain->GetSwapchainImages());
+        VulkanDefaults::PrepareDefaultStereoRenderPasses(vkCore, scene, viewProj, RenderPasses,
+                                                         swapchain->GetSwapchainImages());
     } else {
         LOGGER(LOGGER::INFO) << "Using custom render pass";
         // TODO: custom render pass
@@ -42,27 +43,38 @@ void RenderBackend::GetSwapchainInfo() {
     swapchainImages.resize(swapchainImageCount);
     for (uint32_t i = 0; i < swapchainImageCount; ++i) {
         auto [width, height] = xrCore->SwapchainExtent();
-        swapchainImages[i] = std::make_unique<Image>(vkCore, xrCore->GetSwapchainImages()[i].image,
-                                                     static_cast<VkFormat>(xrCore->SwapchainFormats()[0]), width, height, 2);
+        swapchainImages[i] =
+            std::make_unique<Image>(vkCore, xrCore->GetSwapchainImages()[i].image,
+                                    static_cast<VkFormat>(xrCore->SwapchainFormats()[0]), width, height, 2);
     }
-
 }
 
 void RenderBackend::InitVertexIndexBuffers() {
+    if (scene->Meshes().empty()) {
+        return;
+    }
     // init vertex buffer and index buffer
+    vertexBuffers.resize(scene->Meshes().size());
+    indexBuffers.resize(scene->Meshes().size());
     for (int i = 0; i < scene->Meshes().size(); ++i) {
         auto mesh = scene->Meshes()[i];
+        if (mesh.vertices.empty() || mesh.indices.empty()) {
+            vertexBuffers[i] = nullptr;
+            indexBuffers[i] = nullptr;
+            continue;
+        }
+
         void* verticesData = static_cast<void*>(mesh.vertices.data());
         void* indicesData = static_cast<void*>(mesh.indices.data());
-        vertexBuffers.push_back(
+        vertexBuffers[i] = 
             std::make_unique<Buffer>(vkCore, sizeof(mesh.vertices[0]) * mesh.vertices.size(),
                                      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verticesData,
-                                     true, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+                                     true, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        indexBuffers.push_back(
+        indexBuffers[i] = 
             std::make_unique<Buffer>(vkCore, sizeof(mesh.indices[0]) * mesh.indices.size(),
                                      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicesData,
-                                     true, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT));
+                                     true, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT);
     }
 }
 
@@ -89,10 +101,14 @@ void RenderBackend::Run(uint32_t& imageIndex) {
     auto& currentPass = *RenderPasses[currentPassIndex];
     commandBuffer.StartRecord().StartPass(currentPass, imageIndex).BindDescriptorSets(currentPass, 0);
     for (uint32_t i = 0; i < scene->Meshes().size(); ++i) {
-        commandBuffer.PushConstant(currentPass, sizeof(uint32_t), &i)
-            .BindVertexBuffer(0, {vertexBuffers[i]->GetBuffer()}, {0})
-            .BindIndexBuffer(indexBuffers[i]->GetBuffer(), 0)
-            .DrawIndexed(scene->Meshes()[i].indices.size(), 1, 0, 0, 0);
+        commandBuffer.PushConstant(currentPass, sizeof(uint32_t), &i);
+        if (!vertexBuffers.empty() && !indexBuffers.empty() && vertexBuffers[i] != nullptr &&
+            indexBuffers[i] != nullptr) {
+            commandBuffer.BindVertexBuffer(0, {vertexBuffers[i]->GetBuffer()}, {0})
+                .BindIndexBuffer(indexBuffers[i]->GetBuffer(), 0);
+        }
+
+        commandBuffer.DrawIndexed(scene->Meshes()[i].indices.size(), 1, 0, 0, 0);
     }
 
     // represents how many passes left to draw

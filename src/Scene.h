@@ -63,6 +63,9 @@ class Scene {
     void LoadMesh(const MeshLoadInfo& meshLoadInfo);
     void MeshLoadingThread();
     void Validate();
+    void AddNewMesh(const Mesh& newMesh, const MeshLoadInfo& meshLoadInfo);
+
+   private:
     std::vector<Mesh> meshes;
     std::vector<Light> lights;
 

@@ -151,6 +151,11 @@ std::shared_ptr<Buffer> CreateModelPositionsBuffer(std::shared_ptr<VkCore> core,
         modelPositions[i] = scene->Meshes()[i].transform.GetMatrix();
     }
 
+    if (modelPositions.empty()) {
+        Transform tempTransform;
+        modelPositions.push_back(tempTransform.GetMatrix());
+    }
+
     auto modelPositionsBuffer =
         std::make_shared<Buffer>(core, sizeof(glm::mat4) * modelPositions.size(),
                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
@@ -186,6 +191,13 @@ std::pair<std::shared_ptr<Buffer>, std::shared_ptr<Buffer>> CreateLightBuffer(st
 std::vector<std::shared_ptr<Image>> CreateTextures(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene) {
 
     std::vector<std::shared_ptr<Image>> textures(scene->Meshes().size());
+    if (textures.empty()) {
+        std::vector<uint8_t> textureData;
+        textureData.resize(1 * 1 * 4, 255);
+        textures.push_back(std::make_shared<Image>(core, textureData, 1, 1, 4, VK_FORMAT_R8G8B8A8_SRGB));
+        return textures;
+    }
+
     for (int i = 0; i < textures.size(); ++i) {
         textures[i] = std::make_shared<Image>(core, scene->Meshes()[i].textureData, scene->Meshes()[i].textureWidth,
                                               scene->Meshes()[i].textureHeight, scene->Meshes()[i].textureChannels,
@@ -244,7 +256,7 @@ void PrepareRenderPassesCommon(std::shared_ptr<VkCore> core, std::shared_ptr<Sce
 void VulkanDefaults::PrepareDefaultStereoRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
                                                       Primitives::ViewProjectionStereo& viewProj,
                                                       std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
-    std::vector<std::unique_ptr<Image>>& swapchainImages) {
+                                                      std::vector<std::unique_ptr<Image>>& swapchainImages) {
 
     auto viewProjBuffer = CreateViewProjBuffer(core, viewProj);
     auto modelPositionsBuffer = CreateModelPositionsBuffer(core, scene);
@@ -254,7 +266,8 @@ void VulkanDefaults::PrepareDefaultStereoRenderPasses(std::shared_ptr<VkCore> co
 
     std::vector<DescriptorLayoutElement> modelLayoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
     std::vector<DescriptorLayoutElement> lightsLayoutElements{{lightsCountBuffer}, {lightsBuffer}};
-    PrepareRenderPassesCommon(core, scene, renderPasses, swapchainImages, {modelLayoutElements, lightsLayoutElements}, true);
+    PrepareRenderPassesCommon(core, scene, renderPasses, swapchainImages, {modelLayoutElements, lightsLayoutElements},
+                              true);
 }
 
 void VulkanDefaults::PrepareDefaultFlatRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
@@ -271,8 +284,8 @@ void VulkanDefaults::PrepareDefaultFlatRenderPasses(std::shared_ptr<VkCore> core
 
     std::vector<DescriptorLayoutElement> modelLayoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
     std::vector<DescriptorLayoutElement> lightsLayoutElements{{lightsCountBuffer}, {lightsBuffer}};
-    PrepareRenderPassesCommon(core, scene, renderPasses, swapchainImages,
-                              {modelLayoutElements, lightsLayoutElements}, false);
+    PrepareRenderPassesCommon(core, scene, renderPasses, swapchainImages, {modelLayoutElements, lightsLayoutElements},
+                              false);
 
     EventSystem::Callback<int> bufferOnKeyShouldUpdateCallback = [scene, &viewProj, viewProjBuffer](int keyCode) {
         viewProj.view = scene->CameraTransform().GetMatrix();
