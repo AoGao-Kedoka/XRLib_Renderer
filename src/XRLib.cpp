@@ -39,7 +39,7 @@ XRLib& XRLib::SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath) {
 #elif defined(__linux__)
     setenv(env_name, fullPath.generic_string().c_str(), 1);
 #else
-    Util::ERR("Platform not supported")
+    Util::ErrorPopup("Platform not supported");
 #endif
     return *this;
 }
