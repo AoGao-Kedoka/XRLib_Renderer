@@ -21,6 +21,10 @@ void WindowHandler::Init(std::shared_ptr<Info> info) {
     glfwMakeContextCurrent(window);
 }
 
+void WindowHandler::Deinitialize() {
+    glfwDestroyWindow(window);
+}
+
 void WindowHandler::ActivateInput() {
     glfwSetMouseButtonCallback(window, MouseButtonCallback);
     glfwSetCursorPosCallback(window, MouseMoveCallback);

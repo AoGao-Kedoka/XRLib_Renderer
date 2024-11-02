@@ -31,7 +31,6 @@ RenderPass::RenderPass(std::shared_ptr<VkCore> core, std::vector<std::unique_ptr
 }
 
 RenderPass::~RenderPass() {
-    LOGGER(LOGGER::DEBUG) << "render pass destructor called";
     if (!core)
         return;
     CleanupFrameBuffers();

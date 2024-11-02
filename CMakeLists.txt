@@ -65,8 +65,10 @@ file(GLOB_RECURSE XRLIB_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/lib/*.mm
 )
+if (APPLE)
+    list(APPEND XRLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/lib/boxer_mac.mm)
+endif()
 
 target_sources(${PROJECT_NAME} PRIVATE ${XRLIB_SOURCES})
 

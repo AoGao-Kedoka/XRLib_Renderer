@@ -65,7 +65,6 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fra
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
-
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.pushConstantRangeCount = 1;
@@ -80,7 +79,6 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fra
             pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
         }
     }
-
 
     std::vector<VkDescriptorSetLayout> layouts(descriptorSets.size());
     pipelineLayoutInfo.setLayoutCount = descriptorSets.size();
@@ -128,7 +126,6 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fra
 }
 
 Pipeline::~Pipeline() {
-    LOGGER(LOGGER::DEBUG) << "Pipeline destructor called";
     if (!core)
         return;
     VkUtil::VkSafeClean(vkDestroyPipelineLayout, core->GetRenderDevice(), pipelineLayout, nullptr);

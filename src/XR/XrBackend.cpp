@@ -4,7 +4,7 @@ namespace XRLib {
 namespace XR {
 XrBackend::XrBackend(std::shared_ptr<Info> info, std::shared_ptr<XRLib::Graphics::VkCore> core,
                      std::shared_ptr<XrCore> xrCore)
-    : info{info}, vkCore{core}, xrCore{xrCore}{
+    : info{info}, vkCore{core}, xrCore{xrCore} {
     try {
         for (const auto layer : apiLayers) {
             bool res = XrUtil::XrCheckLayerSupport(layer.c_str());
@@ -299,7 +299,7 @@ XrResult XrBackend::StartFrame(uint32_t& imageIndex) {
 
     XrFrameWaitInfo frameWaitInfo{XR_TYPE_FRAME_WAIT_INFO};
     xrCore->GetXrFrameState().type = XR_TYPE_FRAME_STATE;
-    if (result = xrWaitFrame(xrCore->GetXRSession(), &frameWaitInfo, &xrCore->GetXrFrameState())) {
+    if ((result = xrWaitFrame(xrCore->GetXRSession(), &frameWaitInfo, &xrCore->GetXrFrameState())) != XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to wait frame";
         return result;
     }
@@ -358,7 +358,7 @@ XrResult XrBackend::EndFrame(uint32_t& imageIndex) {
     frameEndInfo.layers = layers.data();
     frameEndInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
     if ((result = xrEndFrame(xrCore->GetXRSession(), &frameEndInfo)) != XR_SUCCESS) {
-        Util::ErrorPopup("Failed to end frame with error: " + result);
+        Util::ErrorPopup("Failed to end frame");
     }
 
     return XR_SUCCESS;

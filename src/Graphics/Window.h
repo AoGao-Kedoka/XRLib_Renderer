@@ -15,6 +15,7 @@ class WindowHandler {
     static void ShowWindow();
     static void Update();
     static bool WindowShouldClose();
+    static void Deinitialize();
     static std::pair<int, int> GetFrameBufferSize();
 
     //vulkan specific

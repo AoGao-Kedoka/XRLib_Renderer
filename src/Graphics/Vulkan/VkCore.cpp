@@ -12,8 +12,14 @@ VkCore::~VkCore() {
     }
 
     VkUtil::VkSafeClean(vkDestroyCommandPool, vkDevice, commandPool, nullptr);
+    VkUtil::VkSafeClean(vkDestroyDescriptorPool, vkDevice, descriptorPool, nullptr);
+
+    VkUtil::VkSafeClean(vkDestroySemaphore, vkDevice, imageAvailableSemaphore, nullptr);
+    VkUtil::VkSafeClean(vkDestroySemaphore, vkDevice, renderFinishedSemaphore, nullptr);
+    VkUtil::VkSafeClean(vkDestroyFence, vkDevice, inFlightFence, nullptr);
 
     VkUtil::VkSafeClean(vkDestroyDevice, vkDevice, nullptr);
+    VkUtil::VkSafeClean(vkDestroySurfaceKHR, vkInstance, surfaceFlat, nullptr);
     VkUtil::VkSafeClean(vkDestroyInstance, vkInstance, nullptr);
 }
 
@@ -75,7 +81,6 @@ void VkCore::CreateVkInstance(Info& info, const std::vector<const char*>& additi
 #ifdef __APPLE__
     instanceCreateInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
-
 
     if (info.validationLayer) {
         debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -211,8 +216,7 @@ void VkCore::CreateVkDevice(Info& info, const std::vector<const char*>& addition
         deviceCreateInfo.pNext = &physicalDeviceMultiviewFeatures;
     }
 
-    if (vkCreateDevice(GetRenderPhysicalDevice(), &deviceCreateInfo, nullptr, &vkDevice) !=
-        VK_SUCCESS) {
+    if (vkCreateDevice(GetRenderPhysicalDevice(), &deviceCreateInfo, nullptr, &vkDevice) != VK_SUCCESS) {
         Util::ErrorPopup("Failed to create vulkan device.");
     }
 
@@ -262,18 +266,17 @@ void VkCore::CreateCommandPool() {
     }
 }
 void VkCore::CreateDescriptorPool() {
-    VkDescriptorPoolSize poolSizes[] = {
-    {VK_DESCRIPTOR_TYPE_SAMPLER, 20},
-    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 20},
-    {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 20},
-    {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 20},
-    {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 20},
-    {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 20},
-    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 20},
-    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 20},
-    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 20},
-    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 20},
-    {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 20}};
+    VkDescriptorPoolSize poolSizes[] = {{VK_DESCRIPTOR_TYPE_SAMPLER, 20},
+                                        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 20},
+                                        {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 20},
+                                        {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 20},
+                                        {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 20},
+                                        {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 20},
+                                        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 20},
+                                        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 20},
+                                        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 20},
+                                        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 20},
+                                        {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 20}};
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = std::size(poolSizes);

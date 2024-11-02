@@ -8,7 +8,9 @@ XRLib::XRLib()
     Util::CheckPlatformSupport();
 }
 
-XRLib::~XRLib() = default;
+XRLib::~XRLib() {
+    Graphics::WindowHandler::Deinitialize();
+}
 
 XRLib& XRLib::SetApplicationName(const std::string& applicationName) {
     info->applicationName = applicationName;
