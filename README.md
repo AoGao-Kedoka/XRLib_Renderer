@@ -22,7 +22,7 @@ include(FetchContent)
 
 FetchContent_Declare(
     XRLib
-    GIT_REPOSITORY https://github.com/AoGao-Kedoka/XRLib.git
+    GIT_REPOSITORY https://github.com/AoGao-Kedoka/XRLib_Renderer.git
     GIT_TAG main
 )
 
