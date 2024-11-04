@@ -242,14 +242,14 @@ void PrepareRenderPassesCommon(std::shared_ptr<VkCore> core, std::shared_ptr<Sce
                                const std::vector<std::vector<DescriptorLayoutElement>>& layoutElementsVec,
                                bool isStereo) {
 
-    std::vector<std::shared_ptr<DescriptorSet>> descriptorSets;
+    std::vector<std::unique_ptr<DescriptorSet>> descriptorSets;
     for (auto& layoutElements : layoutElementsVec) {
-        auto descriptorSet = std::make_shared<DescriptorSet>(core, layoutElements);
+        auto descriptorSet = std::make_unique<DescriptorSet>(core, layoutElements);
         descriptorSet->AllocatePushConstant(sizeof(uint32_t));
-        descriptorSets.push_back(descriptorSet);
+        descriptorSets.push_back(std::move(descriptorSet));
     }
 
-    auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(core, isStereo, images, descriptorSets);
+    auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(core, isStereo, images, std::move(descriptorSets));
     renderPasses.push_back(std::move(graphicsRenderPass));
 }
 

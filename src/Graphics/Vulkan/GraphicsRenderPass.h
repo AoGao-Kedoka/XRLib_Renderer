@@ -10,19 +10,19 @@ namespace Graphics {
 class GraphicsRenderPass {
    public:
     GraphicsRenderPass(std::shared_ptr<VkCore> core, bool multiview, std::vector<std::unique_ptr<Image>>& renderTargets,
-                       std::vector<std::shared_ptr<DescriptorSet>> descriptorSets = {},
+                       std::vector<std::unique_ptr<DescriptorSet>>&& descriptorSets = {},
                        std::string vertexShaderPath = "", std::string fragmentShaderPath = "")
-        : core{core}, multiview{multiview}, descriptorSets{descriptorSets}{
+        : core{core}, multiview{multiview}, descriptorSets{std::move(descriptorSets)}{
         Shader vertexShader{core, vertexShaderPath, Shader::VERTEX_SHADER, multiview};
         Shader fragmentShader{core, fragmentShaderPath, Shader::FRAGMENT_SHADER, multiview};
         renderPass = std::make_shared<RenderPass>(core, renderTargets, multiview);
         pipeline = std::make_shared<Pipeline>(core, std::move(vertexShader), std::move(fragmentShader), renderPass,
-                                              descriptorSets);
+                                              this->descriptorSets);
     }
 
     RenderPass& GetRenderPass() { return *renderPass; }
     Pipeline& GetPipeline() { return *pipeline; }
-    std::vector<std::shared_ptr<DescriptorSet>> GetDescriptorSets() { return descriptorSets; }
+    std::vector<std::unique_ptr<DescriptorSet>>& GetDescriptorSets() { return descriptorSets; }
     bool Stereo() { return multiview; }
 
    private:
@@ -32,7 +32,7 @@ class GraphicsRenderPass {
 
     std::shared_ptr<RenderPass> renderPass;
     std::shared_ptr<Pipeline> pipeline;
-    std::vector<std::shared_ptr<DescriptorSet>> descriptorSets;
+    std::vector<std::unique_ptr<DescriptorSet>> descriptorSets;
     bool multiview;
 };
 }    // namespace Graphics

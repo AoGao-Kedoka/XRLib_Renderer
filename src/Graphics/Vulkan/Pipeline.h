@@ -11,21 +11,8 @@ class Pipeline {
     // TODO: compute pipeline
     Pipeline() = default;
     Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fragmentShader, std::shared_ptr<RenderPass> pass,
-             std::vector<std::shared_ptr<DescriptorSet>> descriptorSets);
+             const std::vector<std::unique_ptr<DescriptorSet>>& descriptorSets);
     ~Pipeline();
-
-    Pipeline(Pipeline&& other) noexcept
-        : core(std::exchange(other.core, nullptr)), pipeline(std::exchange(other.pipeline, VK_NULL_HANDLE)),
-          pipelineLayout(std::exchange(other.pipelineLayout, VK_NULL_HANDLE)) {}
-
-    Pipeline& operator=(Pipeline&& other) noexcept {
-        if (this != &other) {
-            core = std::exchange(other.core, nullptr);
-            pipeline = std::exchange(other.pipeline, VK_NULL_HANDLE);
-            pipelineLayout = std::exchange(other.pipelineLayout, VK_NULL_HANDLE);
-        }
-        return *this;
-    }
 
     VkPipeline& GetVkPipeline() { return pipeline; }
     VkPipelineLayout& GetVkPipelineLayout() { return pipelineLayout; }

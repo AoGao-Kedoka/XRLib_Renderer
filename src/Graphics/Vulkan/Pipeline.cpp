@@ -3,7 +3,7 @@
 namespace XRLib {
 namespace Graphics {
 Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fragmentShader,
-                   std::shared_ptr<RenderPass> renderPass, std::vector<std::shared_ptr<DescriptorSet>> descriptorSets)
+                   std::shared_ptr<RenderPass> renderPass, const std::vector<std::unique_ptr<DescriptorSet>>& descriptorSets)
     : core{core} {
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShader.GetShaderStageInfo(),
                                                       fragmentShader.GetShaderStageInfo()};

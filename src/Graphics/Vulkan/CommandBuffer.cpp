@@ -53,7 +53,7 @@ CommandBuffer& CommandBuffer::BindDescriptorSets(GraphicsRenderPass& pass, uint3
 
     std::vector<VkDescriptorSet> descriptorSets;
     descriptorSets.reserve(pass.GetDescriptorSets().size());
-    for (const auto descriptorSet : pass.GetDescriptorSets()) {
+    for (const auto& descriptorSet : pass.GetDescriptorSets()) {
         if (descriptorSet != nullptr) {
             descriptorSets.push_back(descriptorSet->GetVkDescriptorSet());
         }
