@@ -4,6 +4,18 @@ This is a personal library aimed at accelerating the development of XR applicati
 
 This project is currently in the very early stages of development and is subject to significant changes. As this is an ongoing personal project, stability and feature completeness cannot be guaranteed at this time.
 
+## Implementation Overview
+**Completed features**:
+- screen space and vr rendering
+- basic single-pass phong illumination
+- controller binding "/khr/simple_controller"
+
+**WIP**:
+- improve mesh loading
+- more controller profiles (Quest, Pico)
+- custom rendering support
+- xr mirror view
+
 ## Usage
 ```
 include(FetchContent)
