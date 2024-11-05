@@ -3,7 +3,7 @@
 namespace XRLib {
 namespace Graphics {
 Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fragmentShader,
-                   std::shared_ptr<RenderPass> renderPass, const std::vector<std::unique_ptr<DescriptorSet>>& descriptorSets)
+                   RenderPass& renderPass, const std::vector<std::unique_ptr<DescriptorSet>>& descriptorSets)
     : core{core} {
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShader.GetShaderStageInfo(),
                                                       fragmentShader.GetShaderStageInfo()};
@@ -112,7 +112,7 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fra
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = pipelineLayout;
-    pipelineInfo.renderPass = renderPass->GetVkRenderPass();
+    pipelineInfo.renderPass = renderPass.GetVkRenderPass();
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.pDepthStencilState = &depthStencil;
@@ -122,7 +122,7 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fra
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    renderPass->SetGraphicPipeline(&this->pipeline);
+    renderPass.SetGraphicPipeline(&this->pipeline);
 }
 
 Pipeline::~Pipeline() {

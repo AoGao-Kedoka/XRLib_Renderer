@@ -15,8 +15,8 @@ class GraphicsRenderPass {
         : core{core}, multiview{multiview}, descriptorSets{std::move(descriptorSets)}{
         Shader vertexShader{core, vertexShaderPath, Shader::VERTEX_SHADER, multiview};
         Shader fragmentShader{core, fragmentShaderPath, Shader::FRAGMENT_SHADER, multiview};
-        renderPass = std::make_shared<RenderPass>(core, renderTargets, multiview);
-        pipeline = std::make_shared<Pipeline>(core, std::move(vertexShader), std::move(fragmentShader), renderPass,
+        renderPass = std::make_unique<RenderPass>(core, renderTargets, multiview);
+        pipeline = std::make_unique<Pipeline>(core, std::move(vertexShader), std::move(fragmentShader), *renderPass,
                                               this->descriptorSets);
     }
 
@@ -30,8 +30,8 @@ class GraphicsRenderPass {
    private:
     std::shared_ptr<VkCore> core;
 
-    std::shared_ptr<RenderPass> renderPass;
-    std::shared_ptr<Pipeline> pipeline;
+    std::unique_ptr<RenderPass> renderPass;
+    std::unique_ptr<Pipeline> pipeline;
     std::vector<std::unique_ptr<DescriptorSet>> descriptorSets;
     bool multiview;
 };
