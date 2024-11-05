@@ -218,16 +218,6 @@ void Scene::MeshLoadingThread() {
     }
 }
 
-bool Scene::CheckTaskRunning() {
-    std::lock_guard<std::mutex> lock(queueMutex);
-    for (auto& future : futures) {
-        if (future.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
-            return true;
-        }
-    }
-    return false;
-}
-
 glm::mat4 Scene::CameraProjection() {
     auto [width, height] = Graphics::WindowHandler::GetFrameBufferSize();
     auto proj = glm::perspective(glm::radians(45.0f), width / (float)height, 0.1f, 10.0f);

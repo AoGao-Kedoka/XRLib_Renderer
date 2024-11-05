@@ -53,7 +53,7 @@ void RenderBackendFlat::OnMouseMovement(double deltaX, double deltaY) {
     auto& cam = scene->CameraTransform();
     auto camMatrix = cam.GetMatrix();
 
-    float sensitivity = 0.005f;
+    float sensitivity = 0.1f;
     float yaw = deltaX * sensitivity;
     float pitch = deltaY * sensitivity;
 

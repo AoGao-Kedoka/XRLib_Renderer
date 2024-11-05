@@ -50,7 +50,6 @@ class Scene {
     Scene& AddLights(const Light& light);
 
     void WaitForAllMeshesToLoad();
-    bool CheckTaskRunning();
 
     Transform& CameraTransform() { return cameraTransform; }
     glm::mat4 CameraProjection();

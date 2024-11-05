@@ -67,11 +67,15 @@ void WindowHandler::MouseMoveCallback(GLFWwindow* window, double xpos, double yp
         double deltaX = xpos - lastLeftX;
         double deltaY = ypos - lastLeftY;
         EventSystem::TriggerEvent(Events::XRLIB_EVENT_MOUSE_LEFT_MOVEMENT_EVENT, deltaX, deltaY);
+        lastLeftX = xpos;
+        lastLeftY = ypos;
     }
     if (rightMouseDown) {
         double deltaX = xpos - lastRightX;
         double deltaY = ypos - lastRightY;
         EventSystem::TriggerEvent(Events::XRLIB_EVENT_MOUSE_RIGHT_MOVEMENT_EVENT, deltaX, deltaY);
+        lastRightX = xpos;
+        lastRightY = ypos;
     }
 }
 
