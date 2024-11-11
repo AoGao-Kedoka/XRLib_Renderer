@@ -32,7 +32,8 @@ void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const 
 
     // prepare shader
     if (passesToAdd.empty()) {
-        VulkanDefaults::PrepareDefaultFlatRenderPasses(vkCore, scene, viewProj, RenderPasses, swapchain->GetSwapchainImages());
+        VulkanDefaults::PrepareDefaultFlatRenderPasses(vkCore, scene, viewProj, RenderPasses,
+                                                       swapchain->GetSwapchainImages());
     } else {
         LOGGER(LOGGER::INFO) << "Using custom render pass";
         //TODO: Custom renderpass
@@ -77,22 +78,22 @@ void RenderBackendFlat::OnKeyPressed(int keyCode) {
     float movementSensitivity = 0.02;
     auto& cam = scene->CameraTransform();
     if (keyCode == GLFW_KEY_W) {
-        cam = {glm::translate(cam.GetMatrix(), -cam.FrontVector() * movementSensitivity)};
+        cam.Translate(-cam.FrontVector() * movementSensitivity);
     }
     if (keyCode == GLFW_KEY_S) {
-        cam = {glm::translate(cam.GetMatrix(), -cam.BackVector() * movementSensitivity)};
+        cam.Translate(-cam.BackVector() * movementSensitivity);
     }
     if (keyCode == GLFW_KEY_A) {
-        cam = {glm::translate(cam.GetMatrix(), -cam.LeftVector() * movementSensitivity)};
+        cam.Translate(-cam.LeftVector() * movementSensitivity);
     }
     if (keyCode == GLFW_KEY_D) {
-        cam = {glm::translate(cam.GetMatrix(), -cam.RightVector() * movementSensitivity)};
+        cam.Translate(-cam.RightVector() * movementSensitivity);
     }
     if (keyCode == GLFW_KEY_SPACE) {
-        cam = {glm::translate(cam.GetMatrix(), -cam.UpVector() * movementSensitivity)};
+        cam.Translate(-cam.UpVector() * movementSensitivity);
     }
     if (keyCode == GLFW_KEY_LEFT_CONTROL) {
-        cam = {glm::translate(cam.GetMatrix(), -cam.DownVector() * movementSensitivity)};
+        cam.Translate(-cam.DownVector() * movementSensitivity);
     }
 }
 

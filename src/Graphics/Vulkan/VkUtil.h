@@ -53,7 +53,7 @@ class VkUtil {
             default:
                 logLevel = LOGGER::INFO;
         }
-        LOGGER(logLevel) << "Validation layer in Rendering backend: " << pCallbackData->pMessage;
+        LOGGER(logLevel) << "Vulkan backend: " << pCallbackData->pMessage;
         return VK_FALSE;
     }
 

@@ -52,7 +52,7 @@ class XrUtil {
             default:
                 logLevel = LOGGER::INFO;
         }
-        LOGGER(logLevel) << "Validation layer in XR backend: " << pCallbackData->message;
+        LOGGER(logLevel) << "OpenXR backend: " << pCallbackData->message;
         return XR_FALSE;
     }
 
