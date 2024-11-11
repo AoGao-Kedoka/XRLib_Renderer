@@ -57,6 +57,8 @@ void XRLib::Init(bool xr) {
     Graphics::WindowHandler::Init(info);
     InitRenderBackend();
 
+    SceneBackend().WaitForAllMeshesToLoad();
+
     renderBackend->Prepare(passesToAdd);
     initialized = true;
 

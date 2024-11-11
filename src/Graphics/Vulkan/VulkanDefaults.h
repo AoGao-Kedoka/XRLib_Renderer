@@ -2,8 +2,8 @@
 
 #include "Buffer.h"
 #include "GraphicsRenderPass.h"
-#include "Swapchain.h"
 #include "Scene.h"
+#include "Swapchain.h"
 
 namespace XRLib {
 namespace Graphics {
@@ -27,9 +27,6 @@ class VulkanDefaults {
                                                Primitives::ViewProjection& viewProj,
                                                std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
                                                std::vector<std::unique_ptr<Image>>& swapchainImages);
-
-   private:
-    std::vector<std::unique_ptr<DescriptorSet>> descriptorSets;
 };
 }    // namespace Graphics
 }    // namespace XRLib

@@ -144,11 +144,13 @@ const std::string VulkanDefaults::defaultPhongFrag = R"(
     }
 )";
 
-std::shared_ptr<Buffer> CreateModelPositionsBuffer(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene) {
-
-    std::vector<glm::mat4> modelPositions(scene->Meshes().size());
+////////////////////////////////////////////////////
+/// Default Buffers creation
+////////////////////////////////////////////////////
+std::unique_ptr<Buffer> CreateModelPositionBuffer(std::shared_ptr<VkCore> core, Scene& scene) {
+    std::vector<glm::mat4> modelPositions(scene.Meshes().size());
     for (int i = 0; i < modelPositions.size(); ++i) {
-        modelPositions[i] = scene->Meshes()[i].transform.GetMatrix();
+        modelPositions[i] = scene.Meshes()[i].transform.GetMatrix();
     }
 
     if (modelPositions.empty()) {
@@ -157,69 +159,30 @@ std::shared_ptr<Buffer> CreateModelPositionsBuffer(std::shared_ptr<VkCore> core,
     }
 
     auto modelPositionsBuffer =
-        std::make_shared<Buffer>(core, sizeof(glm::mat4) * modelPositions.size(),
+        std::make_unique<Buffer>(core, sizeof(glm::mat4) * modelPositions.size(),
                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                  static_cast<void*>(modelPositions.data()), false);
 
-    EventSystem::Callback<> modelPositionBufferCallback = [scene, modelPositionsBuffer]() {
-        std::vector<glm::mat4> modelPositions(scene->Meshes().size());
+    EventSystem::Callback<> modelPositionBufferCallback = [&scene, &buffer = *modelPositionsBuffer]() {
+        std::vector<glm::mat4> modelPositions(scene.Meshes().size());
         for (int i = 0; i < modelPositions.size(); ++i) {
-            modelPositions[i] = scene->Meshes()[i].transform.GetMatrix();
+            modelPositions[i] = scene.Meshes()[i].transform.GetMatrix();
         }
-        modelPositionsBuffer->UpdateBuffer(sizeof(glm::mat4) * modelPositions.size(),
-                                           static_cast<void*>(modelPositions.data()));
+        buffer.UpdateBuffer(sizeof(glm::mat4) * modelPositions.size(), static_cast<void*>(modelPositions.data()));
     };
 
     EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING, modelPositionBufferCallback);
-
     return modelPositionsBuffer;
 }
 
-std::pair<std::shared_ptr<Buffer>, std::shared_ptr<Buffer>> CreateLightBuffer(std::shared_ptr<VkCore> core,
-                                                                              std::shared_ptr<Scene> scene) {
-    VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    auto lightsBuffer = std::make_shared<Buffer>(core, sizeof(Scene::Light) * scene->Lights().size() + sizeof(int),
-                                                 usage, static_cast<void*>(scene->Lights().data()), false);
-    usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    int lightsCount = scene->Lights().size();
-    auto lightsCountBuffer =
-        std::make_shared<Buffer>(core, sizeof(int), usage, static_cast<void*>(&lightsCount), false);
-
-    return {lightsCountBuffer, lightsBuffer};
-}
-
-std::vector<std::shared_ptr<Image>> CreateTextures(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene) {
-
-    std::vector<std::shared_ptr<Image>> textures(scene->Meshes().size());
-    if (textures.empty()) {
-        std::vector<uint8_t> textureData;
-        textureData.resize(1 * 1 * 4, 255);
-        textures.push_back(std::make_shared<Image>(core, textureData, 1, 1, 4, VK_FORMAT_R8G8B8A8_SRGB));
-        return textures;
-    }
-
-    for (int i = 0; i < textures.size(); ++i) {
-        textures[i] = std::make_shared<Image>(core, scene->Meshes()[i].textureData, scene->Meshes()[i].textureWidth,
-                                              scene->Meshes()[i].textureHeight, scene->Meshes()[i].textureChannels,
-                                              VK_FORMAT_R8G8B8A8_SRGB);
-    }
-
-    return textures;
-}
-
-template <typename T>
-std::shared_ptr<Buffer> CreateViewProjBuffer(std::shared_ptr<VkCore> core, T& viewProj) {
-
-    return std::make_shared<Buffer>(core, sizeof(T),
-                                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                    static_cast<void*>(&viewProj), false);
-}
-
-void RegisterViewProjUpdateCallback(std::shared_ptr<Buffer> viewProjBuffer,
-                                    Primitives::ViewProjectionStereo& viewProj) {
+std::unique_ptr<Buffer> CreateViewProjectionBuffer(std::shared_ptr<VkCore> core,
+                                                   Primitives::ViewProjectionStereo& viewProj) {
+    auto viewProjBuffer = std::make_unique<Buffer>(
+        core, sizeof(viewProj), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        static_cast<void*>(&viewProj), false);
 
     EventSystem::Callback<std::vector<glm::mat4>, std::vector<glm::mat4>> bufferCamUpdateCallback =
-        [viewProjBuffer, &viewProj](std::vector<glm::mat4> views, std::vector<glm::mat4> projs) {
+        [&buffer = *viewProjBuffer, &viewProj](std::vector<glm::mat4> views, std::vector<glm::mat4> projs) {
             if (views.size() != 2 || projs.size() != 2) {
                 Util::ErrorPopup("Unknown view size, please use custom shader");
                 return;
@@ -230,26 +193,89 @@ void RegisterViewProjUpdateCallback(std::shared_ptr<Buffer> viewProjBuffer,
                 viewProj.projs[i] = projs[i];
             }
 
-            viewProjBuffer->UpdateBuffer(sizeof(Primitives::ViewProjectionStereo), static_cast<void*>(&viewProj));
+            buffer.UpdateBuffer(sizeof(Primitives::ViewProjectionStereo), static_cast<void*>(&viewProj));
         };
 
     EventSystem::RegisterListener(Events::XRLIB_EVENT_HEAD_MOVEMENT, bufferCamUpdateCallback);
+    return viewProjBuffer;
 }
 
-void PrepareRenderPassesCommon(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
-                               std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
-                               std::vector<std::unique_ptr<Image>>& images,
-                               const std::vector<std::vector<DescriptorLayoutElement>>& layoutElementsVec,
-                               bool isStereo) {
+std::unique_ptr<Buffer> CreateViewProjectionBuffer(std::shared_ptr<VkCore> core, Scene& scene,
+                                                   Primitives::ViewProjection& viewProj) {
+    auto viewProjBuffer = std::make_unique<Buffer>(
+        core, sizeof(viewProj), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        static_cast<void*>(&viewProj), false);
+    EventSystem::Callback<int> bufferOnKeyShouldUpdateCallback = [&scene, &viewProj,
+                                                                  &buffer1 = *viewProjBuffer](int keyCode) {
+        viewProj.view = scene.CameraTransform().GetMatrix();
+        buffer1.UpdateBuffer(sizeof(Primitives::ViewProjection), static_cast<void*>(&viewProj));
+    };
 
-    std::vector<std::unique_ptr<DescriptorSet>> descriptorSets;
-    for (auto& layoutElements : layoutElementsVec) {
-        auto descriptorSet = std::make_unique<DescriptorSet>(core, layoutElements);
-        descriptorSet->AllocatePushConstant(sizeof(uint32_t));
-        descriptorSets.push_back(std::move(descriptorSet));
+    EventSystem::RegisterListener(Events::XRLIB_EVENT_KEY_PRESSED, bufferOnKeyShouldUpdateCallback);
+
+    EventSystem::Callback<double, double> bufferOnMouseShouldUpdateCallback =
+        [&scene, &viewProj, &buffer2 = *viewProjBuffer](double deltaX, double deltaY) {
+            viewProj.view = scene.CameraTransform().GetMatrix();
+            buffer2.UpdateBuffer(sizeof(Primitives::ViewProjection), static_cast<void*>(&viewProj));
+        };
+
+    EventSystem::RegisterListener(Events::XRLIB_EVENT_MOUSE_RIGHT_MOVEMENT_EVENT, bufferOnMouseShouldUpdateCallback);
+    return viewProjBuffer;
+}
+
+std::vector<std::unique_ptr<Image>> CreateTextures(std::shared_ptr<VkCore> core, Scene& scene) {
+    std::vector<std::unique_ptr<Image>> textures(scene.Meshes().size());
+    if (textures.empty()) {
+        std::vector<uint8_t> textureData;
+        textureData.resize(1 * 1 * 4, 255);
+        textures.push_back(std::make_unique<Image>(core, textureData, 1, 1, 4, VK_FORMAT_R8G8B8A8_SRGB));
+        return textures;
     }
 
-    auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(core, isStereo, images, std::move(descriptorSets));
+    for (int i = 0; i < textures.size(); ++i) {
+        textures[i] = std::make_unique<Image>(core, scene.Meshes()[i].textureData, scene.Meshes()[i].textureWidth,
+                                              scene.Meshes()[i].textureHeight, scene.Meshes()[i].textureChannels,
+                                              VK_FORMAT_R8G8B8A8_SRGB);
+    }
+
+    return textures;
+}
+
+std::pair<std::unique_ptr<Buffer>, std::unique_ptr<Buffer>> CreateLightBuffer(std::shared_ptr<VkCore> core,
+                                                                              Scene& scene) {
+    VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    auto lightsBuffer = std::make_unique<Buffer>(core, sizeof(Scene::Light) * scene.Lights().size() + sizeof(int),
+                                                 usage, static_cast<void*>(scene.Lights().data()), false);
+    usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    int lightsCount = scene.Lights().size();
+    auto lightsCountBuffer =
+        std::make_unique<Buffer>(core, sizeof(int), usage, static_cast<void*>(&lightsCount), false);
+
+    return {std::move(lightsCountBuffer), std::move(lightsBuffer)};
+}
+
+////////////////////////////////////////////////////
+// Default DescriptorLayout and Renderpasses binding
+////////////////////////////////////////////////////
+void PrepareDefaultRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
+                                std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
+                                std::vector<std::unique_ptr<Image>>& swapchainImages, bool isStereo,
+                                std::unique_ptr<Buffer> viewProjBuffer) {
+    auto modelPositionsBuffer = std::move(CreateModelPositionBuffer(core, *scene));
+    auto textures = std::move(CreateTextures(core, *scene));
+    auto [lightsCountBuffer, lightsBuffer] = std::move(CreateLightBuffer(core, *scene));
+
+    std::vector<std::unique_ptr<DescriptorSet>> descriptorSets;
+    auto descriptorSet = std::make_unique<DescriptorSet>(core, viewProjBuffer, modelPositionsBuffer, textures);
+    descriptorSet->AllocatePushConstant(sizeof(uint32_t));
+    descriptorSets.push_back(std::move(descriptorSet));
+
+    auto descriptorSet2 = std::make_unique<DescriptorSet>(core, lightsCountBuffer, lightsBuffer);
+    descriptorSet2->AllocatePushConstant(sizeof(uint32_t));
+    descriptorSets.push_back(std::move(descriptorSet2));
+
+    auto graphicsRenderPass =
+        std::make_unique<GraphicsRenderPass>(core, isStereo, swapchainImages, std::move(descriptorSets));
     renderPasses.push_back(std::move(graphicsRenderPass));
 }
 
@@ -257,17 +283,8 @@ void VulkanDefaults::PrepareDefaultStereoRenderPasses(std::shared_ptr<VkCore> co
                                                       Primitives::ViewProjectionStereo& viewProj,
                                                       std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
                                                       std::vector<std::unique_ptr<Image>>& swapchainImages) {
-
-    auto viewProjBuffer = CreateViewProjBuffer(core, viewProj);
-    auto modelPositionsBuffer = CreateModelPositionsBuffer(core, scene);
-    auto [lightsCountBuffer, lightsBuffer] = CreateLightBuffer(core, scene);
-    auto textures = CreateTextures(core, scene);
-    RegisterViewProjUpdateCallback(viewProjBuffer, viewProj);
-
-    std::vector<DescriptorLayoutElement> modelLayoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
-    std::vector<DescriptorLayoutElement> lightsLayoutElements{{lightsCountBuffer}, {lightsBuffer}};
-    PrepareRenderPassesCommon(core, scene, renderPasses, swapchainImages, {modelLayoutElements, lightsLayoutElements},
-                              true);
+    PrepareDefaultRenderPasses(core, scene, renderPasses, swapchainImages, true,
+                               std::move(CreateViewProjectionBuffer(core, viewProj)));
 }
 
 void VulkanDefaults::PrepareDefaultFlatRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
@@ -276,31 +293,9 @@ void VulkanDefaults::PrepareDefaultFlatRenderPasses(std::shared_ptr<VkCore> core
                                                     std::vector<std::unique_ptr<Image>>& swapchainImages) {
     viewProj.view = scene->CameraTransform().GetMatrix();
     viewProj.proj = scene->CameraProjection();
-
-    auto viewProjBuffer = CreateViewProjBuffer(core, viewProj);
-    auto modelPositionsBuffer = CreateModelPositionsBuffer(core, scene);
-    auto [lightsCountBuffer, lightsBuffer] = CreateLightBuffer(core, scene);
-    auto textures = CreateTextures(core, scene);
-
-    std::vector<DescriptorLayoutElement> modelLayoutElements{{viewProjBuffer}, {modelPositionsBuffer}, {textures}};
-    std::vector<DescriptorLayoutElement> lightsLayoutElements{{lightsCountBuffer}, {lightsBuffer}};
-    PrepareRenderPassesCommon(core, scene, renderPasses, swapchainImages, {modelLayoutElements, lightsLayoutElements},
-                              false);
-
-    EventSystem::Callback<int> bufferOnKeyShouldUpdateCallback = [scene, &viewProj, viewProjBuffer](int keyCode) {
-        viewProj.view = scene->CameraTransform().GetMatrix();
-        viewProjBuffer->UpdateBuffer(sizeof(Primitives::ViewProjection), static_cast<void*>(&viewProj));
-    };
-
-    EventSystem::RegisterListener(Events::XRLIB_EVENT_KEY_PRESSED, bufferOnKeyShouldUpdateCallback);
-
-    EventSystem::Callback<double, double> bufferOnMouseShouldUpdateCallback =
-        [scene, &viewProj, viewProjBuffer](double deltaX, double deltaY) {
-            viewProj.view = scene->CameraTransform().GetMatrix();
-            viewProjBuffer->UpdateBuffer(sizeof(Primitives::ViewProjection), static_cast<void*>(&viewProj));
-        };
-
-    EventSystem::RegisterListener(Events::XRLIB_EVENT_MOUSE_RIGHT_MOVEMENT_EVENT, bufferOnMouseShouldUpdateCallback);
+    PrepareDefaultRenderPasses(core, scene, renderPasses, swapchainImages, false,
+                               std::move(CreateViewProjectionBuffer(core, *scene, viewProj)));
 }
+
 }    // namespace Graphics
 }    // namespace XRLib
