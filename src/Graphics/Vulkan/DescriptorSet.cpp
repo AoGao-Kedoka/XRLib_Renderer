@@ -12,7 +12,7 @@ void DescriptorSet::Init() {
     for (int i = 0; i < elements.size(); ++i) {
         bindings[i].binding = i;
         bindings[i].descriptorType = elements[i].GetType();
-        if (const auto images = std::get_if<std::vector<std::unique_ptr<Image>>>(&elements[i].data)) {
+        if (const auto images = std::get_if<std::vector<std::shared_ptr<Image>>>(&elements[i].data)) {
             bindings[i].descriptorCount = images->size();
         } else {
             bindings[i].descriptorCount = 1;
@@ -52,7 +52,7 @@ void DescriptorSet::Init() {
         descriptorWrites[i].dstArrayElement = 0;
         descriptorWrites[i].descriptorType = elements[i].GetType();
 
-        if (const auto bufferPtr = std::get_if<std::unique_ptr<Buffer>>(&elements[i].data)) {
+        if (const auto bufferPtr = std::get_if<std::shared_ptr<Buffer>>(&elements[i].data)) {
             // Store buffer info in bufferInfos vector
             bufferInfos[i].buffer = (*bufferPtr)->GetBuffer();
             bufferInfos[i].offset = 0;
@@ -61,10 +61,10 @@ void DescriptorSet::Init() {
             descriptorWrites[i].descriptorCount = 1;
             descriptorWrites[i].pBufferInfo = &bufferInfos[i];
 
-        } else if (const auto images = std::get_if<std::vector<std::unique_ptr<Image>>>(&elements[i].data)) {
+        } else if (const auto images = std::get_if<std::vector<std::shared_ptr<Image>>>(&elements[i].data)) {
             imageInfos.resize(images->size());
             for (int j = 0; j < imageInfos.size(); ++j) {
-                std::unique_ptr<Image>& currentImage = images->at(j);
+                std::shared_ptr<Image>& currentImage = images->at(j);
 
                 imageInfos[j].imageView = currentImage->GetImageView();
                 imageInfos[j].sampler = currentImage->GetSampler();

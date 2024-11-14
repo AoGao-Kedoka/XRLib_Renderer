@@ -147,7 +147,7 @@ const std::string VulkanDefaults::defaultPhongFrag = R"(
 ////////////////////////////////////////////////////
 /// Default Buffers creation
 ////////////////////////////////////////////////////
-std::unique_ptr<Buffer> CreateModelPositionBuffer(std::shared_ptr<VkCore> core, Scene& scene) {
+std::shared_ptr<Buffer> CreateModelPositionBuffer(std::shared_ptr<VkCore> core, Scene& scene) {
     std::vector<glm::mat4> modelPositions(scene.Meshes().size());
     for (int i = 0; i < modelPositions.size(); ++i) {
         modelPositions[i] = scene.Meshes()[i].transform.GetMatrix();
@@ -159,7 +159,7 @@ std::unique_ptr<Buffer> CreateModelPositionBuffer(std::shared_ptr<VkCore> core, 
     }
 
     auto modelPositionsBuffer =
-        std::make_unique<Buffer>(core, sizeof(glm::mat4) * modelPositions.size(),
+        std::make_shared<Buffer>(core, sizeof(glm::mat4) * modelPositions.size(),
                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                  static_cast<void*>(modelPositions.data()), false);
 
@@ -175,9 +175,9 @@ std::unique_ptr<Buffer> CreateModelPositionBuffer(std::shared_ptr<VkCore> core, 
     return modelPositionsBuffer;
 }
 
-std::unique_ptr<Buffer> CreateViewProjectionBuffer(std::shared_ptr<VkCore> core,
+std::shared_ptr<Buffer> CreateViewProjectionBuffer(std::shared_ptr<VkCore> core,
                                                    Primitives::ViewProjectionStereo& viewProj) {
-    auto viewProjBuffer = std::make_unique<Buffer>(
+    auto viewProjBuffer = std::make_shared<Buffer>(
         core, sizeof(viewProj), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         static_cast<void*>(&viewProj), false);
 
@@ -200,9 +200,9 @@ std::unique_ptr<Buffer> CreateViewProjectionBuffer(std::shared_ptr<VkCore> core,
     return viewProjBuffer;
 }
 
-std::unique_ptr<Buffer> CreateViewProjectionBuffer(std::shared_ptr<VkCore> core, Scene& scene,
+std::shared_ptr<Buffer> CreateViewProjectionBuffer(std::shared_ptr<VkCore> core, Scene& scene,
                                                    Primitives::ViewProjection& viewProj) {
-    auto viewProjBuffer = std::make_unique<Buffer>(
+    auto viewProjBuffer = std::make_shared<Buffer>(
         core, sizeof(viewProj), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         static_cast<void*>(&viewProj), false);
     EventSystem::Callback<int> bufferOnKeyShouldUpdateCallback = [&scene, &viewProj,
@@ -223,17 +223,17 @@ std::unique_ptr<Buffer> CreateViewProjectionBuffer(std::shared_ptr<VkCore> core,
     return viewProjBuffer;
 }
 
-std::vector<std::unique_ptr<Image>> CreateTextures(std::shared_ptr<VkCore> core, Scene& scene) {
-    std::vector<std::unique_ptr<Image>> textures(scene.Meshes().size());
+std::vector<std::shared_ptr<Image>> CreateTextures(std::shared_ptr<VkCore> core, Scene& scene) {
+    std::vector<std::shared_ptr<Image>> textures(scene.Meshes().size());
     if (textures.empty()) {
         std::vector<uint8_t> textureData;
         textureData.resize(1 * 1 * 4, 255);
-        textures.push_back(std::make_unique<Image>(core, textureData, 1, 1, 4, VK_FORMAT_R8G8B8A8_SRGB));
+        textures.push_back(std::make_shared<Image>(core, textureData, 1, 1, 4, VK_FORMAT_R8G8B8A8_SRGB));
         return textures;
     }
 
     for (int i = 0; i < textures.size(); ++i) {
-        textures[i] = std::make_unique<Image>(core, scene.Meshes()[i].textureData, scene.Meshes()[i].textureWidth,
+        textures[i] = std::make_shared<Image>(core, scene.Meshes()[i].textureData, scene.Meshes()[i].textureWidth,
                                               scene.Meshes()[i].textureHeight, scene.Meshes()[i].textureChannels,
                                               VK_FORMAT_R8G8B8A8_SRGB);
     }
@@ -241,7 +241,7 @@ std::vector<std::unique_ptr<Image>> CreateTextures(std::shared_ptr<VkCore> core,
     return textures;
 }
 
-std::pair<std::unique_ptr<Buffer>, std::unique_ptr<Buffer>> CreateLightBuffer(std::shared_ptr<VkCore> core,
+std::pair<std::shared_ptr<Buffer>, std::shared_ptr<Buffer>> CreateLightBuffer(std::shared_ptr<VkCore> core,
                                                                               Scene& scene) {
     VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     auto lightsBuffer = std::make_unique<Buffer>(core, sizeof(Scene::Light) * scene.Lights().size() + sizeof(int),
@@ -249,7 +249,7 @@ std::pair<std::unique_ptr<Buffer>, std::unique_ptr<Buffer>> CreateLightBuffer(st
     usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     int lightsCount = scene.Lights().size();
     auto lightsCountBuffer =
-        std::make_unique<Buffer>(core, sizeof(int), usage, static_cast<void*>(&lightsCount), false);
+        std::make_shared<Buffer>(core, sizeof(int), usage, static_cast<void*>(&lightsCount), false);
 
     return {std::move(lightsCountBuffer), std::move(lightsBuffer)};
 }
@@ -260,7 +260,7 @@ std::pair<std::unique_ptr<Buffer>, std::unique_ptr<Buffer>> CreateLightBuffer(st
 void PrepareDefaultRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
                                 std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
                                 std::vector<std::unique_ptr<Image>>& swapchainImages, bool isStereo,
-                                std::unique_ptr<Buffer> viewProjBuffer) {
+                                std::shared_ptr<Buffer> viewProjBuffer) {
     auto modelPositionsBuffer = std::move(CreateModelPositionBuffer(core, *scene));
     auto textures = std::move(CreateTextures(core, *scene));
     auto [lightsCountBuffer, lightsBuffer] = std::move(CreateLightBuffer(core, *scene));

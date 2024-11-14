@@ -72,6 +72,8 @@ class VkCore {
         return inFlightFence;
     }
 
+    uint8_t FramesInFlight = 0;
+
    private:
     void ParseGraphicsQueueFamilyIndex() {
         uint32_t queueFamilyCount;
@@ -110,7 +112,6 @@ class VkCore {
     VkFence inFlightFence;
 
     int32_t graphicsQueueIndex = -1;
-    uint8_t maxFramesInFlight = 3;
 
     // validataion layer
     const std::vector<const char*> validataionLayers = {"VK_LAYER_KHRONOS_validation"};

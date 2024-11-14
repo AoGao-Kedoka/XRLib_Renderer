@@ -31,8 +31,6 @@ class RenderPass {
     std::unique_ptr<Image> depthImage;
     std::vector<std::unique_ptr<Image>>& renderTargets;
 
-    Swapchain* swapchainPtr{nullptr};
-
     bool multiview = false;
 };
 }    // namespace Graphics

@@ -4,6 +4,7 @@ namespace XRLib {
 namespace Graphics {
 Swapchain::Swapchain(std::shared_ptr<VkCore> core) : core{core} {
     CreateSwapchain();
+    core->FramesInFlight = GetSwapchainImages(true).size();
 
     // since swapchain is only manually created in flat rendering mode, we can ignore the case of multivew
     EventSystem::Callback<int, int> windowResizeCallback = [this, core](int width, int height) {
