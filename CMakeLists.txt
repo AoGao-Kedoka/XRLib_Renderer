@@ -116,6 +116,9 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
     find_dependency(glfw3 REQUIRED)
     find_dependency(assimp REQUIRED)
     find_dependency(shaderc REQUIRED)
+if (NOT HAS_STD_FORMAT)
+    find_dependency(fmt REQUIRED)
+endif()
 
     include(\"\${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}Targets.cmake\")
 )
