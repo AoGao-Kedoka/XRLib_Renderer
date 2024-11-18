@@ -2,9 +2,32 @@
 
 namespace XRLib {
 namespace Graphics {
-RenderPass::RenderPass(std::shared_ptr<VkCore> core, std::vector<std::unique_ptr<Image>>& renderTargets, bool multiview)
+RenderPass::RenderPass(std::shared_ptr<VkCore> core, std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets,
+                       bool multiview)
     : core{core}, multiview{multiview}, renderTargets{renderTargets} {
-    depthImage = std::make_unique<Image>(core, renderTargets[0]->Width(), renderTargets[0]->Height(),
+
+    if (renderTargets.empty() || renderTargets[0].empty()) {
+        return;
+    }
+
+    auto allImagesSameSizeAndFormat = [&](const std::vector<std::vector<std::unique_ptr<Image>>>& targets) {
+        uint referenceWidth = targets[0][0]->Width();
+        uint referenceHeight = targets[0][0]->Height();
+        auto referenceFormat = targets[0][0]->GetFormat();
+
+        return std::all_of(targets.begin(), targets.end(), [&](const auto& renderTarget) {
+            return std::all_of(renderTarget.begin(), renderTarget.end(), [&](const auto& image) {
+                return image->Width() == referenceWidth && image->Height() == referenceHeight &&
+                       image->GetFormat() == referenceFormat;
+            });
+        });
+    };
+
+    if (!allImagesSameSizeAndFormat(renderTargets)) {
+        Util::ErrorPopup("Images don't have same size or format");
+    }
+
+    depthImage = std::make_unique<Image>(core, renderTargets[0][0]->Width(), renderTargets[0][0]->Height(),
                                          VkUtil::FindDepthFormat(core->GetRenderPhysicalDevice()),
                                          VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, multiview ? 2 : 1);
@@ -19,7 +42,7 @@ RenderPass::RenderPass(std::shared_ptr<VkCore> core, std::vector<std::unique_ptr
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, multiview ? 2 : 1);
 
         // when render target is not swapchain
-        for (const auto& renderTarget : this->GetRenderTargets()) {
+        for (const auto& renderTarget : this->GetRenderTargets()[0]) {
             if (renderTarget->Width() != width || renderTarget->Height() != height) {
                 //TODO resize image
             }
@@ -38,7 +61,7 @@ RenderPass::~RenderPass() {
 }
 void RenderPass::CreateRenderPass() {
     VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = renderTargets[0]->GetFormat();
+    colorAttachment.format = renderTargets[0][0]->GetFormat();
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -110,18 +133,20 @@ void RenderPass::CreateRenderPass() {
     }
 }
 
-void RenderPass::SetRenderTarget(std::vector<std::unique_ptr<Image>>& images) {
+void RenderPass::SetRenderTarget(std::vector<std::vector<std::unique_ptr<Image>>>& images) {
     frameBuffers.resize(images.size());
     for (int i = 0; i < images.size(); ++i) {
-        std::vector<VkImageView> attachments = {images[i]->GetImageView(),
-                                                depthImage->GetImageView(VK_IMAGE_ASPECT_DEPTH_BIT)};
+        std::vector<VkImageView> attachments;
+        for (const auto& imageAttachmemt : images[i])
+            attachments.push_back(imageAttachmemt->GetImageView());
+        attachments.push_back(depthImage->GetImageView(VK_IMAGE_ASPECT_DEPTH_BIT));
 
         VkFramebufferCreateInfo framebufferCreateInfo{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
         framebufferCreateInfo.renderPass = GetVkRenderPass();
         framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferCreateInfo.pAttachments = attachments.data();
-        framebufferCreateInfo.width = images[i]->Width();
-        framebufferCreateInfo.height = images[i]->Height();
+        framebufferCreateInfo.width = images[i][0]->Width();
+        framebufferCreateInfo.height = images[i][0]->Height();
         framebufferCreateInfo.layers = 1;
 
         VkResult result =
@@ -138,7 +163,7 @@ void RenderPass::CleanupFrameBuffers() {
     }
     frameBuffers.clear();
 }
-std::vector<std::unique_ptr<Image>>& RenderPass::GetRenderTargets() {
+std::vector<std::vector<std::unique_ptr<Image>>>& RenderPass::GetRenderTargets() {
     return renderTargets;
 }
 

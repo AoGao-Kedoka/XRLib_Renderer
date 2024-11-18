@@ -7,17 +7,18 @@ namespace XRLib {
 namespace Graphics {
 class RenderPass {
    public:
-    RenderPass(std::shared_ptr<VkCore> core, std::vector<std::unique_ptr<Image>>& renderTargets, bool multiview);
+    RenderPass(std::shared_ptr<VkCore> core, std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets,
+               bool multiview);
     ~RenderPass();
 
     VkRenderPass& GetVkRenderPass() { return pass; }
     const std::vector<VkFramebuffer>& GetFrameBuffers() { return frameBuffers; }
     void SetGraphicPipeline(VkPipeline* pipeline) { graphicsPipeline = pipeline; }
 
-    std::vector<std::unique_ptr<Image>>& GetRenderTargets();
+    std::vector<std::vector<std::unique_ptr<Image>>>& GetRenderTargets();
 
    private:
-    void SetRenderTarget(std::vector<std::unique_ptr<Image>>& images);
+    void SetRenderTarget(std::vector<std::vector<std::unique_ptr<Image>>>& images);
     void CreateFramebuffer(VkFramebuffer& framebuffer, const std::unique_ptr<Image>& image, int width, int height);
     void CreateRenderPass();
     void CleanupFrameBuffers();
@@ -29,7 +30,7 @@ class RenderPass {
 
     std::vector<VkFramebuffer> frameBuffers;
     std::unique_ptr<Image> depthImage;
-    std::vector<std::unique_ptr<Image>>& renderTargets;
+    std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets;
 
     bool multiview = false;
 };

@@ -28,8 +28,8 @@ class Image {
     VkImageView& GetImageView(VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
     VkDeviceSize GetSize() { return size; }
     VkFormat GetFormat() { return format; }
-    int Width() { return width; };
-    int Height() { return height; }
+    uint Width() { return width; };
+    uint Height() { return height; }
 
    private:
     void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,

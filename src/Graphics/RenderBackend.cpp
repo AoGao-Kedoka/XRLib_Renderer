@@ -38,12 +38,12 @@ void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std:
 
 void RenderBackend::GetSwapchainInfo() {
     swapchain = std::make_unique<Swapchain>();
-    std::vector<std::unique_ptr<Image>>& swapchainImages = swapchain->GetSwapchainImages(true);
+    std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages = swapchain->GetSwapchainImages(true);
     uint8_t swapchainImageCount = xrCore->GetSwapchainImages().size();
     swapchainImages.resize(swapchainImageCount);
     for (uint32_t i = 0; i < swapchainImageCount; ++i) {
         auto [width, height] = xrCore->SwapchainExtent();
-        swapchainImages[i] =
+        swapchainImages[i][0] =
             std::make_unique<Image>(vkCore, xrCore->GetSwapchainImages()[i].image,
                                     static_cast<VkFormat>(xrCore->SwapchainFormats()[0]), width, height, 2);
     }
@@ -66,15 +66,14 @@ void RenderBackend::InitVertexIndexBuffers() {
 
         void* verticesData = static_cast<void*>(mesh.vertices.data());
         void* indicesData = static_cast<void*>(mesh.indices.data());
-        vertexBuffers[i] = 
+        vertexBuffers[i] =
             std::make_unique<Buffer>(vkCore, sizeof(mesh.vertices[0]) * mesh.vertices.size(),
                                      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verticesData,
                                      true, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        indexBuffers[i] = 
-            std::make_unique<Buffer>(vkCore, sizeof(mesh.indices[0]) * mesh.indices.size(),
-                                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indicesData,
-                                     true, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT);
+        indexBuffers[i] = std::make_unique<Buffer>(vkCore, sizeof(mesh.indices[0]) * mesh.indices.size(),
+                                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                                   indicesData, true, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT);
     }
 }
 

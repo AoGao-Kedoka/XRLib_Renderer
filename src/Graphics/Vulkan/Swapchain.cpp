@@ -50,7 +50,7 @@ void Swapchain::CreateSwapchain() {
     }
 }
 
-std::vector<std::unique_ptr<Image>>& Swapchain::GetSwapchainImages(bool ignoreEmpty) {
+std::vector<std::vector<std::unique_ptr<Image>>>& Swapchain::GetSwapchainImages(bool ignoreEmpty) {
     if (!swapchainImages.empty() || ignoreEmpty) {
         return swapchainImages;
     }
@@ -59,10 +59,13 @@ std::vector<std::unique_ptr<Image>>& Swapchain::GetSwapchainImages(bool ignoreEm
     std::vector<VkImage> swapchainRawImages;
     vkGetSwapchainImagesKHR(core->GetRenderDevice(), swapchain, &imageCount, nullptr);
     swapchainRawImages.resize(imageCount);
+    swapchainImages.reserve(imageCount);
     vkGetSwapchainImagesKHR(core->GetRenderDevice(), swapchain, &imageCount, swapchainRawImages.data());
     for (const auto image : swapchainRawImages) {
-        swapchainImages.push_back(std::make_unique<Image>(core, image, swapchainImageFormat, swapchainExtent.width,
-                                                          swapchainExtent.height, 1));
+        std::vector<std::unique_ptr<Image>> swaphcainAttachment;
+        swaphcainAttachment.push_back(std::make_unique<Image>(core, image, swapchainImageFormat, swapchainExtent.width,
+                                                              swapchainExtent.height, 1));
+        swapchainImages.push_back(std::move(swaphcainAttachment));
     }
     return swapchainImages;
 }

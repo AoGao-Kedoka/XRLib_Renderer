@@ -12,7 +12,7 @@ class Swapchain {
     Swapchain(std::shared_ptr<VkCore> core);
 
     ~Swapchain();
-    std::vector<std::unique_ptr<Image>>& GetSwapchainImages(bool ignoreEmpty = false);
+    std::vector<std::vector<std::unique_ptr<Image>>>& GetSwapchainImages(bool ignoreEmpty = false);
     VkSwapchainKHR GetSwaphcain() { return swapchain; }
     void RecreateSwapchain();
 
@@ -27,7 +27,7 @@ class Swapchain {
     VkSurfaceKHR surface{VK_NULL_HANDLE};
     VkFormat swapchainImageFormat{VK_FORMAT_UNDEFINED};
     VkSwapchainKHR swapchain{VK_NULL_HANDLE};
-    std::vector<std::unique_ptr<Image>> swapchainImages;
+    std::vector<std::vector<std::unique_ptr<Image>>> swapchainImages;
     VkExtent2D swapchainExtent;
 };
 }    // namespace Graphics
