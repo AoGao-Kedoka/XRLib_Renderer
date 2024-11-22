@@ -29,7 +29,6 @@ class GraphicsRenderPass {
 
    private:
     std::shared_ptr<VkCore> core;
-
     std::unique_ptr<RenderPass> renderPass;
     std::unique_ptr<Pipeline> pipeline;
     std::vector<std::unique_ptr<DescriptorSet>> descriptorSets;

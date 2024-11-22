@@ -11,9 +11,7 @@ class RenderBackendFlat : public RenderBackend {
         : RenderBackend(info, core, xrCore, scene) {}
     ~RenderBackendFlat();
 
-    RenderBackendFlat& operator=(RenderBackendFlat&& rhs) noexcept { return *this; }
-
-    void Prepare(std::vector<std::pair<const std::string&, const std::string&>> passesToAdd) override;
+    void Prepare(std::vector<std::unique_ptr<GraphicsRenderPass>>& passes) override;
 
     void OnWindowResized(int width, int height) override;
     bool WindowShouldClose() override { return WindowHandler::WindowShouldClose(); }

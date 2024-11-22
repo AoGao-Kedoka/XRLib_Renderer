@@ -13,26 +13,9 @@ class RenderBackend {
                   std::shared_ptr<Scene> scene);
     ~RenderBackend();
 
-    RenderBackend(RenderBackend&& src) noexcept
-        : info(std::exchange(src.info, nullptr)), vkCore(std::exchange(src.vkCore, nullptr)),
-          xrCore(std::exchange(src.xrCore, nullptr)) {
-        LOGGER(LOGGER::DEBUG) << "Move constructor called";
-    }
-
-    RenderBackend& operator=(RenderBackend&& rhs) noexcept {
-        if (this == &rhs)
-            return *this;
-
-        LOGGER(LOGGER::DEBUG) << "Move assignment called";
-        info = std::exchange(rhs.info, nullptr);
-        vkCore = std::exchange(rhs.vkCore, nullptr);
-        xrCore = std::exchange(rhs.xrCore, nullptr);
-        return *this;
-    }
-
     virtual bool WindowShouldClose() { return false; }
 
-    virtual void Prepare(std::vector<std::pair<const std::string&, const std::string&>> passesToAdd);
+    virtual void Prepare(std::vector<std::unique_ptr<GraphicsRenderPass>>& passes);
 
     virtual void OnWindowResized(int width, int height) { Util::ErrorPopup("Undefined image resize"); };
 

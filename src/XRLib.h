@@ -17,7 +17,7 @@ class XRLib {
     XRLib& EnableValidationLayer();
     XRLib& SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath);
     void Init(bool xr = true);
-    XRLib& AddRenderPass(const std::string& vertexShaderPath, const std::string& fragmentShaderPath);
+    XRLib& AddRenderPass(std::unique_ptr<Graphics::GraphicsRenderPass>& graphicsRenderPass);
     void Run();
     bool ShouldStop();
     XRLib& Fullscreen();
@@ -32,7 +32,7 @@ class XRLib {
     std::shared_ptr<Scene> scene;
     std::unique_ptr<XR::XrBackend> xrBackend{nullptr};
     std::unique_ptr<Graphics::RenderBackend> renderBackend{nullptr};
-    std::vector<std::pair<const std::string&, const std::string&>> passesToAdd;
+    std::vector<std::unique_ptr<Graphics::GraphicsRenderPass>> passesToAdd;
     bool initialized = false;
 
     void InitXRBackend();

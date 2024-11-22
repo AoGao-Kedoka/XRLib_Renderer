@@ -11,8 +11,8 @@ RenderPass::RenderPass(std::shared_ptr<VkCore> core, std::vector<std::vector<std
     }
 
     auto allImagesSameSizeAndFormat = [&](const std::vector<std::vector<std::unique_ptr<Image>>>& targets) {
-        uint referenceWidth = targets[0][0]->Width();
-        uint referenceHeight = targets[0][0]->Height();
+        unsigned int referenceWidth = targets[0][0]->Width();
+        unsigned int referenceHeight = targets[0][0]->Height();
         auto referenceFormat = targets[0][0]->GetFormat();
 
         return std::all_of(targets.begin(), targets.end(), [&](const auto& renderTarget) {

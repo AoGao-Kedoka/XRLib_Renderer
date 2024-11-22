@@ -19,20 +19,16 @@ RenderBackend::RenderBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore>
 
 RenderBackend::~RenderBackend() {}
 
-void RenderBackend::Prepare(std::vector<std::pair<const std::string&, const std::string&>> passesToAdd) {
+void RenderBackend::Prepare(std::vector<std::unique_ptr<GraphicsRenderPass>>& passes) {
     GetSwapchainInfo();
     InitVertexIndexBuffers();
 
-    if (passesToAdd.empty()) {
+    if (passes.empty()) {
         VulkanDefaults::PrepareDefaultStereoRenderPasses(vkCore, scene, viewProj, RenderPasses,
                                                          swapchain->GetSwapchainImages());
     } else {
         LOGGER(LOGGER::INFO) << "Using custom render pass";
-        // TODO: custom render pass
-        //for (auto& pass : passesToAdd) {
-        //    auto graphicsRenderPass = std::make_unique<GraphicsRenderPass>(vkCore, true, sets, pass.first, pass.second);
-        //    RenderPasses.push_back(std::move(graphicsRenderPass));
-        //}
+        this->RenderPasses = std::move(passes);
     }
 }
 
@@ -115,6 +111,11 @@ void RenderBackend::Run(uint32_t& imageIndex) {
                                                    (RenderPasses.size() - 1) - currentPassIndex, commandBuffer);
 
     commandBuffer.EndPass();
+
+    // add barrier synchronization between render passes
+    if (currentPassIndex != RenderPasses.size() - 1) {
+        commandBuffer.BarrierBetweenPasses(imageIndex, currentPass);
+    }
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

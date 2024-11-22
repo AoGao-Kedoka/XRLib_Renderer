@@ -4,7 +4,7 @@
 
 namespace XRLib {
 namespace Graphics {
-Image::Image(std::shared_ptr<VkCore> core, std::vector<uint8_t> textureData, int width, int height, int channels,
+Image::Image(std::shared_ptr<VkCore> core, std::vector<uint8_t> textureData, const unsigned int width, const unsigned int height, const unsigned int channels,
              VkFormat format)
     : core{core}, format{format}, width(width), height{height} {
     size = width * height * channels;
@@ -25,13 +25,13 @@ Image::Image(std::shared_ptr<VkCore> core, std::vector<uint8_t> textureData, int
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-Image::Image(std::shared_ptr<VkCore> core, int width, int height, VkFormat format, VkImageTiling tiling,
+Image::Image(std::shared_ptr<VkCore> core, const unsigned int width, const unsigned int height, VkFormat format, VkImageTiling tiling,
              VkImageUsageFlags usage, VkMemoryPropertyFlags properties, uint32_t layerCount)
     : core{core}, format{format}, layerCount{layerCount} {
     CreateImage(width, height, format, tiling, usage, properties, image, imageMemorry);
 }
 
-Image::Image(std::shared_ptr<VkCore> core, VkImage image, VkFormat format, int width, int height, uint32_t layerCount)
+Image::Image(std::shared_ptr<VkCore> core, VkImage image, VkFormat format, const unsigned int width, const unsigned int height, uint32_t layerCount)
     : core{core}, image{image}, format{format}, width{width}, height{height}, layerCount{layerCount} {}
 
 Image::~Image() {

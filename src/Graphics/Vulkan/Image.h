@@ -9,27 +9,28 @@ class Image {
     Image() = default;
 
     // image with data
-    Image(std::shared_ptr<VkCore> core, std::vector<uint8_t> textureData, int width, int height, int channels,
+    Image(std::shared_ptr<VkCore> core, std::vector<uint8_t> textureData, const unsigned int width, const unsigned int height, const unsigned int channels,
           VkFormat format);
 
     // raw image
-    Image(std::shared_ptr<VkCore> core, int width, int height, VkFormat format,
+    Image(std::shared_ptr<VkCore> core, const unsigned int width, const unsigned int height, VkFormat format,
           VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL,
           VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
                                     VK_IMAGE_USAGE_STORAGE_BIT,
           VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uint32_t layerCount = 1);
 
     // image predefined from other apis
-    Image(std::shared_ptr<VkCore> core, VkImage image, VkFormat format, int width, int height, uint32_t layerCount = 1);
+    Image(std::shared_ptr<VkCore> core, VkImage image, VkFormat format, const unsigned int width, const unsigned int height, uint32_t layerCount = 1);
 
     ~Image();
 
+    VkImage& GetImage() { return image; }
     VkSampler& GetSampler();
     VkImageView& GetImageView(VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
     VkDeviceSize GetSize() { return size; }
     VkFormat GetFormat() { return format; }
-    uint Width() { return width; };
-    uint Height() { return height; }
+    unsigned int Width() { return width; };
+    unsigned int Height() { return height; }
 
    private:
     void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
@@ -48,7 +49,7 @@ class Image {
     VkDeviceSize size{0};
 
     uint32_t layerCount{1};
-    int width, height;
+    unsigned int width, height;
 };
 }    // namespace Graphics
 }    // namespace XRLib

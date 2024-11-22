@@ -9,7 +9,7 @@ RenderBackendFlat::~RenderBackendFlat() {
     VkUtil::VkSafeClean(vkDestroySurfaceKHR, vkCore->GetRenderInstance(), vkCore->GetFlatSurface(), nullptr);
 }
 
-void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const std::string&>> passesToAdd) {
+void RenderBackendFlat::Prepare(std::vector<std::unique_ptr<GraphicsRenderPass>>& passes) {
     PrepareFlatWindow();
     InitVertexIndexBuffers();
     swapchain = std::make_unique<Swapchain>(vkCore);
@@ -31,18 +31,12 @@ void RenderBackendFlat::Prepare(std::vector<std::pair<const std::string&, const 
     WindowHandler::ActivateInput();
 
     // prepare shader
-    if (passesToAdd.empty()) {
+    if (passes.empty()) {
         VulkanDefaults::PrepareDefaultFlatRenderPasses(vkCore, scene, viewProj, RenderPasses,
                                                        swapchain->GetSwapchainImages());
     } else {
         LOGGER(LOGGER::INFO) << "Using custom render pass";
-        //TODO: Custom renderpass
-        for (auto& pass : passesToAdd) {
-            //std::vector<std::shared_ptr<DescriptorSet>> sets;
-            //auto graphicsRenderPass =
-            //    std::make_unique<GraphicsRenderPass>(vkCore, false, sets, pass.first, pass.second);
-            //RenderPasses.push_back(std::move(graphicsRenderPass));
-        }
+        this->RenderPasses = std::move(passes);
     }
 }
 
