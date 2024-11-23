@@ -15,6 +15,12 @@ RenderBackend::RenderBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore>
     vkCore->CreateVkDevice(*info, xrCore->VkAdditionalDeviceExts(), xrCore->IsXRValid());
 
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_RENDERBACKEND_INIT_FINISHED);
+
+
+    EventSystem::Callback<> preRenderSynchronizaionCallback = [&vkCore]() {
+    };
+
+    EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING, preRenderSynchronizaionCallback);
 }
 
 RenderBackend::~RenderBackend() {}
@@ -39,9 +45,9 @@ void RenderBackend::GetSwapchainInfo() {
     swapchainImages.resize(swapchainImageCount);
     for (uint32_t i = 0; i < swapchainImageCount; ++i) {
         auto [width, height] = xrCore->SwapchainExtent();
-        swapchainImages[i][0] =
+        swapchainImages[i].push_back(
             std::make_unique<Image>(vkCore, xrCore->GetSwapchainImages()[i].image,
-                                    static_cast<VkFormat>(xrCore->SwapchainFormats()[0]), width, height, 2);
+                                    static_cast<VkFormat>(xrCore->SwapchainFormats()[0]), width, height, 2));
     }
 }
 
@@ -73,24 +79,25 @@ void RenderBackend::InitVertexIndexBuffers() {
     }
 }
 
-void RenderBackend::Run(uint32_t& imageIndex) {
-    CommandBuffer commandBuffer{vkCore};
+bool RenderBackend::StartFrame(uint32_t& imageIndex) {
     vkWaitForFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence(), VK_TRUE, UINT64_MAX);
-    vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
-
-    if (!xrCore->IsXRValid()) {
-        auto result = vkAcquireNextImageKHR(vkCore->GetRenderDevice(), swapchain->GetSwaphcain(), UINT64_MAX,
-                                            vkCore->GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-            auto [width, height] = WindowHandler::GetFrameBufferSize();
-            EventSystem::TriggerEvent(Events::XRLIB_EVENT_WINDOW_RESIZED, width, height);
-            return;
-        } else if (result != VK_SUCCESS) {
-            Util::ErrorPopup("Failed to acquire next image");
-        }
+    auto result = vkAcquireNextImageKHR(vkCore->GetRenderDevice(), swapchain->GetSwaphcain(), UINT64_MAX,
+                                        vkCore->GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        auto [width, height] = WindowHandler::GetFrameBufferSize();
+        EventSystem::TriggerEvent(Events::XRLIB_EVENT_WINDOW_RESIZED, width, height);
+        return false;
+    } else if (result != VK_SUCCESS) {
+        Util::ErrorPopup("Failed to acquire next image");
     }
 
+    return true;
+}
+
+void RenderBackend::RecordFrame(uint32_t& imageIndex) {
     vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
+    CommandBuffer commandBuffer{vkCore};
+    vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
 
     auto currentPassIndex = 0;
     auto& currentPass = *RenderPasses[currentPassIndex];
@@ -132,27 +139,26 @@ void RenderBackend::Run(uint32_t& imageIndex) {
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer.GetCommandBuffer();
 
-    VkSemaphore signalSemaphores[] = {vkCore->GetRenderFinishedSemaphore()};
     if (!xrCore->IsXRValid()) {
         submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
+        submitInfo.pSignalSemaphores = &vkCore->GetRenderFinishedSemaphore();
     }
 
     commandBuffer.EndRecord(&submitInfo, vkCore->GetInFlightFence());
+}
 
-    if (!xrCore->IsXRValid()) {
+void RenderBackend::EndFrame(uint32_t& imageIndex) {
         VkPresentInfoKHR presentInfo{};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
         presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
+        presentInfo.pWaitSemaphores = &vkCore->GetRenderFinishedSemaphore();
         VkSwapchainKHR swapChains[] = {swapchain->GetSwaphcain()};
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &imageIndex;
 
         vkQueuePresentKHR(vkCore->GetGraphicsQueue(), &presentInfo);
-    }
 }
 }    // namespace Graphics
 }    // namespace XRLib

@@ -78,15 +78,13 @@ void XRLib::Run() {
 
     uint32_t imageIndex = 0;
     if (xrCore->IsXRValid()) {
-        XrResult result = xrBackend->StartFrame(imageIndex);
-
-        if (result == XR_SUCCESS) {
-            renderBackend->Run(imageIndex);
+        if (xrBackend->StartFrame(imageIndex) == XR_SUCCESS) {
+            renderBackend->RecordFrame(imageIndex);
         }
-
         xrBackend->EndFrame(imageIndex);
-    } else {
-        renderBackend->Run(imageIndex);
+    } else if (renderBackend->StartFrame(imageIndex)) {
+        renderBackend->RecordFrame(imageIndex);
+        renderBackend->EndFrame(imageIndex);
     }
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_POST_RENDERING);
 }

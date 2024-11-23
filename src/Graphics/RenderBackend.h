@@ -23,6 +23,10 @@ class RenderBackend {
 
     void Run(uint32_t& imageIndex);
 
+    bool StartFrame(uint32_t& imageIndex);
+    void RecordFrame(uint32_t& imageIndex);
+    void EndFrame(uint32_t& imageIndex);
+
     std::vector<std::unique_ptr<GraphicsRenderPass>> RenderPasses;
 
     std::shared_ptr<VkCore> GetCore() { return vkCore; }
