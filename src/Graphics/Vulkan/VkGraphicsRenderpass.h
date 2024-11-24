@@ -1,7 +1,7 @@
 #pragma once
 
 #include "DescriptorSet.h"
-#include "Graphics/IGraphicsRenderPass.h"
+#include "Graphics/IGraphicsRenderpass.h"
 #include "Pipeline.h"
 #include "RenderPass.h"
 #include "Shader.h"
@@ -11,16 +11,16 @@ namespace Graphics {
 class VkGraphicsRenderpass : public IGraphicsRenderpass {
    public:
     VkGraphicsRenderpass(std::shared_ptr<VkCore> core, bool multiview,
-                       std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets,
-                       std::vector<std::unique_ptr<DescriptorSet>>&& descriptorSets = {},
-                       std::string vertexShaderPath = "", std::string fragmentShaderPath = "", bool vertexInput = true)
+                         std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets,
+                         std::vector<std::unique_ptr<DescriptorSet>>&& descriptorSets = {},
+                         std::string vertexShaderPath = "", std::string fragmentShaderPath = "")
 
         : core{core}, multiview{multiview}, descriptorSets{std::move(descriptorSets)} {
         Shader vertexShader{core, vertexShaderPath, Shader::VERTEX_SHADER, multiview};
         Shader fragmentShader{core, fragmentShaderPath, Shader::FRAGMENT_SHADER, multiview};
         renderPass = std::make_unique<Renderpass>(core, renderTargets, multiview);
         pipeline = std::make_unique<Pipeline>(core, std::move(vertexShader), std::move(fragmentShader), *renderPass,
-                                              this->descriptorSets, vertexInput);
+                                              this->descriptorSets);
     }
 
     Renderpass& GetRenderpass() { return *renderPass; }

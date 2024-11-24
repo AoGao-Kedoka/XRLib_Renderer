@@ -2,8 +2,8 @@
 
 namespace XRLib {
 namespace Graphics {
-Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fragmentShader,
-                   Renderpass& renderPass, const std::vector<std::unique_ptr<DescriptorSet>>& descriptorSets, bool vertexInput)
+Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fragmentShader, Renderpass& renderPass,
+                   const std::vector<std::unique_ptr<DescriptorSet>>& descriptorSets)
     : core{core} {
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShader.GetShaderStageInfo(),
                                                       fragmentShader.GetShaderStageInfo()};
@@ -14,14 +14,8 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fra
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-    if (!vertexInput) {
-        vertexInputInfo.vertexBindingDescriptionCount = 0;
-        vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    } else {
-        vertexInputInfo.vertexBindingDescriptionCount = 1;
-        vertexInputInfo.vertexAttributeDescriptionCount = attributeDescription.size();
-    }
-
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.vertexAttributeDescriptionCount = attributeDescription.size();
     vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
 
@@ -74,6 +68,7 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fra
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.pushConstantRangeCount = 0;
 
     if (!descriptorSets.empty()) {
         VkPushConstantRange pushConstantRange{};

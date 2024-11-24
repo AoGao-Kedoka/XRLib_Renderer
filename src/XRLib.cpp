@@ -60,6 +60,7 @@ void XRLib::Init(bool xr) {
 }
 
 void XRLib::Prepare(std::vector<std::unique_ptr<Graphics::IGraphicsRenderpass>> customRenderpass) {
+    LOGGER(LOGGER::DEBUG) << "Preparing renderer";
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_INIT_STARTED);
 
     SceneBackend().WaitForAllMeshesToLoad();

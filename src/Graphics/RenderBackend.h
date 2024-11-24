@@ -32,6 +32,9 @@ class RenderBackend {
 
     Swapchain& GetSwapchain() const { return *swapchain; }
 
+    std::vector<std::unique_ptr<Buffer>>& GetVertexBuffers() { return vertexBuffers; }
+    std::vector<std::unique_ptr<Buffer>>& GetIndexBuffers() { return indexBuffers; }
+
    protected:
     std::shared_ptr<Info> info;
     std::shared_ptr<VkCore> vkCore;
