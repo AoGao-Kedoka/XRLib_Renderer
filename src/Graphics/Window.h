@@ -18,6 +18,12 @@ class WindowHandler {
     static void Deinitialize();
     static std::pair<int, int> GetFrameBufferSize();
 
+    enum WindowMode {
+        WINDOWED = 0,
+        BORDERLESS = 1,
+        FULLSCREEN = 2
+    };
+
     //vulkan specific
     static void VkGetWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
     static const char** VkGetWindowExtensions(uint32_t* requiredExtensionCount);

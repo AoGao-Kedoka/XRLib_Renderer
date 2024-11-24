@@ -15,7 +15,7 @@ class RenderBackend {
 
     virtual bool WindowShouldClose() { return false; }
 
-    virtual void Prepare(std::vector<std::unique_ptr<GraphicsRenderPass>>& passes);
+    virtual void Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& passes);
 
     virtual void OnWindowResized(int width, int height) { Util::ErrorPopup("Undefined image resize"); };
 
@@ -25,11 +25,12 @@ class RenderBackend {
 
     bool StartFrame(uint32_t& imageIndex);
     void RecordFrame(uint32_t& imageIndex);
+    void RecordFrame(uint32_t& imageIndex, std::function<void(uint32_t&, CommandBuffer&)> recordingFunction);
     void EndFrame(uint32_t& imageIndex);
 
-    std::vector<std::unique_ptr<GraphicsRenderPass>> RenderPasses;
+    std::vector<std::unique_ptr<IGraphicsRenderpass>> RenderPasses;
 
-    std::shared_ptr<VkCore> GetCore() { return vkCore; }
+    Swapchain& GetSwapchain() const { return *swapchain; }
 
    protected:
     std::shared_ptr<Info> info;

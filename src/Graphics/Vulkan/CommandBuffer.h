@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GraphicsRenderPass.h"
+#include "VkGraphicsRenderpass.h"
 
 namespace XRLib {
 namespace Graphics {
@@ -17,18 +17,19 @@ class CommandBuffer {
     CommandBuffer& BindIndexBuffer(VkBuffer indexBuffer, VkDeviceSize offset,
                                    VkIndexType indexType = VK_INDEX_TYPE_UINT16);
 
-    CommandBuffer& BindDescriptorSets(GraphicsRenderPass& pass, uint32_t firstSet, uint32_t dynamicOffsetCount = 0,
+    CommandBuffer& BindDescriptorSets(VkGraphicsRenderpass& pass, uint32_t firstSet, uint32_t dynamicOffsetCount = 0,
                                       const uint32_t* pDynamicOffsets = nullptr);
     CommandBuffer& StartRecord();
-    CommandBuffer& StartPass(GraphicsRenderPass& pass, uint32_t imageIndex);
+    CommandBuffer& StartPass(VkGraphicsRenderpass& pass, uint32_t imageIndex);
     CommandBuffer& EndPass();
     CommandBuffer& DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset,
                                uint32_t firstInstance);
     CommandBuffer& Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
-    CommandBuffer& PushConstant(GraphicsRenderPass& pass, uint32_t size, const void* ptr);
+    CommandBuffer& PushConstant(VkGraphicsRenderpass& pass, uint32_t size, const void* ptr);
     void EndRecord(VkSubmitInfo* submitInfo, VkFence fence);
+    void EndRecord();
 
-    void BarrierBetweenPasses(uint32_t imageIndex, GraphicsRenderPass& pass);
+    void BarrierBetweenPasses(uint32_t imageIndex, VkGraphicsRenderpass& pass);
 
     void PipelineBarrier(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                          VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
@@ -40,7 +41,7 @@ class CommandBuffer {
 
    private:
     std::shared_ptr<VkCore> core;
-    GraphicsRenderPass* currentPass{nullptr};
+    VkGraphicsRenderpass* currentPass{nullptr};
     VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
 };
 }    // namespace Graphics

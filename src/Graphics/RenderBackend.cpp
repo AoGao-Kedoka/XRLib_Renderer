@@ -6,7 +6,6 @@ namespace Graphics {
 RenderBackend::RenderBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> vkCore,
                              std::shared_ptr<XRLib::XR::XrCore> xrCore, std::shared_ptr<XRLib::Scene> scene)
     : info{info}, vkCore{vkCore}, xrCore{xrCore}, scene{scene} {
-    // initialize vulkan
     vkCore->CreateVkInstance(*info, xrCore->VkAdditionalInstanceExts());
     if (xrCore->IsXRValid())
         xrCore->VkSetPhysicalDevice(vkCore->GetRenderInstance(), &vkCore->VkPhysicalDeviceRef());
@@ -16,17 +15,14 @@ RenderBackend::RenderBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore>
 
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_RENDERBACKEND_INIT_FINISHED);
 
-
-    EventSystem::Callback<> preRenderSynchronizaionCallback = [&vkCore]() {
-    };
-
-    EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING, preRenderSynchronizaionCallback);
+    if (xrCore->IsXRValid()) {
+        GetSwapchainInfo();
+    }
 }
 
 RenderBackend::~RenderBackend() {}
 
-void RenderBackend::Prepare(std::vector<std::unique_ptr<GraphicsRenderPass>>& passes) {
-    GetSwapchainInfo();
+void RenderBackend::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& passes) {
     InitVertexIndexBuffers();
 
     if (passes.empty()) {
@@ -34,7 +30,7 @@ void RenderBackend::Prepare(std::vector<std::unique_ptr<GraphicsRenderPass>>& pa
                                                          swapchain->GetSwapchainImages());
     } else {
         LOGGER(LOGGER::INFO) << "Using custom render pass";
-        this->RenderPasses = std::move(passes);
+        this->RenderPasses= std::move(passes);
     }
 }
 
@@ -45,9 +41,9 @@ void RenderBackend::GetSwapchainInfo() {
     swapchainImages.resize(swapchainImageCount);
     for (uint32_t i = 0; i < swapchainImageCount; ++i) {
         auto [width, height] = xrCore->SwapchainExtent();
-        swapchainImages[i].push_back(
-            std::make_unique<Image>(vkCore, xrCore->GetSwapchainImages()[i].image,
-                                    static_cast<VkFormat>(xrCore->SwapchainFormats()[0]), width, height, 2));
+        swapchainImages[i].push_back(std::make_unique<Image>(vkCore, xrCore->GetSwapchainImages()[i].image,
+                                                             static_cast<VkFormat>(xrCore->SwapchainFormats()[0]),
+                                                             width, height, 2));
     }
 }
 
@@ -99,8 +95,9 @@ void RenderBackend::RecordFrame(uint32_t& imageIndex) {
     CommandBuffer commandBuffer{vkCore};
     vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
 
+    // default frame recording
     auto currentPassIndex = 0;
-    auto& currentPass = *RenderPasses[currentPassIndex];
+    auto& currentPass = static_cast<VkGraphicsRenderpass&>(*RenderPasses[currentPassIndex]);
     commandBuffer.StartRecord().StartPass(currentPass, imageIndex).BindDescriptorSets(currentPass, 0);
     for (uint32_t i = 0; i < scene->Meshes().size(); ++i) {
         commandBuffer.PushConstant(currentPass, sizeof(uint32_t), &i);
@@ -124,41 +121,30 @@ void RenderBackend::RecordFrame(uint32_t& imageIndex) {
         commandBuffer.BarrierBetweenPasses(imageIndex, currentPass);
     }
 
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    commandBuffer.EndRecord();
+}
 
-    VkSemaphore waitSemaphores[] = {vkCore->GetImageAvailableSemaphore()};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    submitInfo.waitSemaphoreCount = 0;
-    if (!xrCore->IsXRValid()) {
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
-    }
+void RenderBackend::RecordFrame(uint32_t& imageIndex, std::function<void(uint32_t&, CommandBuffer&)> recordingFunction) {
+    vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
+    CommandBuffer commandBuffer{vkCore};
+    vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
 
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer.GetCommandBuffer();
-
-    if (!xrCore->IsXRValid()) {
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = &vkCore->GetRenderFinishedSemaphore();
-    }
-
-    commandBuffer.EndRecord(&submitInfo, vkCore->GetInFlightFence());
+    // custom frame recording
+    recordingFunction(imageIndex, commandBuffer);
 }
 
 void RenderBackend::EndFrame(uint32_t& imageIndex) {
-        VkPresentInfoKHR presentInfo{};
-        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = &vkCore->GetRenderFinishedSemaphore();
-        VkSwapchainKHR swapChains[] = {swapchain->GetSwaphcain()};
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = swapChains;
-        presentInfo.pImageIndices = &imageIndex;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = &vkCore->GetRenderFinishedSemaphore();
+    VkSwapchainKHR swapChains[] = {swapchain->GetSwaphcain()};
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+    presentInfo.pImageIndices = &imageIndex;
 
-        vkQueuePresentKHR(vkCore->GetGraphicsQueue(), &presentInfo);
+    vkQueuePresentKHR(vkCore->GetGraphicsQueue(), &presentInfo);
 }
 }    // namespace Graphics
 }    // namespace XRLib

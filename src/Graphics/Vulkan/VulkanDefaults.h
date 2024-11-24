@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Buffer.h"
-#include "GraphicsRenderPass.h"
+#include "VkGraphicsRenderPass.h"
 #include "Scene.h"
 #include "Swapchain.h"
 
@@ -21,11 +21,11 @@ class VulkanDefaults {
     ////////////////////////////////////////////////////
     static void PrepareDefaultStereoRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
                                                  Primitives::ViewProjectionStereo& viewProj,
-                                                 std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
+                                                 std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses,
                                                  std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages);
     static void PrepareDefaultFlatRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
                                                Primitives::ViewProjection& viewProj,
-                                               std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
+                                               std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses,
                                                std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages);
 };
 }    // namespace Graphics

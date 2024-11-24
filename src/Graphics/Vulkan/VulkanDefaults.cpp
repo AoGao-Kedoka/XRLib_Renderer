@@ -258,7 +258,7 @@ std::pair<std::shared_ptr<Buffer>, std::shared_ptr<Buffer>> CreateLightBuffer(st
 // Default DescriptorLayout and Renderpasses binding
 ////////////////////////////////////////////////////
 void PrepareDefaultRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
-                                std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
+                                std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses,
                                 std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages, bool isStereo,
                                 std::shared_ptr<Buffer> viewProjBuffer) {
     auto modelPositionsBuffer = std::move(CreateModelPositionBuffer(core, *scene));
@@ -274,14 +274,14 @@ void PrepareDefaultRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Sc
     descriptorSet2->AllocatePushConstant(sizeof(uint32_t));
     descriptorSets.push_back(std::move(descriptorSet2));
 
-    auto graphicsRenderPass =
-        std::make_unique<GraphicsRenderPass>(core, isStereo, swapchainImages, std::move(descriptorSets));
+    std::unique_ptr<IGraphicsRenderpass> graphicsRenderPass =
+        std::make_unique<VkGraphicsRenderpass>(core, isStereo, swapchainImages, std::move(descriptorSets));
     renderPasses.push_back(std::move(graphicsRenderPass));
 }
 
 void VulkanDefaults::PrepareDefaultStereoRenderPasses(
     std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene, Primitives::ViewProjectionStereo& viewProj,
-    std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
+    std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses,
     std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages) {
     PrepareDefaultRenderPasses(core, scene, renderPasses, swapchainImages, true,
                                std::move(CreateViewProjectionBuffer(core, viewProj)));
@@ -289,7 +289,7 @@ void VulkanDefaults::PrepareDefaultStereoRenderPasses(
 
 void VulkanDefaults::PrepareDefaultFlatRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
                                                     Primitives::ViewProjection& viewProj,
-                                                    std::vector<std::unique_ptr<GraphicsRenderPass>>& renderPasses,
+                                                    std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses,
                                                     std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages) {
     viewProj.view = scene->CameraTransform().GetMatrix();
     viewProj.proj = scene->CameraProjection();

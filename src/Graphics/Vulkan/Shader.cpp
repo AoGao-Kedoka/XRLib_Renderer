@@ -60,7 +60,7 @@ void Shader::Init(std::vector<uint32_t> spirv) {
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = spirv.size() * sizeof(unsigned int);
     createInfo.pCode = spirv.data();
-    if (vkCreateShaderModule(core->GetRenderDevice(), &createInfo, nullptr, &this->shaderModule)) {
+    if (vkCreateShaderModule(core->GetRenderDevice(), &createInfo, nullptr, &this->shaderModule) != VK_SUCCESS) {
         Util::ErrorPopup("Failed to create shader module");
     }
 

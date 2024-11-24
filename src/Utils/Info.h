@@ -12,6 +12,8 @@ class Info {
 
     std::string applicationName = "";
 
-    bool fullscreen = false;
-
+    // window properties
+    int windowMode = 0;
+    unsigned int defaultWindowWidth = 720;
+    unsigned int defaultWindowHeight = 480;
 };

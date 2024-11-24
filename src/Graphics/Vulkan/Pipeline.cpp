@@ -3,7 +3,7 @@
 namespace XRLib {
 namespace Graphics {
 Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fragmentShader,
-                   RenderPass& renderPass, const std::vector<std::unique_ptr<DescriptorSet>>& descriptorSets)
+                   Renderpass& renderPass, const std::vector<std::unique_ptr<DescriptorSet>>& descriptorSets, bool vertexInput)
     : core{core} {
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShader.GetShaderStageInfo(),
                                                       fragmentShader.GetShaderStageInfo()};
@@ -13,9 +13,16 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fra
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
+
+    if (!vertexInput) {
+        vertexInputInfo.vertexBindingDescriptionCount = 0;
+        vertexInputInfo.vertexAttributeDescriptionCount = 0;
+    } else {
+        vertexInputInfo.vertexBindingDescriptionCount = 1;
+        vertexInputInfo.vertexAttributeDescriptionCount = attributeDescription.size();
+    }
+
     vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    vertexInputInfo.vertexAttributeDescriptionCount = attributeDescription.size();
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -67,16 +74,17 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fra
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.pushConstantRangeCount = 1;
 
-    VkPushConstantRange pushConstantRange{};
-    for (const auto& descriptorSet : descriptorSets) {
-        if (descriptorSet != nullptr && descriptorSet->GetPushConstantSize() != 0) {
-            pushConstantRange.offset = 0;
-            pushConstantRange.size = descriptorSet->GetPushConstantSize();
-            pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-
-            pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+    if (!descriptorSets.empty()) {
+        VkPushConstantRange pushConstantRange{};
+        for (const auto& descriptorSet : descriptorSets) {
+            if (descriptorSet != nullptr && descriptorSet->GetPushConstantSize() != 0) {
+                pushConstantRange.offset = 0;
+                pushConstantRange.size = descriptorSet->GetPushConstantSize();
+                pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+                pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+                pipelineLayoutInfo.pushConstantRangeCount = 1;
+            }
         }
     }
 
@@ -112,7 +120,7 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fra
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = pipelineLayout;
-    pipelineInfo.renderPass = renderPass.GetVkRenderPass();
+    pipelineInfo.renderPass = renderPass.GetVkRenderpass();
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.pDepthStencilState = &depthStencil;

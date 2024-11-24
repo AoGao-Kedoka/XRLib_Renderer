@@ -5,13 +5,13 @@
 
 namespace XRLib {
 namespace Graphics {
-class RenderPass {
+class Renderpass {
    public:
-    RenderPass(std::shared_ptr<VkCore> core, std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets,
+    Renderpass(std::shared_ptr<VkCore> core, std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets,
                bool multiview);
-    ~RenderPass();
+    ~Renderpass();
 
-    VkRenderPass& GetVkRenderPass() { return pass; }
+    VkRenderPass& GetVkRenderpass() { return pass; }
     const std::vector<VkFramebuffer>& GetFrameBuffers() { return frameBuffers; }
     void SetGraphicPipeline(VkPipeline* pipeline) { graphicsPipeline = pipeline; }
 

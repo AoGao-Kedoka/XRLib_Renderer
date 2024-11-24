@@ -44,7 +44,7 @@ CommandBuffer& CommandBuffer::BindIndexBuffer(VkBuffer indexBuffer, VkDeviceSize
     return *this;
 }
 
-CommandBuffer& CommandBuffer::BindDescriptorSets(GraphicsRenderPass& pass, uint32_t firstSet,
+CommandBuffer& CommandBuffer::BindDescriptorSets(VkGraphicsRenderpass& pass, uint32_t firstSet,
                                                  uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets) {
     if (pass.GetDescriptorSets().empty()) {
         LOGGER(LOGGER::WARNING) << "No descriptor set available, skipping";
@@ -77,19 +77,19 @@ CommandBuffer& CommandBuffer::StartRecord() {
     return *this;
 }
 
-CommandBuffer& CommandBuffer::StartPass(GraphicsRenderPass& pass, uint32_t imageIndex) {
+CommandBuffer& CommandBuffer::StartPass(VkGraphicsRenderpass& pass, uint32_t imageIndex) {
     if (pass.GetPipeline().GetVkPipeline() == VK_NULL_HANDLE) {
         Util::ErrorPopup("Graphics pipeline not initialized");
     }
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = pass.GetRenderPass().GetVkRenderPass();
-    renderPassInfo.framebuffer = pass.GetRenderPass().GetFrameBuffers()[imageIndex];
+    renderPassInfo.renderPass = pass.GetRenderpass().GetVkRenderpass();
+    renderPassInfo.framebuffer = pass.GetRenderpass().GetFrameBuffers()[imageIndex];
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = {
-        static_cast<uint32_t>(pass.GetRenderPass().GetRenderTargets()[imageIndex][0]->Width()),
-        static_cast<uint32_t>(pass.GetRenderPass().GetRenderTargets()[imageIndex][0]->Height())};
+        static_cast<uint32_t>(pass.GetRenderpass().GetRenderTargets()[imageIndex][0]->Width()),
+        static_cast<uint32_t>(pass.GetRenderpass().GetRenderTargets()[imageIndex][0]->Height())};
 
     std::array<VkClearValue, 2> clearValues{};
     clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
@@ -116,7 +116,8 @@ CommandBuffer& CommandBuffer::StartPass(GraphicsRenderPass& pass, uint32_t image
     currentPass = &pass;
     return *this;
 }
-CommandBuffer& CommandBuffer::PushConstant(GraphicsRenderPass& pass, uint32_t size, const void* ptr) {
+
+CommandBuffer& CommandBuffer::PushConstant(VkGraphicsRenderpass& pass, uint32_t size, const void* ptr) {
     vkCmdPushConstants(this->commandBuffer, pass.GetPipeline().GetVkPipelineLayout(),
                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, size, ptr);
     return *this;
@@ -144,6 +145,24 @@ CommandBuffer& CommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount,
     return *this;
 }
 
+void CommandBuffer::EndRecord() {
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    VkSemaphore waitSemaphores[] = {core->GetImageAvailableSemaphore()};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &GetCommandBuffer();
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &core->GetRenderFinishedSemaphore();
+
+    EndRecord(&submitInfo, core->GetInFlightFence());
+}
+
 void CommandBuffer::EndRecord(VkSubmitInfo* submitInfo, VkFence fence) {
     if (currentPass != nullptr) {
         vkCmdEndRenderPass(commandBuffer);
@@ -153,8 +172,8 @@ void CommandBuffer::EndRecord(VkSubmitInfo* submitInfo, VkFence fence) {
     vkQueueWaitIdle(core->GetGraphicsQueue());
 }
 
-void CommandBuffer::BarrierBetweenPasses(uint32_t imageIndex, GraphicsRenderPass& pass) {
-        for (const auto& renderTarget : pass.GetRenderPass().GetRenderTargets()[imageIndex]) {
+void CommandBuffer::BarrierBetweenPasses(uint32_t imageIndex, VkGraphicsRenderpass& pass) {
+        for (const auto& renderTarget : pass.GetRenderpass().GetRenderTargets()[imageIndex]) {
             VkImageMemoryBarrier barrier = {};
             barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;

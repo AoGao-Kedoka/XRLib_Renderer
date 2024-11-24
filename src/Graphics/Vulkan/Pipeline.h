@@ -10,8 +10,8 @@ class Pipeline {
    public:
     // TODO: compute pipeline
     Pipeline() = default;
-    Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fragmentShader, RenderPass& pass,
-             const std::vector<std::unique_ptr<DescriptorSet>>& descriptorSets);
+    Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fragmentShader, Renderpass& pass,
+             const std::vector<std::unique_ptr<DescriptorSet>>& descriptorSets, bool vertexInput);
     ~Pipeline();
 
     VkPipeline& GetVkPipeline() { return pipeline; }

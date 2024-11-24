@@ -10,14 +10,29 @@ static double lastLeftX = 0.0, lastLeftY = 0.0;
 static double lastRightX = 0.0, lastRightY = 0.0;
 
 void WindowHandler::Init(std::shared_ptr<Info> info) {
+    WindowMode mode = static_cast<WindowMode>(info->windowMode);
+
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    window =
-        glfwCreateWindow(info->fullscreen ? glfwGetVideoMode(glfwGetPrimaryMonitor())->width : 400,
-                         info->fullscreen ? glfwGetVideoMode(glfwGetPrimaryMonitor())->height : 400,
-                         info->applicationName.c_str(), info->fullscreen ? glfwGetPrimaryMonitor() : nullptr, nullptr);
 
+    GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
+
+    if (mode == BORDERLESS) {
+        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+    }
+
+    int width = info->defaultWindowWidth, height = info->defaultWindowHeight;
+    GLFWmonitor* monitor = nullptr;
+
+    if (mode == FULLSCREEN || mode == BORDERLESS) {
+        width = videoMode->width;
+        height = videoMode->height;
+        monitor = (mode == FULLSCREEN) ? primaryMonitor : nullptr;
+    }
+
+    window = glfwCreateWindow(width, height, info->applicationName.c_str(), monitor, nullptr);
     glfwMakeContextCurrent(window);
 }
 

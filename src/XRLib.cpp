@@ -47,7 +47,6 @@ XRLib& XRLib::SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath) {
 }
 
 void XRLib::Init(bool xr) {
-    EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_INIT_STARTED);
     if (!xr) {
         xrCore->SetXRValid(false);
     } else {
@@ -57,35 +56,55 @@ void XRLib::Init(bool xr) {
     Graphics::WindowHandler::Init(info);
     InitRenderBackend();
 
+    LOGGER(LOGGER::INFO) << "XRLib Initialized";
+}
+
+void XRLib::Prepare(std::vector<std::unique_ptr<Graphics::IGraphicsRenderpass>> customRenderpass) {
+    EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_INIT_STARTED);
+
     SceneBackend().WaitForAllMeshesToLoad();
 
-    renderBackend->Prepare(passesToAdd);
+    renderBackend->Prepare(customRenderpass);
     initialized = true;
 
     if (!xrCore->IsXRValid()) {
         Graphics::WindowHandler::ShowWindow();
     }
-
-    LOGGER(LOGGER::INFO) << "XRLib Initialized";
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_INIT_FINISHED);
 }
 
-void XRLib::Run() {
+void XRLib::Run(std::function<void(uint32_t&, Graphics::CommandBuffer&)> customRecordingFunction) {
+
+    if (!initialized) {
+        Prepare();
+    }
+
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING);
+
     if (!xrCore->IsXRValid()) {
         Graphics::WindowHandler::Update();
     }
 
     uint32_t imageIndex = 0;
+
+    auto recordFrame = [&](uint32_t index) {
+        if (customRecordingFunction) {
+            renderBackend->RecordFrame(index, customRecordingFunction);
+        } else {
+            renderBackend->RecordFrame(index);
+        }
+    };
+
     if (xrCore->IsXRValid()) {
         if (xrBackend->StartFrame(imageIndex) == XR_SUCCESS) {
-            renderBackend->RecordFrame(imageIndex);
+            recordFrame(imageIndex);
         }
         xrBackend->EndFrame(imageIndex);
     } else if (renderBackend->StartFrame(imageIndex)) {
-        renderBackend->RecordFrame(imageIndex);
+        recordFrame(imageIndex);
         renderBackend->EndFrame(imageIndex);
     }
+
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_POST_RENDERING);
 }
 
@@ -93,13 +112,16 @@ bool XRLib::ShouldStop() {
     return xrCore->IsXRValid() ? xrBackend->XrShouldStop() : renderBackend->WindowShouldClose();
 }
 
-XRLib& XRLib::Fullscreen() {
-    info->fullscreen = true;
+XRLib& XRLib::SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode) {
+    info->windowMode = windowMode;
     return *this;
 }
 
-XRLib& XRLib::AddRenderPass(std::unique_ptr<Graphics::GraphicsRenderPass>& graphicsRenderPass) {
-    passesToAdd.push_back(std::move(graphicsRenderPass));
+XRLib& XRLib::SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode, unsigned int width,
+                                  unsigned int height) {
+    info->windowMode = windowMode;
+    info->defaultWindowWidth = width;
+    info->defaultWindowHeight = height;
     return *this;
 }
 

@@ -2,6 +2,12 @@
 
 namespace XRLib {
 namespace Graphics {
+RenderBackendFlat::RenderBackendFlat(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
+                                     std::shared_ptr<XR::XrCore> xrCore, std::shared_ptr<Scene> scene)
+    : RenderBackend(info, core, xrCore, scene) {
+    PrepareFlatWindow();
+    swapchain = std::make_unique<Swapchain>(core);
+}
 RenderBackendFlat::~RenderBackendFlat() {
     if (vkCore == nullptr || info == nullptr)
         return;
@@ -9,10 +15,8 @@ RenderBackendFlat::~RenderBackendFlat() {
     VkUtil::VkSafeClean(vkDestroySurfaceKHR, vkCore->GetRenderInstance(), vkCore->GetFlatSurface(), nullptr);
 }
 
-void RenderBackendFlat::Prepare(std::vector<std::unique_ptr<GraphicsRenderPass>>& passes) {
-    PrepareFlatWindow();
+void RenderBackendFlat::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& passes) {
     InitVertexIndexBuffers();
-    swapchain = std::make_unique<Swapchain>(vkCore);
 
     // register window resize callback
     EventSystem::Callback<int, int> windowResizeCallback =

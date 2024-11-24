@@ -17,13 +17,17 @@ class XRLib {
     XRLib& EnableValidationLayer();
     XRLib& SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath);
     void Init(bool xr = true);
-    XRLib& AddRenderPass(std::unique_ptr<Graphics::GraphicsRenderPass>& graphicsRenderPass);
-    void Run();
+    void Prepare(std::vector<std::unique_ptr<Graphics::IGraphicsRenderpass>> customRenderpass = {});
+    void Run(std::function<void(uint32_t&, Graphics::CommandBuffer&)> customRecordingFunction = nullptr);
     bool ShouldStop();
-    XRLib& Fullscreen();
+    XRLib& SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode);
+    XRLib& SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode, unsigned int width, unsigned int height);
     Scene& SceneBackend();
     Graphics::RenderBackend& RenderBackend();
     XR::XrBackend& XrBackend();
+
+    std::shared_ptr<Graphics::VkCore> GetVkCore() { return vkCore; }
+    std::shared_ptr<XR::XrCore> GetXrCore() { return xrCore; }
 
    private:
     std::shared_ptr<Info> info;
@@ -32,7 +36,6 @@ class XRLib {
     std::shared_ptr<Scene> scene;
     std::unique_ptr<XR::XrBackend> xrBackend{nullptr};
     std::unique_ptr<Graphics::RenderBackend> renderBackend{nullptr};
-    std::vector<std::unique_ptr<Graphics::GraphicsRenderPass>> passesToAdd;
     bool initialized = false;
 
     void InitXRBackend();

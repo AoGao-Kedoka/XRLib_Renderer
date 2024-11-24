@@ -2,7 +2,7 @@
 
 namespace XRLib {
 namespace Graphics {
-RenderPass::RenderPass(std::shared_ptr<VkCore> core, std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets,
+Renderpass::Renderpass(std::shared_ptr<VkCore> core, std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets,
                        bool multiview)
     : core{core}, multiview{multiview}, renderTargets{renderTargets} {
 
@@ -53,13 +53,13 @@ RenderPass::RenderPass(std::shared_ptr<VkCore> core, std::vector<std::vector<std
     EventSystem::RegisterListener<int, int>(Events::XRLIB_EVENT_WINDOW_RESIZED, windowResizeCallback);
 }
 
-RenderPass::~RenderPass() {
+Renderpass::~Renderpass() {
     if (!core)
         return;
     CleanupFrameBuffers();
     VkUtil::VkSafeClean(vkDestroyRenderPass, core->GetRenderDevice(), pass, nullptr);
 }
-void RenderPass::CreateRenderPass() {
+void Renderpass::CreateRenderPass() {
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = renderTargets[0][0]->GetFormat();
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -133,7 +133,7 @@ void RenderPass::CreateRenderPass() {
     }
 }
 
-void RenderPass::SetRenderTarget(std::vector<std::vector<std::unique_ptr<Image>>>& images) {
+void Renderpass::SetRenderTarget(std::vector<std::vector<std::unique_ptr<Image>>>& images) {
     frameBuffers.resize(images.size());
     for (int i = 0; i < images.size(); ++i) {
         std::vector<VkImageView> attachments;
@@ -142,7 +142,7 @@ void RenderPass::SetRenderTarget(std::vector<std::vector<std::unique_ptr<Image>>
         attachments.push_back(depthImage->GetImageView(VK_IMAGE_ASPECT_DEPTH_BIT));
 
         VkFramebufferCreateInfo framebufferCreateInfo{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
-        framebufferCreateInfo.renderPass = GetVkRenderPass();
+        framebufferCreateInfo.renderPass = GetVkRenderpass();
         framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferCreateInfo.pAttachments = attachments.data();
         framebufferCreateInfo.width = images[i][0]->Width();
@@ -157,13 +157,13 @@ void RenderPass::SetRenderTarget(std::vector<std::vector<std::unique_ptr<Image>>
     }
 }
 
-void RenderPass::CleanupFrameBuffers() {
+void Renderpass::CleanupFrameBuffers() {
     for (const auto& frameBuffer : frameBuffers) {
         VkUtil::VkSafeClean(vkDestroyFramebuffer, core->GetRenderDevice(), frameBuffer, nullptr);
     }
     frameBuffers.clear();
 }
-std::vector<std::vector<std::unique_ptr<Image>>>& RenderPass::GetRenderTargets() {
+std::vector<std::vector<std::unique_ptr<Image>>>& Renderpass::GetRenderTargets() {
     return renderTargets;
 }
 
