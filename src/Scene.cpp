@@ -19,7 +19,6 @@ Scene::Scene() : done(false), stop(false) {
             Transform defaultTransform;
             lights.push_back({defaultTransform, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.5f});
         }
-
     };
     EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_INIT_STARTED, allMeshesLoadCallback);
 }
@@ -30,6 +29,7 @@ Scene::~Scene() {
         stop = true;
     }
     cv.notify_all();
+
     if (workerThread.joinable()) {
         workerThread.join();
     }
@@ -65,7 +65,7 @@ void Scene::WaitForAllMeshesToLoad() {
     lock.unlock();
 
     for (auto& future : futures) {
-        future.get();
+        future.wait();
     }
 }
 void Scene::AddNewMesh(const Mesh& newMesh, const MeshLoadInfo& meshLoadInfo) {
