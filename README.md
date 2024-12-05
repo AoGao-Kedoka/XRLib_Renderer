@@ -11,6 +11,7 @@ This project is currently in the very early stages of development and is subject
 - controller binding "/khr/simple_controller"
 
 **WIP**:
+- Reduce Heap (`std::unqiue_ptr`, `std::shared_ptr`) usage
 - improve mesh loading
 - more controller profiles (Quest, Pico)
 - custom rendering support
