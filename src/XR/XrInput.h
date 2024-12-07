@@ -9,7 +9,7 @@ namespace XRLib {
 namespace XR {
 class XrInput {
    public:
-    XrInput(std::shared_ptr<XrCore> core, const std::string& interactionProfile = "");
+    XrInput(XrCore& core, const std::string& interactionProfile = "");
     XrInput() = default;
     ~XrInput() = default;
     void UpdateInput();
@@ -19,8 +19,9 @@ class XrInput {
     void UpdatePosePosition();
     void UpdateTriggerValue();
     void UpdateGripValue();
+
    private:
-    std::shared_ptr<XrCore> core;
+    XrCore* core{nullptr};
     std::string suggestedInteractionProfile{"/interaction_profiles/khr/simple_controller"};
 
     XrActionSet actionSet{XR_NULL_HANDLE};

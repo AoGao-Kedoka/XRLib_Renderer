@@ -9,8 +9,7 @@ namespace XRLib {
 namespace Graphics {
 class RenderBackend {
    public:
-    RenderBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> vkCore, std::shared_ptr<XR::XrCore> xrCore,
-                  std::shared_ptr<Scene> scene);
+    RenderBackend(Info& info, std::shared_ptr<VkCore> vkCore, XR::XrCore& xrCore, Scene& scene);
     ~RenderBackend();
 
     virtual bool WindowShouldClose() { return false; }
@@ -36,10 +35,10 @@ class RenderBackend {
     std::vector<std::unique_ptr<Buffer>>& GetIndexBuffers() { return indexBuffers; }
 
    protected:
-    std::shared_ptr<Info> info;
+    Info& info;
+    Scene& scene;
+    XR::XrCore& xrCore;
     std::shared_ptr<VkCore> vkCore;
-    std::shared_ptr<XR::XrCore> xrCore;
-    std::shared_ptr<Scene> scene;
 
     std::vector<std::unique_ptr<Buffer>> vertexBuffers;
     std::vector<std::unique_ptr<Buffer>> indexBuffers;

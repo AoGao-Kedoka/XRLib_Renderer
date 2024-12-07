@@ -9,8 +9,8 @@ static double rightMouseDown = false;
 static double lastLeftX = 0.0, lastLeftY = 0.0;
 static double lastRightX = 0.0, lastRightY = 0.0;
 
-void WindowHandler::Init(std::shared_ptr<Info> info) {
-    WindowMode mode = static_cast<WindowMode>(info->windowMode);
+void WindowHandler::Init(Info& info) {
+    WindowMode mode = static_cast<WindowMode>(info.windowMode);
 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -23,7 +23,7 @@ void WindowHandler::Init(std::shared_ptr<Info> info) {
         glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
     }
 
-    int width = info->defaultWindowWidth, height = info->defaultWindowHeight;
+    int width = info.defaultWindowWidth, height = info.defaultWindowHeight;
     GLFWmonitor* monitor = nullptr;
 
     if (mode == FULLSCREEN || mode == BORDERLESS) {
@@ -32,7 +32,7 @@ void WindowHandler::Init(std::shared_ptr<Info> info) {
         monitor = (mode == FULLSCREEN) ? primaryMonitor : nullptr;
     }
 
-    window = glfwCreateWindow(width, height, info->applicationName.c_str(), monitor, nullptr);
+    window = glfwCreateWindow(width, height, info.applicationName.c_str(), monitor, nullptr);
     glfwMakeContextCurrent(window);
 }
 

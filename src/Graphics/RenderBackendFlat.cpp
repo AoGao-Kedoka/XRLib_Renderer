@@ -2,14 +2,13 @@
 
 namespace XRLib {
 namespace Graphics {
-RenderBackendFlat::RenderBackendFlat(std::shared_ptr<Info> info, std::shared_ptr<VkCore> core,
-                                     std::shared_ptr<XR::XrCore> xrCore, std::shared_ptr<Scene> scene)
+RenderBackendFlat::RenderBackendFlat(Info& info, std::shared_ptr<VkCore> core, XR::XrCore& xrCore, Scene& scene)
     : RenderBackend(info, core, xrCore, scene) {
     PrepareFlatWindow();
     swapchain = std::make_unique<Swapchain>(core);
 }
 RenderBackendFlat::~RenderBackendFlat() {
-    if (vkCore == nullptr || info == nullptr)
+    if (vkCore == nullptr)
         return;
     vkDeviceWaitIdle(vkCore->GetRenderDevice());
     VkUtil::VkSafeClean(vkDestroySurfaceKHR, vkCore->GetRenderInstance(), vkCore->GetFlatSurface(), nullptr);
@@ -49,7 +48,7 @@ void RenderBackendFlat::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void RenderBackendFlat::OnMouseMovement(double deltaX, double deltaY) {
-    auto& cam = scene->CameraTransform();
+    auto& cam = scene.CameraTransform();
     auto camMatrix = cam.GetMatrix();
 
     float sensitivity = 0.1f;
@@ -69,12 +68,12 @@ void RenderBackendFlat::OnMouseMovement(double deltaX, double deltaY) {
         camMatrix[2][i] = column.z;
     }
 
-    scene->CameraTransform() = {camMatrix};
+    scene.CameraTransform() = {camMatrix};
 }
 
 void RenderBackendFlat::OnKeyPressed(int keyCode) {
     float movementSensitivity = 0.02;
-    auto& cam = scene->CameraTransform();
+    auto& cam = scene.CameraTransform();
     if (keyCode == GLFW_KEY_W) {
         cam.Translate(-cam.FrontVector() * movementSensitivity);
     }

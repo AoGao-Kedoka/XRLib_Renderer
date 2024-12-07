@@ -2,7 +2,7 @@
 
 namespace XRLib {
 namespace XR {
-XrInput::XrInput(std::shared_ptr<XrCore> core, const std::string& interactionProfile) : core{core} {
+XrInput::XrInput(XrCore& core, const std::string& interactionProfile) : core{&core} {
     XrResult result;
     XrActionSetCreateInfo actionSetCreateInfo{XR_TYPE_ACTION_SET_CREATE_INFO};
     std::strcpy(actionSetCreateInfo.actionSetName, "xrlib_action_set");

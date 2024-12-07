@@ -27,13 +27,13 @@ class XRLib {
     XR::XrBackend& XrBackend();
 
     std::shared_ptr<Graphics::VkCore> GetVkCore() { return vkCore; }
-    std::shared_ptr<XR::XrCore> GetXrCore() { return xrCore; }
+    XR::XrCore& GetXrCore() { return xrCore; }
 
    private:
-    std::shared_ptr<Info> info;
+    Info info;
+    Scene scene;
     std::shared_ptr<Graphics::VkCore> vkCore;
-    std::shared_ptr<XR::XrCore> xrCore;
-    std::shared_ptr<Scene> scene;
+    XR::XrCore xrCore;
     std::unique_ptr<XR::XrBackend> xrBackend{nullptr};
     std::unique_ptr<Graphics::RenderBackend> renderBackend{nullptr};
     bool initialized = false;

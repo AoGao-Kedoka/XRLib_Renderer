@@ -9,7 +9,7 @@ namespace XRLib {
 namespace XR {
 class XrBackend {
    public:
-    XrBackend(std::shared_ptr<Info> info, std::shared_ptr<Graphics::VkCore> core, std::shared_ptr<XrCore> xrCore);
+    XrBackend(Info& info, Graphics::VkCore& core, XrCore& xrCore);
     ~XrBackend();
 
     XrResult StartFrame(uint32_t& imageIndex);
@@ -32,9 +32,9 @@ class XrBackend {
     void PollEvents();
 
    private:
-    std::shared_ptr<Info> info{nullptr};
-    std::shared_ptr<Graphics::VkCore> vkCore{nullptr};
-    std::shared_ptr<XrCore> xrCore{nullptr};
+    Info& info;
+    Graphics::VkCore& vkCore;
+    XrCore& xrCore;
 
     XrInput input;
 

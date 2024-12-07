@@ -19,11 +19,11 @@ class VulkanDefaults {
     ////////////////////////////////////////////////////
     // Default render passes
     ////////////////////////////////////////////////////
-    static void PrepareDefaultStereoRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
+    static void PrepareDefaultStereoRenderPasses(std::shared_ptr<VkCore> core, Scene& scene,
                                                  Primitives::ViewProjectionStereo& viewProj,
                                                  std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses,
                                                  std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages);
-    static void PrepareDefaultFlatRenderPasses(std::shared_ptr<VkCore> core, std::shared_ptr<Scene> scene,
+    static void PrepareDefaultFlatRenderPasses(std::shared_ptr<VkCore> core, Scene& scene,
                                                Primitives::ViewProjection& viewProj,
                                                std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses,
                                                std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages);

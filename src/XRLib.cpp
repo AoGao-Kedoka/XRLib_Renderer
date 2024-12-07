@@ -2,9 +2,7 @@
 
 namespace XRLib {
 
-XRLib::XRLib()
-    : info(std::make_shared<Info>()), vkCore(std::make_shared<Graphics::VkCore>()),
-      xrCore(std::make_shared<XR::XrCore>()), scene(std::make_shared<Scene>()) {
+XRLib::XRLib() : vkCore{std::make_shared<Graphics::VkCore>()} {
     Util::CheckPlatformSupport();
 }
 
@@ -13,19 +11,19 @@ XRLib::~XRLib() {
 }
 
 XRLib& XRLib::SetApplicationName(const std::string& applicationName) {
-    info->applicationName = applicationName;
+    info.applicationName = applicationName;
     return *this;
 }
 
 XRLib& XRLib::SetVersionNumber(unsigned int majorVersion, unsigned int minorVersion, unsigned int patchVersion) {
-    info->majorVersion = majorVersion;
-    info->minorVersion = minorVersion;
-    info->patchVersion = patchVersion;
+    info.majorVersion = majorVersion;
+    info.minorVersion = minorVersion;
+    info.patchVersion = patchVersion;
     return *this;
 }
 
 XRLib& XRLib::EnableValidationLayer() {
-    info->validationLayer = true;
+    info.validationLayer = true;
     return *this;
 }
 
@@ -48,7 +46,7 @@ XRLib& XRLib::SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath) {
 
 void XRLib::Init(bool xr) {
     if (!xr) {
-        xrCore->SetXRValid(false);
+        xrCore.SetXRValid(false);
     } else {
         InitXRBackend();
     }
@@ -68,7 +66,7 @@ void XRLib::Prepare(std::vector<std::unique_ptr<Graphics::IGraphicsRenderpass>> 
     renderBackend->Prepare(customRenderpass);
     initialized = true;
 
-    if (!xrCore->IsXRValid()) {
+    if (!xrCore.IsXRValid()) {
         Graphics::WindowHandler::ShowWindow();
     }
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_INIT_FINISHED);
@@ -82,7 +80,7 @@ void XRLib::Run(std::function<void(uint32_t&, Graphics::CommandBuffer&)> customR
 
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING);
 
-    if (!xrCore->IsXRValid()) {
+    if (!xrCore.IsXRValid()) {
         Graphics::WindowHandler::Update();
     }
 
@@ -96,7 +94,7 @@ void XRLib::Run(std::function<void(uint32_t&, Graphics::CommandBuffer&)> customR
         }
     };
 
-    if (xrCore->IsXRValid()) {
+    if (xrCore.IsXRValid()) {
         if (xrBackend->StartFrame(imageIndex) == XR_SUCCESS) {
             recordFrame(imageIndex);
         }
@@ -110,40 +108,40 @@ void XRLib::Run(std::function<void(uint32_t&, Graphics::CommandBuffer&)> customR
 }
 
 bool XRLib::ShouldStop() {
-    return xrCore->IsXRValid() ? xrBackend->XrShouldStop() : renderBackend->WindowShouldClose();
+    return xrCore.IsXRValid() ? xrBackend->XrShouldStop() : renderBackend->WindowShouldClose();
 }
 
 XRLib& XRLib::SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode) {
-    info->windowMode = windowMode;
+    info.windowMode = windowMode;
     return *this;
 }
 
 XRLib& XRLib::SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode, unsigned int width,
                                   unsigned int height) {
-    info->windowMode = windowMode;
-    info->defaultWindowWidth = width;
-    info->defaultWindowHeight = height;
+    info.windowMode = windowMode;
+    info.defaultWindowWidth = width;
+    info.defaultWindowHeight = height;
     return *this;
 }
 
 void XRLib::InitXRBackend() {
-    if (info->applicationName.empty()) {
+    if (info.applicationName.empty()) {
         Util::ErrorPopup("No application name specified");
     }
 
-    xrBackend = std::make_unique<XR::XrBackend>(info, vkCore, xrCore);
+    xrBackend = std::make_unique<XR::XrBackend>(info, *vkCore, xrCore);
 }
 
 void XRLib::InitRenderBackend() {
-    if (info->majorVersion == 0 && info->minorVersion == 0 && info->patchVersion == 0) {
+    if (info.majorVersion == 0 && info.minorVersion == 0 && info.patchVersion == 0) {
         LOGGER(LOGGER::WARNING) << "Version number is 0";
     }
 
-    if (info->applicationName.empty()) {
+    if (info.applicationName.empty()) {
         Util::ErrorPopup("No application name specified");
     }
 
-    if (!xrCore->IsXRValid()) {
+    if (!xrCore.IsXRValid()) {
         renderBackend = std::make_unique<Graphics::RenderBackendFlat>(info, vkCore, xrCore, scene);
     } else {
         renderBackend = std::make_unique<Graphics::RenderBackend>(info, vkCore, xrCore, scene);
@@ -151,7 +149,7 @@ void XRLib::InitRenderBackend() {
 }
 
 Scene& XRLib::SceneBackend() {
-    return *scene;
+    return scene;
 }
 
 Graphics::RenderBackend& XRLib::RenderBackend() {

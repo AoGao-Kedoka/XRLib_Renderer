@@ -11,18 +11,14 @@ namespace XRLib {
 namespace Graphics {
 class WindowHandler {
    public:
-    static void Init(std::shared_ptr<Info> info);
+    static void Init(Info& info);
     static void ShowWindow();
     static void Update();
     static bool WindowShouldClose();
     static void Deinitialize();
     static std::pair<int, int> GetFrameBufferSize();
 
-    enum WindowMode {
-        WINDOWED = 0,
-        BORDERLESS = 1,
-        FULLSCREEN = 2
-    };
+    enum WindowMode { WINDOWED = 0, BORDERLESS = 1, FULLSCREEN = 2 };
 
     //vulkan specific
     static void VkGetWindowSurface(VkInstance instance, VkSurfaceKHR* surface);

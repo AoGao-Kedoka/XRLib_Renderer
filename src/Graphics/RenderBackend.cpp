@@ -3,19 +3,18 @@
 
 namespace XRLib {
 namespace Graphics {
-RenderBackend::RenderBackend(std::shared_ptr<Info> info, std::shared_ptr<VkCore> vkCore,
-                             std::shared_ptr<XRLib::XR::XrCore> xrCore, std::shared_ptr<XRLib::Scene> scene)
+RenderBackend::RenderBackend(Info& info, std::shared_ptr<VkCore> vkCore, XR::XrCore& xrCore, XRLib::Scene& scene)
     : info{info}, vkCore{vkCore}, xrCore{xrCore}, scene{scene} {
-    vkCore->CreateVkInstance(*info, xrCore->VkAdditionalInstanceExts());
-    if (xrCore->IsXRValid())
-        xrCore->VkSetPhysicalDevice(vkCore->GetRenderInstance(), &vkCore->VkPhysicalDeviceRef());
+    vkCore->CreateVkInstance(info, xrCore.VkAdditionalInstanceExts());
+    if (xrCore.IsXRValid())
+        xrCore.VkSetPhysicalDevice(vkCore->GetRenderInstance(), &vkCore->VkPhysicalDeviceRef());
     else
         vkCore->SelectPhysicalDevice();
-    vkCore->CreateVkDevice(*info, xrCore->VkAdditionalDeviceExts(), xrCore->IsXRValid());
+    vkCore->CreateVkDevice(info, xrCore.VkAdditionalDeviceExts(), xrCore.IsXRValid());
 
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_RENDERBACKEND_INIT_FINISHED);
 
-    if (xrCore->IsXRValid()) {
+    if (xrCore.IsXRValid()) {
         GetSwapchainInfo();
     }
 }
@@ -30,32 +29,32 @@ void RenderBackend::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& p
                                                          swapchain->GetSwapchainImages());
     } else {
         LOGGER(LOGGER::INFO) << "Using custom render pass";
-        this->RenderPasses= std::move(passes);
+        this->RenderPasses = std::move(passes);
     }
 }
 
 void RenderBackend::GetSwapchainInfo() {
     swapchain = std::make_unique<Swapchain>();
     std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages = swapchain->GetSwapchainImages(true);
-    uint8_t swapchainImageCount = xrCore->GetSwapchainImages().size();
+    uint8_t swapchainImageCount = xrCore.GetSwapchainImages().size();
     swapchainImages.resize(swapchainImageCount);
     for (uint32_t i = 0; i < swapchainImageCount; ++i) {
-        auto [width, height] = xrCore->SwapchainExtent();
-        swapchainImages[i].push_back(std::make_unique<Image>(vkCore, xrCore->GetSwapchainImages()[i].image,
-                                                             static_cast<VkFormat>(xrCore->SwapchainFormats()[0]),
-                                                             width, height, 2));
+        auto [width, height] = xrCore.SwapchainExtent();
+        swapchainImages[i].push_back(std::make_unique<Image>(vkCore, xrCore.GetSwapchainImages()[i].image,
+                                                             static_cast<VkFormat>(xrCore.SwapchainFormats()[0]), width,
+                                                             height, 2));
     }
 }
 
 void RenderBackend::InitVertexIndexBuffers() {
-    if (scene->Meshes().empty()) {
+    if (scene.Meshes().empty()) {
         return;
     }
     // init vertex buffer and index buffer
-    vertexBuffers.resize(scene->Meshes().size());
-    indexBuffers.resize(scene->Meshes().size());
-    for (int i = 0; i < scene->Meshes().size(); ++i) {
-        auto mesh = scene->Meshes()[i];
+    vertexBuffers.resize(scene.Meshes().size());
+    indexBuffers.resize(scene.Meshes().size());
+    for (int i = 0; i < scene.Meshes().size(); ++i) {
+        auto mesh = scene.Meshes()[i];
         if (mesh.vertices.empty() || mesh.indices.empty()) {
             vertexBuffers[i] = nullptr;
             indexBuffers[i] = nullptr;
@@ -99,7 +98,7 @@ void RenderBackend::RecordFrame(uint32_t& imageIndex) {
     auto currentPassIndex = 0;
     auto& currentPass = static_cast<VkGraphicsRenderpass&>(*RenderPasses[currentPassIndex]);
     commandBuffer.StartRecord().StartPass(currentPass, imageIndex).BindDescriptorSets(currentPass, 0);
-    for (uint32_t i = 0; i < scene->Meshes().size(); ++i) {
+    for (uint32_t i = 0; i < scene.Meshes().size(); ++i) {
         commandBuffer.PushConstant(currentPass, sizeof(uint32_t), &i);
         if (!vertexBuffers.empty() && !indexBuffers.empty() && vertexBuffers[i] != nullptr &&
             indexBuffers[i] != nullptr) {
@@ -107,7 +106,7 @@ void RenderBackend::RecordFrame(uint32_t& imageIndex) {
                 .BindIndexBuffer(indexBuffers[i]->GetBuffer(), 0);
         }
 
-        commandBuffer.DrawIndexed(scene->Meshes()[i].indices.size(), 1, 0, 0, 0);
+        commandBuffer.DrawIndexed(scene.Meshes()[i].indices.size(), 1, 0, 0, 0);
     }
 
     // represents how many passes left to draw
@@ -124,7 +123,8 @@ void RenderBackend::RecordFrame(uint32_t& imageIndex) {
     commandBuffer.EndRecord();
 }
 
-void RenderBackend::RecordFrame(uint32_t& imageIndex, std::function<void(uint32_t&, CommandBuffer&)> recordingFunction) {
+void RenderBackend::RecordFrame(uint32_t& imageIndex,
+                                std::function<void(uint32_t&, CommandBuffer&)> recordingFunction) {
     vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
     CommandBuffer commandBuffer{vkCore};
     vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
