@@ -21,9 +21,11 @@
 #include <vector>
 
 #if __has_include(<format>)
-#include <format>
+    #include <format>
+    #define FORMAT_STRING(content, ...) std::format(content, __VA_ARGS__)
 #else
-#include "fmt/format.h"
+    #include <fmt/core.h>
+    #define FORMAT_STRING(content, ...) fmt::format(content, __VA_ARGS__)
 #endif
 
 #include <vulkan/vulkan.h>

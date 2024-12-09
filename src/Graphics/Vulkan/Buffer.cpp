@@ -38,8 +38,8 @@ void Buffer::UpdateBuffer(VkDeviceSize size, void* data) {
         return;
 
     auto cb = CommandBuffer::BeginSingleTimeCommands(core);
-    vkCmdUpdateBuffer(cb->GetCommandBuffer(), buffer, 0, size, data);
-    CommandBuffer::EndSingleTimeCommands(std::move(cb));
+    vkCmdUpdateBuffer(cb.GetCommandBuffer(), buffer, 0, size, data);
+    CommandBuffer::EndSingleTimeCommands(cb);
 }
 
 void Buffer::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) {
@@ -89,9 +89,9 @@ void Buffer::MapDeviceMemory(void* dataInput) {
 
     VkBufferCopy copyRegion{};
     copyRegion.size = bufferSize;
-    vkCmdCopyBuffer(cb->GetCommandBuffer(), stagingBuffer.GetBuffer(), buffer, 1, &copyRegion);
+    vkCmdCopyBuffer(cb.GetCommandBuffer(), stagingBuffer.GetBuffer(), buffer, 1, &copyRegion);
 
-    CommandBuffer::EndSingleTimeCommands(std::move(cb));
+    CommandBuffer::EndSingleTimeCommands(cb);
 }
 
 }    // namespace Graphics

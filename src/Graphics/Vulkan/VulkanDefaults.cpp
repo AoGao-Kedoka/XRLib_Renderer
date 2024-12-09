@@ -3,7 +3,7 @@
 namespace XRLib {
 namespace Graphics {
 
-const std::string VulkanDefaults::defaultVertFlat = R"(
+const std::string_view VulkanDefaults::defaultVertFlat = R"(
     #version 450
     #extension GL_ARB_separate_shader_objects : enable
     layout(set = 0, binding = 0) uniform ViewProj{
@@ -38,7 +38,7 @@ const std::string VulkanDefaults::defaultVertFlat = R"(
     }
 )";
 
-const std::string VulkanDefaults::defaultVertStereo = R"(
+const std::string_view VulkanDefaults::defaultVertStereo = R"(
     #version 450
     #extension GL_EXT_multiview : enable
     #extension GL_ARB_separate_shader_objects : enable
@@ -75,7 +75,7 @@ const std::string VulkanDefaults::defaultVertStereo = R"(
     }
 )";
 
-const std::string VulkanDefaults::defaultPhongFrag = R"(
+const std::string_view VulkanDefaults::defaultPhongFrag = R"(
     #version 450
     #extension GL_ARB_separate_shader_objects : enable
     #extension GL_EXT_multiview : enable

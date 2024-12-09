@@ -2,7 +2,8 @@
 
 #include <pch.h>
 
-class MathUtil{
+namespace XRLib {
+class MathUtil {
    public:
     static XrPosef XrIdentity() {
         XrPosef pose{};
@@ -63,3 +64,4 @@ class MathUtil{
         return trans;
     }
 };
+}    // namespace XRLib

@@ -19,18 +19,18 @@ CommandBuffer::~CommandBuffer() {
     vkFreeCommandBuffers(core.GetRenderDevice(), core.GetCommandPool(), 1, &commandBuffer);
 }
 
-std::unique_ptr<CommandBuffer> CommandBuffer::BeginSingleTimeCommands(VkCore& core) {
-    auto commandBuffer = std::make_unique<CommandBuffer>(core);
-    commandBuffer->StartRecord();
+CommandBuffer CommandBuffer::BeginSingleTimeCommands(VkCore& core) {
+    CommandBuffer commandBuffer{core};
+    commandBuffer.StartRecord();
     return commandBuffer;
 }
 
-void CommandBuffer::EndSingleTimeCommands(std::unique_ptr<CommandBuffer> commandBuffer) {
+void CommandBuffer::EndSingleTimeCommands(CommandBuffer& commandBuffer) {
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer->GetCommandBuffer();
-    commandBuffer->EndRecord(&submitInfo, VK_NULL_HANDLE);
+    submitInfo.pCommandBuffers = &commandBuffer.GetCommandBuffer();
+    commandBuffer.EndRecord(&submitInfo, VK_NULL_HANDLE);
 }
 
 CommandBuffer& CommandBuffer::BindVertexBuffer(int firstBinding, std::vector<VkBuffer> buffers,

@@ -1,6 +1,7 @@
 #pragma once
 #include "Utils/MathUtil.h"
 
+namespace XRLib {
 class Transform {
    public:
     Transform(glm::vec3 translation, glm::vec3 rotation, float rotationRadians,
@@ -25,3 +26,4 @@ class Transform {
    private:
     glm::mat4 transform{1.0f};
 };
+}    // namespace XRLib

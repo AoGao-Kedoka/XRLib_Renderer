@@ -50,15 +50,6 @@ Image::~Image() {
     VkUtil::VkSafeClean(vkDestroySampler, core.GetRenderDevice(), sampler, nullptr);
 }
 
-void Image::ResetImage() {
-    VkUtil::VkSafeClean(vkFreeMemory, core.GetRenderDevice(), imageMemory, nullptr);
-    VkUtil::VkSafeClean(vkDestroyImageView, core.GetRenderDevice(), imageView, nullptr);
-    VkUtil::VkSafeClean(vkDestroySampler, core.GetRenderDevice(), sampler, nullptr);
-    imageView = VK_NULL_HANDLE;
-    sampler = VK_NULL_HANDLE;
-    imageMemory = VK_NULL_HANDLE;
-}
-
 VkImageView& Image::GetImageView(VkImageAspectFlags aspectFlags) {
     if (imageView == VK_NULL_HANDLE) {
         VkImageViewCreateInfo imageViewInfo{};
@@ -209,9 +200,9 @@ void Image::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout 
         throw std::invalid_argument("Transition not found");
     }
 
-    vkCmdPipelineBarrier(commandBuffer->GetCommandBuffer(), sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1,
+    vkCmdPipelineBarrier(commandBuffer.GetCommandBuffer(), sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1,
                          &barrier);
-    CommandBuffer::EndSingleTimeCommands(std::move(commandBuffer));
+    CommandBuffer::EndSingleTimeCommands(commandBuffer);
 }
 void Image::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
     auto commandBuffer = CommandBuffer::BeginSingleTimeCommands(core);
@@ -228,10 +219,10 @@ void Image::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, ui
     region.imageOffset = {0, 0, 0};
     region.imageExtent = {width, height, 1};
 
-    vkCmdCopyBufferToImage(commandBuffer->GetCommandBuffer(), buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+    vkCmdCopyBufferToImage(commandBuffer.GetCommandBuffer(), buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                            &region);
 
-    CommandBuffer::EndSingleTimeCommands(std::move(commandBuffer));
+    CommandBuffer::EndSingleTimeCommands(commandBuffer);
 }
 
 void Image::StoreImageProperties(VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags,
@@ -242,6 +233,16 @@ void Image::StoreImageProperties(VkFormat format, VkImageTiling tiling, VkImageU
     this->layerCount = layerCount;
     this->format = format;
 }
+
+void Image::ResetImage() {
+    VkUtil::VkSafeClean(vkFreeMemory, core.GetRenderDevice(), imageMemory, nullptr);
+    VkUtil::VkSafeClean(vkDestroyImageView, core.GetRenderDevice(), imageView, nullptr);
+    VkUtil::VkSafeClean(vkDestroySampler, core.GetRenderDevice(), sampler, nullptr);
+    imageView = VK_NULL_HANDLE;
+    sampler = VK_NULL_HANDLE;
+    imageMemory = VK_NULL_HANDLE;
+}
+
 
 }    // namespace Graphics
 }    // namespace XRLib

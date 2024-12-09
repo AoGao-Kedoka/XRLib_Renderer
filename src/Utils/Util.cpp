@@ -1,6 +1,7 @@
 #include "Util.h"
 #include "boxer.h"
 
+namespace XRLib {
 const char* getCurrentPlatform() {
 #if defined(_WIN32)
 #define PLATFORM_NAME "windows"
@@ -52,7 +53,7 @@ bool Util::CheckPlatformSupport() {
         LOGGER(LOGGER::WARNING) << message;
         boxer::show(message.c_str(), "WARNING", boxer::Style::Warning);
         return true;
-    } 
+    }
     LOGGER(LOGGER::ERR) << "Unsuppored platform";
     return false;
 }
@@ -93,23 +94,23 @@ std::vector<const char*> Util::SplitStringToCharPtr(const std::string& input) {
     return out;
 }
 
-void Util::ErrorPopup(std::string&& message) {
+void Util::ErrorPopup(const std::string& message) {
     LOGGER(LOGGER::ERR) << message;
     boxer::show(message.c_str(), "ERROR", boxer::Style::Error);
     throw std::runtime_error(message.c_str());
 }
 
-void Util::EnsureDirExists(const std::string& dirPath) {
+void Util::EnsureDirExists(const std::filesystem::path& dirPath) {
     if (!std::filesystem::exists(dirPath)) {
         if (std::filesystem::create_directories(dirPath)) {
             LOGGER(LOGGER::INFO) << "Directory created: " << dirPath;
         } else {
-            ErrorPopup("Directory creation failed: " + dirPath);
+            ErrorPopup(FORMAT_STRING("Directory creation failed: {}", dirPath.generic_string()));
         }
     }
 }
 
-std::string Util::ReadFile(const std::string& filePath) {
+std::string Util::ReadFile(const std::filesystem::path& filePath) {
     std::ifstream t(filePath);
     std::string result = std::string((std::istreambuf_iterator<char>(t)), (std::istreambuf_iterator<char>()));
     if (result == "") {
@@ -120,7 +121,7 @@ std::string Util::ReadFile(const std::string& filePath) {
     return result;
 }
 
-std::vector<uint32_t> Util::ReadBinaryFile(const std::string& filePath) {
+std::vector<uint32_t> Util::ReadBinaryFile(const std::filesystem::path& filePath) {
     std::ifstream file(filePath, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
         ErrorPopup("Error opening file");
@@ -142,25 +143,16 @@ std::vector<uint32_t> Util::ReadBinaryFile(const std::string& filePath) {
     return buffer;
 }
 
-bool Util::WriteFile(const std::string& filePath, const std::vector<uint32_t>& data) {
-     std::ofstream outFile(filePath, std::ios::binary);
+bool Util::WriteFile(const std::filesystem::path& filePath, const std::vector<uint32_t>& data) {
+    std::ofstream outFile(filePath, std::ios::binary);
     if (!outFile.is_open()) {
-#if __has_include(<format>)
-        ErrorPopup(std::format("Error: Cannot open file {} for writing", filePath));
-#else
-        ErrorPopup(fmt::format("Error: Cannot open file {} for writing", filePath));
-#endif
-
+        ErrorPopup(FORMAT_STRING("Error: Cannot open file {} for writing", filePath.generic_string()));
         return false;
     }
 
     outFile.write(reinterpret_cast<const char*>(data.data()), data.size() * sizeof(uint32_t));
     if (!outFile.good()) {
-#if __has_include(<format>)
-        ErrorPopup(std::format("Error writing to file: {}", filePath));
-#else
-        ErrorPopup(fmt::format("Error writing to file: {}", filePath));
-#endif
+        ErrorPopup(FORMAT_STRING("Error writing to file: {}", filePath.generic_string()));
         return false;
     }
 
@@ -186,3 +178,4 @@ std::filesystem::path Util::ResolvePath(const std::filesystem::path& path) {
 #endif
     return res;
 }
+}    // namespace XRLib

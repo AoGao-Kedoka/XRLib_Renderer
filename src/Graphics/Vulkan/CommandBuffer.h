@@ -6,8 +6,8 @@ namespace XRLib {
 namespace Graphics {
 class CommandBuffer {
    public:
-    static std::unique_ptr<CommandBuffer> BeginSingleTimeCommands(VkCore& core);
-    static void EndSingleTimeCommands(std::unique_ptr<CommandBuffer> commandBuffer);
+    static CommandBuffer BeginSingleTimeCommands(VkCore& core);
+    static void EndSingleTimeCommands(CommandBuffer& commandBuffer);
 
    public:
     CommandBuffer(VkCore& core);

@@ -34,6 +34,7 @@ void XrInput::CreateDefaultInteractionActionBindings() {
 
         if ((result = xrCreateAction(actionSet, &actionCI, &action)) != XR_SUCCESS) {
             Util::ErrorPopup(std::string("Failed to create ") + actionName + " action");
+            Util::ErrorPopup(FORMAT_STRING("Failed to create {} action", actionName));
         }
         LOGGER(LOGGER::DEBUG) << actionName << " action created";
     };

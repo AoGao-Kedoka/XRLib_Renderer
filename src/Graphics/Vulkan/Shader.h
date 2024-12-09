@@ -29,7 +29,6 @@ class Shader {
     ShaderStage stage;
     VkShaderModule shaderModule{VK_NULL_HANDLE};
     VkPipelineShaderStageCreateInfo shaderStageInfo{};
-    std::string shaderCacheDir = "./ShaderCache";
 };
 }    // namespace Graphics
 }    // namespace XRLib

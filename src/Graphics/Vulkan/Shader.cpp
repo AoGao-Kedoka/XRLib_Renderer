@@ -7,7 +7,7 @@ namespace Graphics {
 Shader::Shader(VkCore& core, const std::filesystem::path& filePath, ShaderStage shaderStage,
                bool stereo)
     : core{core}, stage{shaderStage} {
-    Util::EnsureDirExists(shaderCacheDir);
+    Util::EnsureDirExists(VulkanDefaults::defaultShaderCachePath);
     std::string rawCode;
     if (filePath.empty()) {
         switch (stage) {
@@ -25,11 +25,7 @@ Shader::Shader(VkCore& core, const std::filesystem::path& filePath, ShaderStage 
     std::string cacheNamePrefix = filePath.empty() ? "defaultMain" : filePath.filename().generic_string();
     std::string cacheNameSuffix = std::to_string(Util::HashString(rawCode));
 
-#if __has_include(<format>)
-    std::string cacheFilePath = std::format("{}/{}_{}.spv", shaderCacheDir, cacheNamePrefix, cacheNameSuffix);
-#else
-    std::string cacheFilePath = fmt::format("{}/{}_{}.spv", shaderCacheDir, cacheNamePrefix, cacheNameSuffix);
-#endif
+    std::string cacheFilePath = FORMAT_STRING("{}/{}_{}.spv", VulkanDefaults::defaultShaderCachePath, cacheNamePrefix, cacheNameSuffix);
 
     std::vector<uint32_t> code;
     if (std::filesystem::exists(cacheFilePath)) {
@@ -87,7 +83,7 @@ std::vector<uint32_t> Shader::Compile(std::string content, std::string name) {
     shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(content, shader_kind, name.c_str(), options);
 
     if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
-        Util::ErrorPopup("Failed to compile shader: " + std::string(module.GetErrorMessage()));
+        Util::ErrorPopup(FORMAT_STRING("Failed to compile shader: {}", module.GetErrorMessage()));
     }
 
     return {module.cbegin(), module.cend()};

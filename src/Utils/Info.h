@@ -2,6 +2,7 @@
 
 #include <string>
 
+namespace XRLib {
 class Info {
    public:
     bool validationLayer = false;
@@ -17,3 +18,4 @@ class Info {
     unsigned int defaultWindowWidth = 720;
     unsigned int defaultWindowHeight = 480;
 };
+}    // namespace XRLib

@@ -12,9 +12,11 @@ class VulkanDefaults {
     ////////////////////////////////////////////////////
     // Shaders
     ////////////////////////////////////////////////////
-    static const std::string defaultVertFlat;
-    static const std::string defaultPhongFrag;
-    static const std::string defaultVertStereo;
+    static const std::string_view defaultVertFlat;
+    static const std::string_view defaultPhongFrag;
+    static const std::string_view defaultVertStereo;
+
+    constexpr static std::string_view defaultShaderCachePath = "./ShaderCache";
 
     ////////////////////////////////////////////////////
     // Default render passes
