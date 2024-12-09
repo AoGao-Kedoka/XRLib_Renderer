@@ -4,17 +4,16 @@
 
 namespace XRLib {
 namespace Graphics {
-Image::Image(std::shared_ptr<VkCore> core, std::vector<uint8_t> textureData, const unsigned int width, const unsigned int height, const unsigned int channels,
+Image::Image(VkCore& core, std::vector<uint8_t> textureData, const unsigned int width, const unsigned int height, const unsigned int channels,
              VkFormat format)
-    : core{core}, format{format}, width(width), height{height} {
+    : core{core}, format{format}, width(width), height{height}{
     size = width * height * channels;
 
     std::unique_ptr<Buffer> imageBuffer = std::make_unique<Buffer>(core, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                                                    static_cast<void*>(textureData.data()), false);
 
     CreateImage(width, height, format, VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                image, imageMemorry);
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     // command buffer: copy buffer to the image
     TransitionImageLayout(image, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -25,20 +24,41 @@ Image::Image(std::shared_ptr<VkCore> core, std::vector<uint8_t> textureData, con
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-Image::Image(std::shared_ptr<VkCore> core, const unsigned int width, const unsigned int height, VkFormat format, VkImageTiling tiling,
+Image::Image(VkCore& core, const unsigned int width, const unsigned int height, VkFormat format, VkImageTiling tiling,
              VkImageUsageFlags usage, VkMemoryPropertyFlags properties, uint32_t layerCount)
     : core{core}, format{format}, layerCount{layerCount} {
-    CreateImage(width, height, format, tiling, usage, properties, image, imageMemorry);
+    CreateImage(width, height, format, tiling, usage, properties);
+    resizable = true;
 }
 
-Image::Image(std::shared_ptr<VkCore> core, VkImage image, VkFormat format, const unsigned int width, const unsigned int height, uint32_t layerCount)
+Image::Image(VkCore& core, VkImage image, VkFormat format, const unsigned int width, const unsigned int height, uint32_t layerCount)
     : core{core}, image{image}, format{format}, width{width}, height{height}, layerCount{layerCount} {}
 
-Image::~Image() {
-    VkUtil::VkSafeClean(vkFreeMemory, core->GetRenderDevice(), imageMemorry, nullptr);
-    VkUtil::VkSafeClean(vkDestroyImageView, core->GetRenderDevice(), imageView, nullptr);
-    VkUtil::VkSafeClean(vkDestroySampler, core->GetRenderDevice(), sampler, nullptr);
+void Image::Resize(unsigned int width, unsigned int height) {
+    if (!resizable) {
+        LOGGER(LOGGER::INFO) << "Image doesn't support resize";
+        return;
+    }
+
+    ResetImage();
+    CreateImage(width, height, format, tiling, usageFlags, propertyFlags);
 }
+
+Image::~Image() {
+    VkUtil::VkSafeClean(vkFreeMemory, core.GetRenderDevice(), imageMemory, nullptr);
+    VkUtil::VkSafeClean(vkDestroyImageView, core.GetRenderDevice(), imageView, nullptr);
+    VkUtil::VkSafeClean(vkDestroySampler, core.GetRenderDevice(), sampler, nullptr);
+}
+
+void Image::ResetImage() {
+    VkUtil::VkSafeClean(vkFreeMemory, core.GetRenderDevice(), imageMemory, nullptr);
+    VkUtil::VkSafeClean(vkDestroyImageView, core.GetRenderDevice(), imageView, nullptr);
+    VkUtil::VkSafeClean(vkDestroySampler, core.GetRenderDevice(), sampler, nullptr);
+    imageView = VK_NULL_HANDLE;
+    sampler = VK_NULL_HANDLE;
+    imageMemory = VK_NULL_HANDLE;
+}
+
 VkImageView& Image::GetImageView(VkImageAspectFlags aspectFlags) {
     if (imageView == VK_NULL_HANDLE) {
         VkImageViewCreateInfo imageViewInfo{};
@@ -52,7 +72,7 @@ VkImageView& Image::GetImageView(VkImageAspectFlags aspectFlags) {
         imageViewInfo.subresourceRange.baseArrayLayer = 0;
         imageViewInfo.subresourceRange.layerCount = layerCount;
 
-        if (vkCreateImageView(core->GetRenderDevice(), &imageViewInfo, nullptr, &imageView) != VK_SUCCESS) {
+        if (vkCreateImageView(core.GetRenderDevice(), &imageViewInfo, nullptr, &imageView) != VK_SUCCESS) {
             throw std::runtime_error("Faild to create image view");
         }
     }
@@ -77,14 +97,15 @@ VkSampler& Image::GetSampler() {
         samplerInfo.minLod = 0.0f;
         samplerInfo.maxLod = 0.0f;
 
-        if (vkCreateSampler(core->GetRenderDevice(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
+        if (vkCreateSampler(core.GetRenderDevice(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
             Util::ErrorPopup("Failed to create sampler");
         }
     }
     return sampler;
 }
 void Image::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-                        VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
+                        VkMemoryPropertyFlags properties) {
+    StoreImageProperties(format, tiling, usage, properties);
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -101,23 +122,26 @@ void Image::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImag
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;    // we don't use another queue family for the
                                                           // compute shader
 
-    if (vkCreateImage(core->GetRenderDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
+    if (vkCreateImage(core.GetRenderDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
         throw std::runtime_error("failed to create image!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(core->GetRenderDevice(), image, &memRequirements);
+    vkGetImageMemoryRequirements(core.GetRenderDevice(), image, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = core->GetMemoryType(memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = core.GetMemoryType(memRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(core->GetRenderDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(core.GetRenderDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate image memory!");
     }
 
-    vkBindImageMemory(core->GetRenderDevice(), image, imageMemory, 0);
+    vkBindImageMemory(core.GetRenderDevice(), image, imageMemory, 0);
+
+    this->height = height;
+    this->width = width;
 }
 
 bool hasStencilComponent(VkFormat format) {
@@ -209,5 +233,15 @@ void Image::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, ui
 
     CommandBuffer::EndSingleTimeCommands(std::move(commandBuffer));
 }
+
+void Image::StoreImageProperties(VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags,
+                                 VkMemoryPropertyFlags property) {
+    this->tiling = tiling;
+    this->usageFlags = usageFlags;
+    this->propertyFlags = property;
+    this->layerCount = layerCount;
+    this->format = format;
+}
+
 }    // namespace Graphics
 }    // namespace XRLib

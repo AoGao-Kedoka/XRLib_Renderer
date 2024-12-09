@@ -6,7 +6,7 @@ namespace XRLib {
 namespace Graphics {
 class RenderBackendFlat : public RenderBackend {
    public:
-    RenderBackendFlat(Info& info, std::shared_ptr<VkCore> core, XR::XrCore& xrCore, Scene& scene);
+    RenderBackendFlat(Info& info, VkCore& core, XR::XrCore& xrCore, Scene& scene);
     ~RenderBackendFlat();
 
     void Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& passes) override;

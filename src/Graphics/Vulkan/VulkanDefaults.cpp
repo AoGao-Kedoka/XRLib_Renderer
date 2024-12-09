@@ -147,7 +147,7 @@ const std::string VulkanDefaults::defaultPhongFrag = R"(
 ////////////////////////////////////////////////////
 /// Default Buffers creation
 ////////////////////////////////////////////////////
-std::shared_ptr<Buffer> CreateModelPositionBuffer(std::shared_ptr<VkCore> core, Scene& scene) {
+std::shared_ptr<Buffer> CreateModelPositionBuffer(VkCore& core, Scene& scene) {
     std::vector<glm::mat4> modelPositions(scene.Meshes().size());
     for (int i = 0; i < modelPositions.size(); ++i) {
         modelPositions[i] = scene.Meshes()[i].transform.GetMatrix();
@@ -175,7 +175,7 @@ std::shared_ptr<Buffer> CreateModelPositionBuffer(std::shared_ptr<VkCore> core, 
     return modelPositionsBuffer;
 }
 
-std::shared_ptr<Buffer> CreateViewProjectionBuffer(std::shared_ptr<VkCore> core,
+std::shared_ptr<Buffer> CreateViewProjectionBuffer(VkCore& core,
                                                    Primitives::ViewProjectionStereo& viewProj) {
     auto viewProjBuffer = std::make_shared<Buffer>(
         core, sizeof(viewProj), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
@@ -200,7 +200,7 @@ std::shared_ptr<Buffer> CreateViewProjectionBuffer(std::shared_ptr<VkCore> core,
     return viewProjBuffer;
 }
 
-std::shared_ptr<Buffer> CreateViewProjectionBuffer(std::shared_ptr<VkCore> core, Scene& scene,
+std::shared_ptr<Buffer> CreateViewProjectionBuffer(VkCore& core, Scene& scene,
                                                    Primitives::ViewProjection& viewProj) {
     auto viewProjBuffer = std::make_shared<Buffer>(
         core, sizeof(viewProj), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
@@ -223,7 +223,7 @@ std::shared_ptr<Buffer> CreateViewProjectionBuffer(std::shared_ptr<VkCore> core,
     return viewProjBuffer;
 }
 
-std::vector<std::shared_ptr<Image>> CreateTextures(std::shared_ptr<VkCore> core, Scene& scene) {
+std::vector<std::shared_ptr<Image>> CreateTextures(VkCore& core, Scene& scene) {
     std::vector<std::shared_ptr<Image>> textures(scene.Meshes().size());
     if (textures.empty()) {
         std::vector<uint8_t> textureData;
@@ -241,7 +241,7 @@ std::vector<std::shared_ptr<Image>> CreateTextures(std::shared_ptr<VkCore> core,
     return textures;
 }
 
-std::pair<std::shared_ptr<Buffer>, std::shared_ptr<Buffer>> CreateLightBuffer(std::shared_ptr<VkCore> core,
+std::pair<std::shared_ptr<Buffer>, std::shared_ptr<Buffer>> CreateLightBuffer(VkCore& core,
                                                                               Scene& scene) {
     VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     auto lightsBuffer = std::make_unique<Buffer>(core, sizeof(Scene::Light) * scene.Lights().size() + sizeof(int),
@@ -257,7 +257,7 @@ std::pair<std::shared_ptr<Buffer>, std::shared_ptr<Buffer>> CreateLightBuffer(st
 ////////////////////////////////////////////////////
 // Default DescriptorLayout and Renderpasses binding
 ////////////////////////////////////////////////////
-void PrepareDefaultRenderPasses(std::shared_ptr<VkCore> core, Scene& scene,
+void PrepareDefaultRenderPasses(VkCore& core, Scene& scene,
                                 std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses,
                                 std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages, bool isStereo,
                                 std::shared_ptr<Buffer> viewProjBuffer) {
@@ -280,14 +280,14 @@ void PrepareDefaultRenderPasses(std::shared_ptr<VkCore> core, Scene& scene,
 }
 
 void VulkanDefaults::PrepareDefaultStereoRenderPasses(
-    std::shared_ptr<VkCore> core, Scene& scene, Primitives::ViewProjectionStereo& viewProj,
+    VkCore& core, Scene& scene, Primitives::ViewProjectionStereo& viewProj,
     std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses,
     std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages) {
     PrepareDefaultRenderPasses(core, scene, renderPasses, swapchainImages, true,
                                std::move(CreateViewProjectionBuffer(core, viewProj)));
 }
 
-void VulkanDefaults::PrepareDefaultFlatRenderPasses(std::shared_ptr<VkCore> core, Scene& scene,
+void VulkanDefaults::PrepareDefaultFlatRenderPasses(VkCore& core, Scene& scene,
                                                     Primitives::ViewProjection& viewProj,
                                                     std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses,
                                                     std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages) {

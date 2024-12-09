@@ -7,7 +7,7 @@ namespace XRLib {
 namespace Graphics {
 class Renderpass {
    public:
-    Renderpass(std::shared_ptr<VkCore> core, std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets,
+    Renderpass(VkCore& core, std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets,
                bool multiview);
     ~Renderpass();
 
@@ -24,12 +24,12 @@ class Renderpass {
     void CleanupFrameBuffers();
 
    private:
-    std::shared_ptr<VkCore> core{nullptr};
+    VkCore& core;
     VkRenderPass pass{VK_NULL_HANDLE};
     VkPipeline* graphicsPipeline{nullptr};
 
     std::vector<VkFramebuffer> frameBuffers;
-    std::unique_ptr<Image> depthImage;
+    Image depthImage;
     std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets;
 
     bool multiview = false;

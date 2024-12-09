@@ -2,24 +2,30 @@
 
 namespace XRLib {
 namespace Graphics {
-Swapchain::Swapchain(std::shared_ptr<VkCore> core) : core{core} {
+Swapchain::Swapchain(VkCore& core) : core{core} {
     CreateSwapchain();
-    core->FramesInFlight = GetSwapchainImages(true).size();
+    core.FramesInFlight = GetSwapchainImages(true).size();
 
     // since swapchain is only manually created in flat rendering mode, we can ignore the case of multivew
-    EventSystem::Callback<int, int> windowResizeCallback = [this, core](int width, int height) {
-        vkDeviceWaitIdle(core->GetRenderDevice());
+    EventSystem::Callback<int, int> windowResizeCallback = [this, &core](int width, int height) {
+        vkDeviceWaitIdle(core.GetRenderDevice());
         RecreateSwapchain();
         GetSwapchainImages();
     };
     EventSystem::RegisterListener<int, int>(Events::XRLIB_EVENT_WINDOW_RESIZED, windowResizeCallback);
 }
 
-Swapchain::~Swapchain() {
-    if (core == nullptr) {
-        return;
+Swapchain::Swapchain(VkCore& core, std::vector<std::unique_ptr<Image>>& images) : core{core} {
+    std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages = GetSwapchainImages(true);
+    swapchainImages.resize(images.size());
+    for (uint32_t i = 0; i < images.size(); ++i) {
+        swapchainImages[i].push_back(std::move(images[i]));
     }
-    VkUtil::VkSafeClean(vkDestroySwapchainKHR, core->GetRenderDevice(), swapchain, nullptr);
+    core.FramesInFlight = swapchainImages.size();
+}
+
+Swapchain::~Swapchain() {
+    VkUtil::VkSafeClean(vkDestroySwapchainKHR, core.GetRenderDevice(), swapchain, nullptr);
 }
 
 void Swapchain::CreateSwapchain() {
@@ -31,7 +37,7 @@ void Swapchain::CreateSwapchain() {
 
     VkSwapchainCreateInfoKHR swapchainCreateInfo{};
     swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swapchainCreateInfo.surface = core->GetFlatSurface();
+    swapchainCreateInfo.surface = core.GetFlatSurface();
     swapchainCreateInfo.minImageCount = imageCount;
     swapchainCreateInfo.imageFormat = surfaceFormat.format;
     swapchainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -44,7 +50,7 @@ void Swapchain::CreateSwapchain() {
     swapchainCreateInfo.presentMode = presentMode;
     swapchainCreateInfo.clipped = VK_TRUE;
     swapchainCreateInfo.oldSwapchain = swapchain;
-    if ((result = vkCreateSwapchainKHR(core->GetRenderDevice(), &swapchainCreateInfo, nullptr, &swapchain)) !=
+    if ((result = vkCreateSwapchainKHR(core.GetRenderDevice(), &swapchainCreateInfo, nullptr, &swapchain)) !=
         VK_SUCCESS) {
         Util::ErrorPopup("Failed to create swapchain");
     }
@@ -57,10 +63,10 @@ std::vector<std::vector<std::unique_ptr<Image>>>& Swapchain::GetSwapchainImages(
 
     uint32_t imageCount;
     std::vector<VkImage> swapchainRawImages;
-    vkGetSwapchainImagesKHR(core->GetRenderDevice(), swapchain, &imageCount, nullptr);
+    vkGetSwapchainImagesKHR(core.GetRenderDevice(), swapchain, &imageCount, nullptr);
     swapchainRawImages.resize(imageCount);
     swapchainImages.reserve(imageCount);
-    vkGetSwapchainImagesKHR(core->GetRenderDevice(), swapchain, &imageCount, swapchainRawImages.data());
+    vkGetSwapchainImagesKHR(core.GetRenderDevice(), swapchain, &imageCount, swapchainRawImages.data());
     for (const auto image : swapchainRawImages) {
         std::vector<std::unique_ptr<Image>> swaphcainAttachment;
         swaphcainAttachment.push_back(std::make_unique<Image>(core, image, swapchainImageFormat, swapchainExtent.width,
@@ -74,10 +80,9 @@ VkSurfaceFormatKHR Swapchain::ChooseSwapchainImageFormat() {
     VkSurfaceFormatKHR swapchainSurfaceFormat;
     std::vector<VkSurfaceFormatKHR> surfaceFormats;
     uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(core->GetRenderPhysicalDevice(), core->GetFlatSurface(), &formatCount,
-                                         nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(core.GetRenderPhysicalDevice(), core.GetFlatSurface(), &formatCount, nullptr);
     surfaceFormats.resize(formatCount);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(core->GetRenderPhysicalDevice(), core->GetFlatSurface(), &formatCount,
+    vkGetPhysicalDeviceSurfaceFormatsKHR(core.GetRenderPhysicalDevice(), core.GetFlatSurface(), &formatCount,
                                          surfaceFormats.data());
     if (surfaceFormats.empty()) {
         Util::ErrorPopup("Failed to get surface formats");
@@ -98,11 +103,11 @@ VkPresentModeKHR Swapchain::ChooseSwapchainPresentMode() {
     VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
     std::vector<VkPresentModeKHR> presentModes;
     uint32_t presentModesCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(core->GetRenderPhysicalDevice(), core->GetFlatSurface(),
-                                              &presentModesCount, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(core.GetRenderPhysicalDevice(), core.GetFlatSurface(), &presentModesCount,
+                                              nullptr);
     presentModes.resize(presentModesCount);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(core->GetRenderPhysicalDevice(), core->GetFlatSurface(),
-                                              &presentModesCount, presentModes.data());
+    vkGetPhysicalDeviceSurfacePresentModesKHR(core.GetRenderPhysicalDevice(), core.GetFlatSurface(), &presentModesCount,
+                                              presentModes.data());
     if (presentModes.empty()) {
         LOGGER(LOGGER::WARNING) << "Failed to get present mode";
     }
@@ -117,7 +122,7 @@ VkPresentModeKHR Swapchain::ChooseSwapchainPresentMode() {
 
 VkSurfaceCapabilitiesKHR Swapchain::GetSurfaceCapabilities() {
     VkSurfaceCapabilitiesKHR capabilities;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(core->GetRenderPhysicalDevice(), core->GetFlatSurface(), &capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(core.GetRenderPhysicalDevice(), core.GetFlatSurface(), &capabilities);
     auto [width, height] = WindowHandler::GetFrameBufferSize();
 
     swapchainExtent = {

@@ -10,7 +10,7 @@ void ValidateBufferUsage(VkBufferUsageFlags usage) {
     }
 }
 
-Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size, VkBufferUsageFlags usage, void* data,
+Buffer::Buffer(VkCore& core, VkDeviceSize size, VkBufferUsageFlags usage, void* data,
                bool deviceBuffer, VkMemoryPropertyFlags properties)
     : core{core}, bufferSize{size}, usage{usage} {
     ValidateBufferUsage(usage);
@@ -21,7 +21,7 @@ Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size, VkBufferUsageFla
             << "You are not sending a transfer destination bit with memory mapping, this may result error!";
     }
 }
-Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size, VkBufferUsageFlags usage,
+Buffer::Buffer(VkCore& core, VkDeviceSize size, VkBufferUsageFlags usage,
                VkMemoryPropertyFlags properties)
     : core{core}, bufferSize{size}, usage{usage} {
     ValidateBufferUsage(usage);
@@ -29,8 +29,8 @@ Buffer::Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size, VkBufferUsageFla
 }
 
 Buffer::~Buffer() {
-    VkUtil::VkSafeClean(vkDestroyBuffer, core->GetRenderDevice(), buffer, nullptr);
-    VkUtil::VkSafeClean(vkFreeMemory, core->GetRenderDevice(), bufferMemory, nullptr);
+    VkUtil::VkSafeClean(vkDestroyBuffer, core.GetRenderDevice(), buffer, nullptr);
+    VkUtil::VkSafeClean(vkFreeMemory, core.GetRenderDevice(), bufferMemory, nullptr);
 }
 
 void Buffer::UpdateBuffer(VkDeviceSize size, void* data) {
@@ -49,27 +49,27 @@ void Buffer::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryP
     bufferInfo.usage = usage;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateBuffer(core->GetRenderDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+    if (vkCreateBuffer(core.GetRenderDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to create buffer!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(core->GetRenderDevice(), buffer, &memRequirements);
+    vkGetBufferMemoryRequirements(core.GetRenderDevice(), buffer, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = core->GetMemoryType(memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = core.GetMemoryType(memRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(core->GetRenderDevice(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(core.GetRenderDevice(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
         Util::ErrorPopup("Failed to allocate buffer memory!");
     }
 
-    vkBindBufferMemory(this->core->GetRenderDevice(), buffer, bufferMemory, 0);
+    vkBindBufferMemory(this->core.GetRenderDevice(), buffer, bufferMemory, 0);
 }
 
 void Buffer::MapHostMemory(void* dataInput) {
-    vkMapMemory(core->GetRenderDevice(), bufferMemory, 0, bufferSize, 0, &data);
+    vkMapMemory(core.GetRenderDevice(), bufferMemory, 0, bufferSize, 0, &data);
     std::memcpy(data, dataInput, (size_t)bufferSize);
 }
 
@@ -81,9 +81,9 @@ void Buffer::MapDeviceMemory(void* dataInput) {
     Buffer stagingBuffer{this->core, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
 
-    vkMapMemory(core->GetRenderDevice(), stagingBuffer.GetDeviceMemory(), 0, bufferSize, 0, &data);
+    vkMapMemory(core.GetRenderDevice(), stagingBuffer.GetDeviceMemory(), 0, bufferSize, 0, &data);
     std::memcpy(data, dataInput, (size_t)bufferSize);
-    vkUnmapMemory(core->GetRenderDevice(), stagingBuffer.GetDeviceMemory());
+    vkUnmapMemory(core.GetRenderDevice(), stagingBuffer.GetDeviceMemory());
 
     auto cb = CommandBuffer::BeginSingleTimeCommands(core);
 

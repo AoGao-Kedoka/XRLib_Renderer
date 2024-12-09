@@ -2,7 +2,7 @@
 
 namespace XRLib {
 namespace Graphics {
-DescriptorSet::DescriptorSet(std::shared_ptr<VkCore> core, std::vector<DescriptorLayoutElement>& layoutBindings)
+DescriptorSet::DescriptorSet(VkCore& core, std::vector<DescriptorLayoutElement>& layoutBindings)
     : core{core}, elements{std::move(layoutBindings)} {
     Init();
 }
@@ -26,17 +26,17 @@ void DescriptorSet::Init() {
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = bindings.size();
     layoutInfo.pBindings = bindings.data();
-    if ((result = vkCreateDescriptorSetLayout(core->GetRenderDevice(), &layoutInfo, nullptr, &descriptorSetLayout)) !=
+    if ((result = vkCreateDescriptorSetLayout(core.GetRenderDevice(), &layoutInfo, nullptr, &descriptorSetLayout)) !=
         VK_SUCCESS) {
         Util::ErrorPopup("Error create descriptor set layout");
     }
 
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = core->GetDescriptorPool();
+    allocInfo.descriptorPool = core.GetDescriptorPool();
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &descriptorSetLayout;
-    if ((result = vkAllocateDescriptorSets(core->GetRenderDevice(), &allocInfo, &descriptorSet)) != VK_SUCCESS) {
+    if ((result = vkAllocateDescriptorSets(core.GetRenderDevice(), &allocInfo, &descriptorSet)) != VK_SUCCESS) {
         Util::ErrorPopup("Failed to allocate descriptor set");
     }
 
@@ -76,11 +76,11 @@ void DescriptorSet::Init() {
         }
     }
 
-    vkUpdateDescriptorSets(core->GetRenderDevice(), descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+    vkUpdateDescriptorSets(core.GetRenderDevice(), descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 }
 
 DescriptorSet::~DescriptorSet() {
-    vkDestroyDescriptorSetLayout(core->GetRenderDevice(), descriptorSetLayout, nullptr);
+    vkDestroyDescriptorSetLayout(core.GetRenderDevice(), descriptorSetLayout, nullptr);
 }
 }    // namespace Graphics
 }    // namespace XRLib

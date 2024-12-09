@@ -109,7 +109,7 @@ class VkCore {
     // semaphores
     VkSemaphore imageAvailableSemaphore{VK_NULL_HANDLE};
     VkSemaphore renderFinishedSemaphore{VK_NULL_HANDLE};
-    VkFence inFlightFence;
+    VkFence inFlightFence{VK_NULL_HANDLE};
 
     int32_t graphicsQueueIndex = -1;
 

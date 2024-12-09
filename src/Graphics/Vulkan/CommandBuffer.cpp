@@ -3,23 +3,23 @@
 namespace XRLib {
 namespace Graphics {
 
-CommandBuffer::CommandBuffer(std::shared_ptr<VkCore> core) : core{core} {
+CommandBuffer::CommandBuffer(VkCore& core) : core{core} {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = core->GetCommandPool();
+    allocInfo.commandPool = core.GetCommandPool();
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = 1;
 
-    if (vkAllocateCommandBuffers(core->GetRenderDevice(), &allocInfo, &commandBuffer) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(core.GetRenderDevice(), &allocInfo, &commandBuffer) != VK_SUCCESS) {
         Util::ErrorPopup("failed to allocate command buffers!");
     }
 }
 
 CommandBuffer::~CommandBuffer() {
-    vkFreeCommandBuffers(core->GetRenderDevice(), core->GetCommandPool(), 1, &commandBuffer);
+    vkFreeCommandBuffers(core.GetRenderDevice(), core.GetCommandPool(), 1, &commandBuffer);
 }
 
-std::unique_ptr<CommandBuffer> CommandBuffer::BeginSingleTimeCommands(std::shared_ptr<VkCore> core) {
+std::unique_ptr<CommandBuffer> CommandBuffer::BeginSingleTimeCommands(VkCore& core) {
     auto commandBuffer = std::make_unique<CommandBuffer>(core);
     commandBuffer->StartRecord();
     return commandBuffer;
@@ -149,7 +149,7 @@ void CommandBuffer::EndRecord() {
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore waitSemaphores[] = {core->GetImageAvailableSemaphore()};
+    VkSemaphore waitSemaphores[] = {core.GetImageAvailableSemaphore()};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
@@ -158,9 +158,9 @@ void CommandBuffer::EndRecord() {
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &GetCommandBuffer();
     submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = &core->GetRenderFinishedSemaphore();
+    submitInfo.pSignalSemaphores = &core.GetRenderFinishedSemaphore();
 
-    EndRecord(&submitInfo, core->GetInFlightFence());
+    EndRecord(&submitInfo, core.GetInFlightFence());
 }
 
 void CommandBuffer::EndRecord(VkSubmitInfo* submitInfo, VkFence fence) {
@@ -168,8 +168,8 @@ void CommandBuffer::EndRecord(VkSubmitInfo* submitInfo, VkFence fence) {
         vkCmdEndRenderPass(commandBuffer);
     }
     vkEndCommandBuffer(commandBuffer);
-    vkQueueSubmit(core->GetGraphicsQueue(), 1, submitInfo, fence);
-    vkQueueWaitIdle(core->GetGraphicsQueue());
+    vkQueueSubmit(core.GetGraphicsQueue(), 1, submitInfo, fence);
+    vkQueueWaitIdle(core.GetGraphicsQueue());
 }
 
 void CommandBuffer::BarrierBetweenPasses(uint32_t imageIndex, VkGraphicsRenderpass& pass) {

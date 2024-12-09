@@ -4,7 +4,7 @@
 namespace XRLib {
 namespace Graphics {
 
-Shader::Shader(std::shared_ptr<VkCore> core, const std::filesystem::path& filePath, ShaderStage shaderStage,
+Shader::Shader(VkCore& core, const std::filesystem::path& filePath, ShaderStage shaderStage,
                bool stereo)
     : core{core}, stage{shaderStage} {
     Util::EnsureDirExists(shaderCacheDir);
@@ -49,9 +49,7 @@ Shader::Shader(std::shared_ptr<VkCore> core, const std::filesystem::path& filePa
 }
 
 Shader::~Shader() {
-    if (!core)
-        return;
-    VkUtil::VkSafeClean(vkDestroyShaderModule, core->GetRenderDevice(), this->shaderModule, nullptr);
+    VkUtil::VkSafeClean(vkDestroyShaderModule, core.GetRenderDevice(), this->shaderModule, nullptr);
 }
 
 void Shader::Init(std::vector<uint32_t> spirv) {
@@ -60,7 +58,7 @@ void Shader::Init(std::vector<uint32_t> spirv) {
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = spirv.size() * sizeof(unsigned int);
     createInfo.pCode = spirv.data();
-    if (vkCreateShaderModule(core->GetRenderDevice(), &createInfo, nullptr, &this->shaderModule) != VK_SUCCESS) {
+    if (vkCreateShaderModule(core.GetRenderDevice(), &createInfo, nullptr, &this->shaderModule) != VK_SUCCESS) {
         Util::ErrorPopup("Failed to create shader module");
     }
 

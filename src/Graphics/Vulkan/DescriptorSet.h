@@ -28,10 +28,10 @@ struct DescriptorLayoutElement {
 
 class DescriptorSet {
    public:
-    DescriptorSet(std::shared_ptr<VkCore> core, std::vector<DescriptorLayoutElement>& layoutBindings);
+    DescriptorSet(VkCore& core, std::vector<DescriptorLayoutElement>& layoutBindings);
 
     template <typename... Args>
-    DescriptorSet(std::shared_ptr<VkCore> core, Args&&... args) : core{core} {
+    DescriptorSet(VkCore& core, Args&&... args) : core{core} {
         (PushElement(std::forward<Args>(args)), ...);
         Init();
     }
@@ -63,7 +63,7 @@ class DescriptorSet {
     struct always_false : std::false_type {};
 
    private:
-    std::shared_ptr<VkCore> core;
+    VkCore& core;
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     std::vector<DescriptorLayoutElement> elements;
     uint32_t pushConstantSize{0};

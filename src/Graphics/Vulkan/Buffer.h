@@ -8,21 +8,13 @@ namespace Graphics {
 
 class Buffer {
    public:
-    Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size, VkBufferUsageFlags usage,
+    Buffer(VkCore& core, VkDeviceSize size, VkBufferUsageFlags usage,
            VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    Buffer(std::shared_ptr<VkCore> core, VkDeviceSize size, VkBufferUsageFlags usage, void* data, bool deviceBuffer,
+    Buffer(VkCore& core, VkDeviceSize size, VkBufferUsageFlags usage, void* data, bool deviceBuffer,
            VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    Buffer() = default;
     ~Buffer();
-
-    Buffer& operator=(const Buffer& other) {
-        this->core = other.core;
-        this->buffer = other.buffer;
-        this->bufferMemory = other.bufferMemory;
-        return *this;
-    }
 
     VkBuffer& GetBuffer() { return buffer; }
     VkDeviceMemory GetDeviceMemory() { return bufferMemory; }
@@ -43,7 +35,7 @@ class Buffer {
      */
     void MapDeviceMemory(void* dataInput);
 
-    std::shared_ptr<VkCore> core{nullptr};
+    VkCore& core;
     VkBuffer buffer{VK_NULL_HANDLE};
     VkDeviceMemory bufferMemory{VK_NULL_HANDLE};
     VkDeviceSize bufferSize{0};

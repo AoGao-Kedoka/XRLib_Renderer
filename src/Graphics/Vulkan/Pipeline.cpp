@@ -2,7 +2,7 @@
 
 namespace XRLib {
 namespace Graphics {
-Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fragmentShader, Renderpass& renderPass,
+Pipeline::Pipeline(VkCore& core, Shader& vertexShader, Shader& fragmentShader, Renderpass& renderPass,
                    const std::vector<std::unique_ptr<DescriptorSet>>& descriptorSets)
     : core{core} {
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShader.GetShaderStageInfo(),
@@ -90,7 +90,7 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fra
     }
     pipelineLayoutInfo.pSetLayouts = layouts.data();
 
-    if (vkCreatePipelineLayout(core->GetRenderDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(core.GetRenderDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
 
@@ -120,7 +120,7 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fra
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.pDepthStencilState = &depthStencil;
 
-    if (vkCreateGraphicsPipelines(core->GetRenderDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) !=
+    if (vkCreateGraphicsPipelines(core.GetRenderDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
@@ -129,10 +129,8 @@ Pipeline::Pipeline(std::shared_ptr<VkCore> core, Shader vertexShader, Shader fra
 }
 
 Pipeline::~Pipeline() {
-    if (!core)
-        return;
-    VkUtil::VkSafeClean(vkDestroyPipelineLayout, core->GetRenderDevice(), pipelineLayout, nullptr);
-    VkUtil::VkSafeClean(vkDestroyPipeline, core->GetRenderDevice(), pipeline, nullptr);
+    VkUtil::VkSafeClean(vkDestroyPipelineLayout, core.GetRenderDevice(), pipelineLayout, nullptr);
+    VkUtil::VkSafeClean(vkDestroyPipeline, core.GetRenderDevice(), pipeline, nullptr);
 }
 }    // namespace Graphics
 }    // namespace XRLib

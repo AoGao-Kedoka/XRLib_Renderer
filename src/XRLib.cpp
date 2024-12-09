@@ -2,7 +2,7 @@
 
 namespace XRLib {
 
-XRLib::XRLib() : vkCore{std::make_shared<Graphics::VkCore>()} {
+XRLib::XRLib() {
     Util::CheckPlatformSupport();
 }
 
@@ -129,7 +129,7 @@ void XRLib::InitXRBackend() {
         Util::ErrorPopup("No application name specified");
     }
 
-    xrBackend = std::make_unique<XR::XrBackend>(info, *vkCore, xrCore);
+    xrBackend = std::make_unique<XR::XrBackend>(info, vkCore, xrCore);
 }
 
 void XRLib::InitRenderBackend() {

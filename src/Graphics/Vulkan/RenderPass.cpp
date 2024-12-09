@@ -2,9 +2,16 @@
 
 namespace XRLib {
 namespace Graphics {
-Renderpass::Renderpass(std::shared_ptr<VkCore> core, std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets,
-                       bool multiview)
-    : core{core}, multiview{multiview}, renderTargets{renderTargets} {
+Renderpass::Renderpass(VkCore& core, std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets, bool multiview)
+    : core{core}, multiview{multiview}, renderTargets{renderTargets},
+      depthImage{core,
+                 renderTargets[0][0]->Width(),
+                 renderTargets[0][0]->Height(),
+                 VkUtil::FindDepthFormat(core.GetRenderPhysicalDevice()),
+                 VK_IMAGE_TILING_OPTIMAL,
+                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                 static_cast<uint32_t>(multiview ? 2 : 1)} {
 
     if (renderTargets.empty() || renderTargets[0].empty()) {
         return;
@@ -26,25 +33,19 @@ Renderpass::Renderpass(std::shared_ptr<VkCore> core, std::vector<std::vector<std
     if (!allImagesSameSizeAndFormat(renderTargets)) {
         Util::ErrorPopup("Images don't have same size or format");
     }
-
-    depthImage = std::make_unique<Image>(core, renderTargets[0][0]->Width(), renderTargets[0][0]->Height(),
-                                         VkUtil::FindDepthFormat(core->GetRenderPhysicalDevice()),
-                                         VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, multiview ? 2 : 1);
     CreateRenderPass();
     SetRenderTarget(renderTargets);
 
-    EventSystem::Callback<int, int> windowResizeCallback = [this, core, multiview](int width, int height) {
-        vkDeviceWaitIdle(core->GetRenderDevice());
+    EventSystem::Callback<int, int> windowResizeCallback = [this, &core, &multiview](int width, int height) {
+        vkDeviceWaitIdle(core.GetRenderDevice());
         CleanupFrameBuffers();
-        depthImage = std::make_unique<Image>(
-            core, width, height, VkUtil::FindDepthFormat(core->GetRenderPhysicalDevice()), VK_IMAGE_TILING_OPTIMAL,
-            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, multiview ? 2 : 1);
+
+        depthImage.Resize(width, height);
 
         // when render target is not swapchain
         for (const auto& renderTarget : this->GetRenderTargets()[0]) {
             if (renderTarget->Width() != width || renderTarget->Height() != height) {
-                //TODO resize image
+                renderTarget->Resize(width, height);
             }
         }
 
@@ -54,10 +55,8 @@ Renderpass::Renderpass(std::shared_ptr<VkCore> core, std::vector<std::vector<std
 }
 
 Renderpass::~Renderpass() {
-    if (!core)
-        return;
     CleanupFrameBuffers();
-    VkUtil::VkSafeClean(vkDestroyRenderPass, core->GetRenderDevice(), pass, nullptr);
+    VkUtil::VkSafeClean(vkDestroyRenderPass, core.GetRenderDevice(), pass, nullptr);
 }
 void Renderpass::CreateRenderPass() {
     VkAttachmentDescription colorAttachment{};
@@ -76,7 +75,7 @@ void Renderpass::CreateRenderPass() {
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkAttachmentDescription depthAttachment{};
-    depthAttachment.format = depthImage->GetFormat();
+    depthAttachment.format = depthImage.GetFormat();
     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -128,7 +127,7 @@ void Renderpass::CreateRenderPass() {
         renderPassInfo.pNext = &renderPassMultiviewCreateInfo;
     }
 
-    if (vkCreateRenderPass(core->GetRenderDevice(), &renderPassInfo, nullptr, &pass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(core.GetRenderDevice(), &renderPassInfo, nullptr, &pass) != VK_SUCCESS) {
         Util::ErrorPopup("Failed to create render pass");
     }
 }
@@ -139,7 +138,7 @@ void Renderpass::SetRenderTarget(std::vector<std::vector<std::unique_ptr<Image>>
         std::vector<VkImageView> attachments;
         for (const auto& imageAttachmemt : images[i])
             attachments.push_back(imageAttachmemt->GetImageView());
-        attachments.push_back(depthImage->GetImageView(VK_IMAGE_ASPECT_DEPTH_BIT));
+        attachments.push_back(depthImage.GetImageView(VK_IMAGE_ASPECT_DEPTH_BIT));
 
         VkFramebufferCreateInfo framebufferCreateInfo{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
         framebufferCreateInfo.renderPass = GetVkRenderpass();
@@ -150,7 +149,7 @@ void Renderpass::SetRenderTarget(std::vector<std::vector<std::unique_ptr<Image>>
         framebufferCreateInfo.layers = 1;
 
         VkResult result =
-            vkCreateFramebuffer(core->GetRenderDevice(), &framebufferCreateInfo, nullptr, &frameBuffers[i]);
+            vkCreateFramebuffer(core.GetRenderDevice(), &framebufferCreateInfo, nullptr, &frameBuffers[i]);
         if (result != VK_SUCCESS) {
             Util::ErrorPopup("Failed to create frame buffer");
         }
@@ -159,7 +158,7 @@ void Renderpass::SetRenderTarget(std::vector<std::vector<std::unique_ptr<Image>>
 
 void Renderpass::CleanupFrameBuffers() {
     for (const auto& frameBuffer : frameBuffers) {
-        VkUtil::VkSafeClean(vkDestroyFramebuffer, core->GetRenderDevice(), frameBuffer, nullptr);
+        VkUtil::VkSafeClean(vkDestroyFramebuffer, core.GetRenderDevice(), frameBuffer, nullptr);
     }
     frameBuffers.clear();
 }

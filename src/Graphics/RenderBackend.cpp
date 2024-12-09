@@ -3,14 +3,14 @@
 
 namespace XRLib {
 namespace Graphics {
-RenderBackend::RenderBackend(Info& info, std::shared_ptr<VkCore> vkCore, XR::XrCore& xrCore, XRLib::Scene& scene)
+RenderBackend::RenderBackend(Info& info, VkCore& vkCore, XR::XrCore& xrCore, XRLib::Scene& scene)
     : info{info}, vkCore{vkCore}, xrCore{xrCore}, scene{scene} {
-    vkCore->CreateVkInstance(info, xrCore.VkAdditionalInstanceExts());
+    vkCore.CreateVkInstance(info, xrCore.VkAdditionalInstanceExts());
     if (xrCore.IsXRValid())
-        xrCore.VkSetPhysicalDevice(vkCore->GetRenderInstance(), &vkCore->VkPhysicalDeviceRef());
+        xrCore.VkSetPhysicalDevice(vkCore.GetRenderInstance(), &vkCore.VkPhysicalDeviceRef());
     else
-        vkCore->SelectPhysicalDevice();
-    vkCore->CreateVkDevice(info, xrCore.VkAdditionalDeviceExts(), xrCore.IsXRValid());
+        vkCore.SelectPhysicalDevice();
+    vkCore.CreateVkDevice(info, xrCore.VkAdditionalDeviceExts(), xrCore.IsXRValid());
 
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_RENDERBACKEND_INIT_FINISHED);
 
@@ -34,16 +34,14 @@ void RenderBackend::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& p
 }
 
 void RenderBackend::GetSwapchainInfo() {
-    swapchain = std::make_unique<Swapchain>();
-    std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages = swapchain->GetSwapchainImages(true);
-    uint8_t swapchainImageCount = xrCore.GetSwapchainImages().size();
-    swapchainImages.resize(swapchainImageCount);
-    for (uint32_t i = 0; i < swapchainImageCount; ++i) {
-        auto [width, height] = xrCore.SwapchainExtent();
-        swapchainImages[i].push_back(std::make_unique<Image>(vkCore, xrCore.GetSwapchainImages()[i].image,
+    std::vector<std::unique_ptr<Image>> swapchainImages;
+    auto [width, height] = xrCore.SwapchainExtent();
+    for (int i = 0; i < xrCore.GetSwapchainImages().size(); ++i) {
+        swapchainImages.push_back(std::make_unique<Image>(vkCore, xrCore.GetSwapchainImages()[i].image,
                                                              static_cast<VkFormat>(xrCore.SwapchainFormats()[0]), width,
                                                              height, 2));
     }
+    swapchain = std::make_unique<Swapchain>(vkCore, swapchainImages);
 }
 
 void RenderBackend::InitVertexIndexBuffers() {
@@ -75,9 +73,9 @@ void RenderBackend::InitVertexIndexBuffers() {
 }
 
 bool RenderBackend::StartFrame(uint32_t& imageIndex) {
-    vkWaitForFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence(), VK_TRUE, UINT64_MAX);
-    auto result = vkAcquireNextImageKHR(vkCore->GetRenderDevice(), swapchain->GetSwaphcain(), UINT64_MAX,
-                                        vkCore->GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
+    vkWaitForFences(vkCore.GetRenderDevice(), 1, &vkCore.GetInFlightFence(), VK_TRUE, UINT64_MAX);
+    auto result = vkAcquireNextImageKHR(vkCore.GetRenderDevice(), swapchain->GetSwaphcain(), UINT64_MAX,
+                                        vkCore.GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         auto [width, height] = WindowHandler::GetFrameBufferSize();
         EventSystem::TriggerEvent(Events::XRLIB_EVENT_WINDOW_RESIZED, width, height);
@@ -90,7 +88,7 @@ bool RenderBackend::StartFrame(uint32_t& imageIndex) {
 }
 
 void RenderBackend::RecordFrame(uint32_t& imageIndex) {
-    vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
+    vkResetFences(vkCore.GetRenderDevice(), 1, &vkCore.GetInFlightFence());
     CommandBuffer commandBuffer{vkCore};
     vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
 
@@ -125,7 +123,7 @@ void RenderBackend::RecordFrame(uint32_t& imageIndex) {
 
 void RenderBackend::RecordFrame(uint32_t& imageIndex,
                                 std::function<void(uint32_t&, CommandBuffer&)> recordingFunction) {
-    vkResetFences(vkCore->GetRenderDevice(), 1, &vkCore->GetInFlightFence());
+    vkResetFences(vkCore.GetRenderDevice(), 1, &vkCore.GetInFlightFence());
     CommandBuffer commandBuffer{vkCore};
     vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
 
@@ -138,13 +136,13 @@ void RenderBackend::EndFrame(uint32_t& imageIndex) {
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
     presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = &vkCore->GetRenderFinishedSemaphore();
+    presentInfo.pWaitSemaphores = &vkCore.GetRenderFinishedSemaphore();
     VkSwapchainKHR swapChains[] = {swapchain->GetSwaphcain()};
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapChains;
     presentInfo.pImageIndices = &imageIndex;
 
-    vkQueuePresentKHR(vkCore->GetGraphicsQueue(), &presentInfo);
+    vkQueuePresentKHR(vkCore.GetGraphicsQueue(), &presentInfo);
 }
 }    // namespace Graphics
 }    // namespace XRLib

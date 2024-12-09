@@ -6,11 +6,11 @@ namespace XRLib {
 namespace Graphics {
 class CommandBuffer {
    public:
-    static std::unique_ptr<CommandBuffer> BeginSingleTimeCommands(std::shared_ptr<VkCore> core);
+    static std::unique_ptr<CommandBuffer> BeginSingleTimeCommands(VkCore& core);
     static void EndSingleTimeCommands(std::unique_ptr<CommandBuffer> commandBuffer);
 
    public:
-    CommandBuffer(std::shared_ptr<VkCore> core);
+    CommandBuffer(VkCore& core);
     ~CommandBuffer();
 
     CommandBuffer& BindVertexBuffer(int firstBinding, std::vector<VkBuffer> buffers, std::vector<VkDeviceSize> offsets);
@@ -40,7 +40,7 @@ class CommandBuffer {
     VkCommandBuffer& GetCommandBuffer() { return commandBuffer; }
 
    private:
-    std::shared_ptr<VkCore> core;
+    VkCore& core;
     VkGraphicsRenderpass* currentPass{nullptr};
     VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
 };

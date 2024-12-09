@@ -2,16 +2,14 @@
 
 namespace XRLib {
 namespace Graphics {
-RenderBackendFlat::RenderBackendFlat(Info& info, std::shared_ptr<VkCore> core, XR::XrCore& xrCore, Scene& scene)
+RenderBackendFlat::RenderBackendFlat(Info& info, VkCore& core, XR::XrCore& xrCore, Scene& scene)
     : RenderBackend(info, core, xrCore, scene) {
     PrepareFlatWindow();
     swapchain = std::make_unique<Swapchain>(core);
 }
 RenderBackendFlat::~RenderBackendFlat() {
-    if (vkCore == nullptr)
-        return;
-    vkDeviceWaitIdle(vkCore->GetRenderDevice());
-    VkUtil::VkSafeClean(vkDestroySurfaceKHR, vkCore->GetRenderInstance(), vkCore->GetFlatSurface(), nullptr);
+    vkDeviceWaitIdle(vkCore.GetRenderDevice());
+    VkUtil::VkSafeClean(vkDestroySurfaceKHR, vkCore.GetRenderInstance(), vkCore.GetFlatSurface(), nullptr);
 }
 
 void RenderBackendFlat::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& passes) {
@@ -99,11 +97,11 @@ void RenderBackendFlat::OnWindowResized(int width, int height) {
 }
 
 void RenderBackendFlat::PrepareFlatWindow() {
-    WindowHandler::VkGetWindowSurface(vkCore->GetRenderInstance(), &vkCore->GetFlatSurface());
+    WindowHandler::VkGetWindowSurface(vkCore.GetRenderInstance(), &vkCore.GetFlatSurface());
 
     VkBool32 presentSupport = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR(vkCore->GetRenderPhysicalDevice(), vkCore->GetGraphicsQueueFamilyIndex(),
-                                         vkCore->GetFlatSurface(), &presentSupport);
+    vkGetPhysicalDeviceSurfaceSupportKHR(vkCore.GetRenderPhysicalDevice(), vkCore.GetGraphicsQueueFamilyIndex(),
+                                         vkCore.GetFlatSurface(), &presentSupport);
 
     if (!presentSupport) {
         LOGGER(LOGGER::WARNING) << "Graphics queue doesn't have present support";

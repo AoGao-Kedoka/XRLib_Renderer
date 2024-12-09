@@ -10,7 +10,7 @@ namespace XRLib {
 namespace Graphics {
 class VkGraphicsRenderpass : public IGraphicsRenderpass {
    public:
-    VkGraphicsRenderpass(std::shared_ptr<VkCore> core, bool multiview,
+    VkGraphicsRenderpass(VkCore& core, bool multiview,
                          std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets,
                          std::vector<std::unique_ptr<DescriptorSet>>&& descriptorSets = {},
                          std::string vertexShaderPath = "", std::string fragmentShaderPath = "")
@@ -19,7 +19,7 @@ class VkGraphicsRenderpass : public IGraphicsRenderpass {
         Shader vertexShader{core, vertexShaderPath, Shader::VERTEX_SHADER, multiview};
         Shader fragmentShader{core, fragmentShaderPath, Shader::FRAGMENT_SHADER, multiview};
         renderPass = std::make_unique<Renderpass>(core, renderTargets, multiview);
-        pipeline = std::make_unique<Pipeline>(core, std::move(vertexShader), std::move(fragmentShader), *renderPass,
+        pipeline = std::make_unique<Pipeline>(core, vertexShader, fragmentShader, *renderPass,
                                               this->descriptorSets);
     }
 
@@ -29,7 +29,7 @@ class VkGraphicsRenderpass : public IGraphicsRenderpass {
     bool Stereo() { return multiview; }
 
    private:
-    std::shared_ptr<VkCore> core;
+    VkCore& core;
     std::unique_ptr<Renderpass> renderPass;
     std::unique_ptr<Pipeline> pipeline;
     std::vector<std::unique_ptr<DescriptorSet>> descriptorSets;
