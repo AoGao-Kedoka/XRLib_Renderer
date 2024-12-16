@@ -38,8 +38,8 @@ void RenderBackend::GetSwapchainInfo() {
     auto [width, height] = xrCore.SwapchainExtent();
     for (int i = 0; i < xrCore.GetSwapchainImages().size(); ++i) {
         swapchainImages.push_back(std::make_unique<Image>(vkCore, xrCore.GetSwapchainImages()[i].image,
-                                                             static_cast<VkFormat>(xrCore.SwapchainFormats()[0]), width,
-                                                             height, 2));
+                                                          static_cast<VkFormat>(xrCore.SwapchainFormats()[0]), width,
+                                                          height, 2));
     }
     swapchain = std::make_unique<Swapchain>(vkCore, swapchainImages);
 }
@@ -53,20 +53,20 @@ void RenderBackend::InitVertexIndexBuffers() {
     indexBuffers.resize(scene.Meshes().size());
     for (int i = 0; i < scene.Meshes().size(); ++i) {
         auto mesh = scene.Meshes()[i];
-        if (mesh.vertices.empty() || mesh.indices.empty()) {
+        if (mesh.GetVerticies().empty() || mesh.GetIndices().empty()) {
             vertexBuffers[i] = nullptr;
             indexBuffers[i] = nullptr;
             continue;
         }
 
-        void* verticesData = static_cast<void*>(mesh.vertices.data());
-        void* indicesData = static_cast<void*>(mesh.indices.data());
+        void* verticesData = static_cast<void*>(mesh.GetVerticies().data());
+        void* indicesData = static_cast<void*>(mesh.GetIndices().data());
         vertexBuffers[i] =
-            std::make_unique<Buffer>(vkCore, sizeof(mesh.vertices[0]) * mesh.vertices.size(),
+            std::make_unique<Buffer>(vkCore, sizeof(mesh.GetVerticies()[0]) * mesh.GetVerticies().size(),
                                      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verticesData,
                                      true, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        indexBuffers[i] = std::make_unique<Buffer>(vkCore, sizeof(mesh.indices[0]) * mesh.indices.size(),
+        indexBuffers[i] = std::make_unique<Buffer>(vkCore, sizeof(mesh.GetIndices()[0]) * mesh.GetIndices().size(),
                                                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                                                    indicesData, true, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT);
     }
@@ -104,7 +104,7 @@ void RenderBackend::RecordFrame(uint32_t& imageIndex) {
                 .BindIndexBuffer(indexBuffers[i]->GetBuffer(), 0);
         }
 
-        commandBuffer.DrawIndexed(scene.Meshes()[i].indices.size(), 1, 0, 0, 0);
+        commandBuffer.DrawIndexed(scene.Meshes()[i].GetIndices().size(), 1, 0, 0, 0);
     }
 
     // represents how many passes left to draw

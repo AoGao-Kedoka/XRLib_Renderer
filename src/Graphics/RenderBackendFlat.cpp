@@ -49,24 +49,28 @@ void RenderBackendFlat::OnMouseMovement(double deltaX, double deltaY) {
     auto& cam = scene.CameraTransform();
     auto camMatrix = cam.GetMatrix();
 
-    float sensitivity = 0.1f;
-    float yaw = deltaX * sensitivity;
-    float pitch = deltaY * sensitivity;
+    const float sensitivity = 0.1f;
 
-    glm::mat4 rotationYaw = glm::rotate(glm::mat4(1.0f), glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 rotationPitch = glm::rotate(glm::mat4(1.0f), glm::radians(pitch), cam.RightVector());
+    float yaw = static_cast<float>(deltaX) * sensitivity;
+    float pitch = static_cast<float>(deltaY) * sensitivity;
 
-    camMatrix = {rotationPitch * camMatrix};
-    camMatrix = {rotationYaw * camMatrix};
-    for (int i = 0; i < 3; ++i) {
-        glm::vec3 column(camMatrix[0][i], camMatrix[1][i], camMatrix[2][i]);
-        column = glm::normalize(column);
-        camMatrix[0][i] = column.x;
-        camMatrix[1][i] = column.y;
-        camMatrix[2][i] = column.z;
+    static float accumulatedPitch = 0.0f;
+    accumulatedPitch += pitch;
+    const float maxPitch = 89.0f;
+    if (accumulatedPitch > maxPitch) {
+        pitch -= (accumulatedPitch - maxPitch);
+        accumulatedPitch = maxPitch;
+    } else if (accumulatedPitch < -maxPitch) {
+        pitch -= (accumulatedPitch + maxPitch);
+        accumulatedPitch = -maxPitch;
     }
 
-    scene.CameraTransform() = {camMatrix};
+    glm::mat4 rotationYaw = glm::rotate(glm::mat4(1.0f), glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    glm::vec3 rightVector = glm::vec3(camMatrix[0][0], camMatrix[1][0], camMatrix[2][0]);
+    glm::mat4 rotationPitch = glm::rotate(glm::mat4(1.0f), glm::radians(pitch), rightVector);
+    camMatrix = rotationYaw * rotationPitch * camMatrix;
+    scene.CameraTransform() = camMatrix;
 }
 
 void RenderBackendFlat::OnKeyPressed(int keyCode) {

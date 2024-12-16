@@ -2,7 +2,7 @@
 
 #include "Graphics/Vulkan/CommandBuffer.h"
 #include "Graphics/Vulkan/VulkanDefaults.h"
-#include "Scene.h"
+#include "Scene/Scene.h"
 #include "XR/XrCore.h"
 
 namespace XRLib {

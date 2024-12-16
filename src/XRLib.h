@@ -4,7 +4,7 @@
 
 #include "Graphics/RenderBackend.h"
 #include "Graphics/RenderBackendFlat.h"
-#include "Scene.h"
+#include "Scene/Scene.h"
 #include "XR/XrBackend.h"
 
 namespace XRLib {
