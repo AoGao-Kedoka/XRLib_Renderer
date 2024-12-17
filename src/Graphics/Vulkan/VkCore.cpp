@@ -201,6 +201,13 @@ void VkCore::CreateVkDevice(Info& info, const std::vector<const char*>& addition
     indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
     indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
 
+#ifdef __APPLE__
+    VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilitySubsetFeatures{};
+    portabilitySubsetFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR;
+    portabilitySubsetFeatures.mutableComparisonSamplers = VK_TRUE;
+    indexingFeatures.pNext = &portabilitySubsetFeatures;
+#endif
+
     VkDeviceCreateInfo deviceCreateInfo{};
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceCreateInfo.queueCreateInfoCount = 1;

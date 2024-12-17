@@ -28,6 +28,10 @@
     #define FORMAT_STRING(content, ...) fmt::format(content, __VA_ARGS__)
 #endif
 
+#if __APPLE__
+#define VK_ENABLE_BETA_EXTENSIONS
+#endif
+
 #include <vulkan/vulkan.h>
 
 #define XR_USE_GRAPHICS_API_VULKAN
