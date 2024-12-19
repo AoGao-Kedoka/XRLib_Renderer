@@ -5,7 +5,6 @@
 
 namespace XRLib {
 
-static int LOADING_STATUS_COUNTER{0};
 MeshManager::MeshManager() : done{false}, stop{false} {
     workerThread = std::thread(&MeshManager::MeshLoadingThread, this);
 }
@@ -52,8 +51,6 @@ void CreateTempTexture(XRLib::Mesh& newMesh, uint8_t color) {
     newMesh.GetTextureData() = textureData;
 }
 void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo) {
-    Assimp::Importer importer;
-
     const aiScene* scene =
         importer.ReadFile(meshLoadInfo.meshPath, aiProcess_Triangulate | aiProcess_FlipUVs |
                                                      aiProcess_JoinIdenticalVertices | aiProcess_PreTransformVertices);
@@ -175,7 +172,7 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo) {
         }
     }
 
-    if (LOADING_STATUS_COUNTER == meshes.size()) {
+    if (loadingStatuscounter == meshes.size()) {
         EventSystem::TriggerEvent(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED);
     }
 }
@@ -199,7 +196,7 @@ void MeshManager::MeshLoadingThread() {
 void MeshManager::AddNewMesh(const Mesh& newMesh, const Mesh::MeshLoadInfo& meshLoadInfo) {
     std::lock_guard<std::mutex> lock(queueMutex);
     meshes[meshLoadInfo.localLoadingIndex] = newMesh;
-    LOADING_STATUS_COUNTER++;
+    loadingStatuscounter++;
 }
 
 void MeshManager::AttachLeftControllerPose() {

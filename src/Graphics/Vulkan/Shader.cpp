@@ -1,5 +1,5 @@
 #include "Shader.h"
-#include "VulkanDefaults.h"
+#include "VkStandardRB.h"
 
 namespace XRLib {
 namespace Graphics {
@@ -7,15 +7,15 @@ namespace Graphics {
 Shader::Shader(VkCore& core, const std::filesystem::path& filePath, ShaderStage shaderStage,
                bool stereo)
     : core{core}, stage{shaderStage} {
-    Util::EnsureDirExists(VulkanDefaults::defaultShaderCachePath);
+    Util::EnsureDirExists(VkStandardRB::defaultShaderCachePath);
     std::string rawCode;
     if (filePath.empty()) {
         switch (stage) {
             case ShaderStage::VERTEX_SHADER:
-                rawCode = stereo ? VulkanDefaults::defaultVertStereo : VulkanDefaults::defaultVertFlat;
+                rawCode = stereo ? VkStandardRB::defaultVertStereo : VkStandardRB::defaultVertFlat;
                 break;
             case ShaderStage::FRAGMENT_SHADER:
-                rawCode = VulkanDefaults::defaultPhongFrag;
+                rawCode = VkStandardRB::defaultPhongFrag;
                 break;
         }
     } else {
@@ -25,7 +25,7 @@ Shader::Shader(VkCore& core, const std::filesystem::path& filePath, ShaderStage 
     std::string cacheNamePrefix = filePath.empty() ? "defaultMain" : filePath.filename().generic_string();
     std::string cacheNameSuffix = std::to_string(Util::HashString(rawCode));
 
-    std::string cacheFilePath = FORMAT_STRING("{}/{}_{}.spv", VulkanDefaults::defaultShaderCachePath, cacheNamePrefix, cacheNameSuffix);
+    std::string cacheFilePath = FORMAT_STRING("{}/{}_{}.spv", VkStandardRB::defaultShaderCachePath, cacheNamePrefix, cacheNameSuffix);
 
     std::vector<uint32_t> code;
     if (std::filesystem::exists(cacheFilePath)) {

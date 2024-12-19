@@ -5,7 +5,7 @@ namespace Graphics {
 RenderBackendFlat::RenderBackendFlat(Info& info, VkCore& core, XR::XrCore& xrCore, Scene& scene)
     : RenderBackend(info, core, xrCore, scene) {
     PrepareFlatWindow();
-    swapchain = std::make_unique<Swapchain>(core);
+    vkSRB.GetSwapchain()  = std::make_unique<Swapchain>(core);
 }
 RenderBackendFlat::~RenderBackendFlat() {
     vkDeviceWaitIdle(vkCore.GetRenderDevice());
@@ -13,8 +13,6 @@ RenderBackendFlat::~RenderBackendFlat() {
 }
 
 void RenderBackendFlat::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& passes) {
-    InitVertexIndexBuffers();
-
     // register window resize callback
     EventSystem::Callback<int, int> windowResizeCallback =
         std::bind(&RenderBackendFlat::OnWindowResized, this, std::placeholders::_1, std::placeholders::_2);
@@ -33,8 +31,8 @@ void RenderBackendFlat::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>
 
     // prepare shader
     if (passes.empty()) {
-        VulkanDefaults::PrepareDefaultFlatRenderPasses(vkCore, scene, viewProj, RenderPasses,
-                                                       swapchain->GetSwapchainImages());
+        vkSRB.InitVerticesIndicesShader();
+        vkSRB.PrepareDefaultFlatRenderPasses(viewProj, RenderPasses);
     } else {
         LOGGER(LOGGER::INFO) << "Using custom render pass";
         this->RenderPasses = std::move(passes);

@@ -24,6 +24,7 @@ class MeshManager {
     void LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo);
     void MeshLoadingThread();
     void AddNewMesh(const Mesh& newMesh, const Mesh::MeshLoadInfo& meshLoadInfo);
+    bool MeshLoaded() { return loadingIndex != -1; }
 
    private:
     std::vector<Mesh> meshes;
@@ -35,7 +36,10 @@ class MeshManager {
     std::atomic<bool> done;
     std::atomic<bool> stop;
     std::thread workerThread;
-    int loadingIndex = -1;
-    bool MeshLoaded() { return loadingIndex != -1; }
+    int loadingIndex{-1};
+    int loadingStatuscounter{0};
+
+    Assimp::Importer importer;
+
 };
 }    // namespace XRLib

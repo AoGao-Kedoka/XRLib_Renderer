@@ -1,9 +1,11 @@
-#include "VulkanDefaults.h"
+#include "VkStandardRB.h"
 
 namespace XRLib {
 namespace Graphics {
 
-const std::string_view VulkanDefaults::defaultVertFlat = R"(
+VkStandardRB::VkStandardRB(VkCore& core, Scene& scene) : core{core}, scene{scene} {}
+
+const std::string_view VkStandardRB::defaultVertFlat = R"(
     #version 450
     #extension GL_ARB_separate_shader_objects : enable
     layout(set = 0, binding = 0) uniform ViewProj{
@@ -38,7 +40,7 @@ const std::string_view VulkanDefaults::defaultVertFlat = R"(
     }
 )";
 
-const std::string_view VulkanDefaults::defaultVertStereo = R"(
+const std::string_view VkStandardRB::defaultVertStereo = R"(
     #version 450
     #extension GL_EXT_multiview : enable
     #extension GL_ARB_separate_shader_objects : enable
@@ -75,7 +77,7 @@ const std::string_view VulkanDefaults::defaultVertStereo = R"(
     }
 )";
 
-const std::string_view VulkanDefaults::defaultPhongFrag = R"(
+const std::string_view VkStandardRB::defaultPhongFrag = R"(
     #version 450
     #extension GL_ARB_separate_shader_objects : enable
     #extension GL_EXT_multiview : enable
@@ -255,9 +257,7 @@ std::pair<std::shared_ptr<Buffer>, std::shared_ptr<Buffer>> CreateLightBuffer(Vk
 ////////////////////////////////////////////////////
 // Default DescriptorLayout and Renderpasses binding
 ////////////////////////////////////////////////////
-void PrepareDefaultRenderPasses(VkCore& core, Scene& scene,
-                                std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses,
-                                std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages, bool isStereo,
+void VkStandardRB::PrepareDefaultRenderPasses(std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages, bool isStereo,
                                 std::shared_ptr<Buffer> viewProjBuffer) {
     auto modelPositionsBuffer = std::move(CreateModelPositionBuffer(core, scene));
     auto textures = std::move(CreateTextures(core, scene));
@@ -277,22 +277,112 @@ void PrepareDefaultRenderPasses(VkCore& core, Scene& scene,
     renderPasses.push_back(std::move(graphicsRenderPass));
 }
 
-void VulkanDefaults::PrepareDefaultStereoRenderPasses(
-    VkCore& core, Scene& scene, Primitives::ViewProjectionStereo& viewProj,
-    std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses,
-    std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages) {
-    PrepareDefaultRenderPasses(core, scene, renderPasses, swapchainImages, true,
+void VkStandardRB::InitVerticesIndicesShader() {
+    if (scene.Meshes().empty()) {
+        return;
+    }
+    // init vertex buffer and index buffer
+    vertexBuffers.resize(scene.Meshes().size());
+    indexBuffers.resize(scene.Meshes().size());
+    for (int i = 0; i < scene.Meshes().size(); ++i) {
+        auto mesh = scene.Meshes()[i];
+        if (mesh.GetVerticies().empty() || mesh.GetIndices().empty()) {
+            vertexBuffers[i] = nullptr;
+            indexBuffers[i] = nullptr;
+            continue;
+        }
+
+        void* verticesData = static_cast<void*>(mesh.GetVerticies().data());
+        void* indicesData = static_cast<void*>(mesh.GetIndices().data());
+        vertexBuffers[i] =
+            std::make_unique<Buffer>(core, sizeof(mesh.GetVerticies()[0]) * mesh.GetVerticies().size(),
+                                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verticesData,
+                                     true, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        indexBuffers[i] = std::make_unique<Buffer>(core, sizeof(mesh.GetIndices()[0]) * mesh.GetIndices().size(),
+                                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                                   indicesData, true, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT);
+    }
+}
+
+void VkStandardRB::PrepareDefaultStereoRenderPasses(
+    Primitives::ViewProjectionStereo& viewProj,
+    std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses) {
+    PrepareDefaultRenderPasses(swapchain->GetSwapchainImages(), true,
                                std::move(CreateViewProjectionBuffer(core, viewProj)));
 }
 
-void VulkanDefaults::PrepareDefaultFlatRenderPasses(VkCore& core, Scene& scene, Primitives::ViewProjection& viewProj,
-                                                    std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses,
-                                                    std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages) {
+void VkStandardRB::PrepareDefaultFlatRenderPasses(Primitives::ViewProjection& viewProj,
+                                                    std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses) {
     viewProj.view = scene.CameraTransform().GetMatrix();
     viewProj.proj = scene.CameraProjection();
-    PrepareDefaultRenderPasses(core, scene, renderPasses, swapchainImages, false,
+    PrepareDefaultRenderPasses(swapchain->GetSwapchainImages(), false,
                                std::move(CreateViewProjectionBuffer(core, scene, viewProj)));
 }
+
+bool VkStandardRB::StartFrame(uint32_t& imageIndex) {
+    vkWaitForFences(core.GetRenderDevice(), 1, &core.GetInFlightFence(), VK_TRUE, UINT64_MAX);
+    auto result = vkAcquireNextImageKHR(core.GetRenderDevice(), swapchain->GetSwaphcain(), UINT64_MAX,
+                                        core.GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        auto [width, height] = WindowHandler::GetFrameBufferSize();
+        EventSystem::TriggerEvent(Events::XRLIB_EVENT_WINDOW_RESIZED, width, height);
+        return false;
+    } else if (result != VK_SUCCESS) {
+        Util::ErrorPopup("Failed to acquire next image");
+    }
+
+    return true;
+}
+
+void VkStandardRB::RecordFrame(uint32_t& imageIndex) {
+    vkResetFences(core.GetRenderDevice(), 1, &core.GetInFlightFence());
+    CommandBuffer commandBuffer{core};
+    vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
+
+    // default frame recording
+    auto currentPassIndex = 0;
+    auto& currentPass = static_cast<VkGraphicsRenderpass&>(*renderPasses[currentPassIndex]);
+    commandBuffer.StartRecord().StartPass(currentPass, imageIndex).BindDescriptorSets(currentPass, 0);
+    for (uint32_t i = 0; i < scene.Meshes().size(); ++i) {
+        commandBuffer.PushConstant(currentPass, sizeof(uint32_t), &i);
+        if (!vertexBuffers.empty() && !indexBuffers.empty() && vertexBuffers[i] != nullptr &&
+            indexBuffers[i] != nullptr) {
+            commandBuffer.BindVertexBuffer(0, {vertexBuffers[i]->GetBuffer()}, {0})
+                .BindIndexBuffer(indexBuffers[i]->GetBuffer(), 0);
+        }
+
+        commandBuffer.DrawIndexed(scene.Meshes()[i].GetIndices().size(), 1, 0, 0, 0);
+    }
+
+    // represents how many passes left to draw
+    EventSystem::TriggerEvent<int, CommandBuffer&>(Events::XRLIB_EVENT_RENDERER_PRE_SUBMITTING,
+                                                   (renderPasses.size() - 1) - currentPassIndex, commandBuffer);
+
+    commandBuffer.EndPass();
+
+    // add barrier synchronization between render passes
+    if (currentPassIndex != renderPasses.size() - 1) {
+        commandBuffer.BarrierBetweenPasses(imageIndex, currentPass);
+    }
+
+    commandBuffer.EndRecord();
+}
+
+void VkStandardRB::EndFrame(uint32_t& imageIndex) {
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = &core.GetRenderFinishedSemaphore();
+    VkSwapchainKHR swapChains[] = {swapchain->GetSwaphcain()};
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+    presentInfo.pImageIndices = &imageIndex;
+
+    vkQueuePresentKHR(core.GetGraphicsQueue(), &presentInfo);
+}
+
 
 }    // namespace Graphics
 }    // namespace XRLib

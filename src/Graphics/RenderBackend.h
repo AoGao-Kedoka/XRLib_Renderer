@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Graphics/Vulkan/CommandBuffer.h"
-#include "Graphics/Vulkan/VulkanDefaults.h"
+#include "Graphics/Vulkan/VkStandardRB.h"
 #include "Scene/Scene.h"
 #include "XR/XrCore.h"
 
@@ -18,10 +18,7 @@ class RenderBackend {
 
     virtual void OnWindowResized(int width, int height) { Util::ErrorPopup("Undefined image resize"); };
 
-    void InitVertexIndexBuffers();
-
-    void Run(uint32_t& imageIndex);
-
+    Swapchain& GetSwapchain() { return *vkSRB.GetSwapchain(); }
     bool StartFrame(uint32_t& imageIndex);
     void RecordFrame(uint32_t& imageIndex);
     void RecordFrame(uint32_t& imageIndex, std::function<void(uint32_t&, CommandBuffer&)> recordingFunction);
@@ -29,21 +26,13 @@ class RenderBackend {
 
     std::vector<std::unique_ptr<IGraphicsRenderpass>> RenderPasses;
 
-    Swapchain& GetSwapchain() const { return *swapchain; }
-
-    std::vector<std::unique_ptr<Buffer>>& GetVertexBuffers() { return vertexBuffers; }
-    std::vector<std::unique_ptr<Buffer>>& GetIndexBuffers() { return indexBuffers; }
-
    protected:
     Info& info;
     Scene& scene;
     XR::XrCore& xrCore;
     VkCore& vkCore;
 
-    std::vector<std::unique_ptr<Buffer>> vertexBuffers;
-    std::vector<std::unique_ptr<Buffer>> indexBuffers;
-
-    std::unique_ptr<Swapchain> swapchain{nullptr};
+    VkStandardRB vkSRB{vkCore, scene};
 
    private:
     void InitVulkan();

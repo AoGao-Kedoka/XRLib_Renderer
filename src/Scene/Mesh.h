@@ -40,6 +40,5 @@ class Mesh {
     TextureData textureData;
 
     std::vector<MESH_TAG> tags;
-    int rootIndex = 0;
 };
 }    // namespace XRLib
