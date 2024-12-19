@@ -11,9 +11,10 @@ This project is currently in the very early stages of development and is subject
 - controller binding "/khr/simple_controller"
 
 **WIP**:
-- improve mesh loading
+- improve mesh loading (models with multiple meshes, textures)
+- custom renderpass
+- PBR
 - more controller profiles (Quest, Pico)
-- custom rendering support
 - xr mirror view
 
 ## Usage
