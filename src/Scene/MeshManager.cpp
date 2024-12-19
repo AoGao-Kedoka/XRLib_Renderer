@@ -51,6 +51,8 @@ void CreateTempTexture(XRLib::Mesh& newMesh, uint8_t color) {
     newMesh.GetTextureData() = textureData;
 }
 void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo) {
+    Assimp::Importer importer;
+
     const aiScene* scene =
         importer.ReadFile(meshLoadInfo.meshPath, aiProcess_Triangulate | aiProcess_FlipUVs |
                                                      aiProcess_JoinIdenticalVertices | aiProcess_PreTransformVertices);
@@ -64,6 +66,10 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo) {
         CreateTempTexture(newMesh, 255);
         AddNewMesh(newMesh, meshLoadInfo);
         return;
+    }
+
+    if (scene->mNumMeshes != 1) {
+        Util::ErrorPopup("Loading models with multiple meshes is currently not supported.\nThis will be worked on very soon!");
     }
 
     for (unsigned int i = 0; i < scene->mNumMeshes; i++) {

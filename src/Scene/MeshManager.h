@@ -3,6 +3,7 @@
 #include "Event/EventSystem.h"
 #include "Event/Events.h"
 #include "Logger.h"
+#include "Utils/Util.h"
 #include "Mesh.h"
 
 namespace XRLib {
@@ -38,8 +39,6 @@ class MeshManager {
     std::thread workerThread;
     int loadingIndex{-1};
     int loadingStatuscounter{0};
-
-    Assimp::Importer importer;
 
 };
 }    // namespace XRLib
