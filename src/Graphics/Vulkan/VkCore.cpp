@@ -201,11 +201,17 @@ void VkCore::CreateVkDevice(Info& info, const std::vector<const char*>& addition
     indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
     indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
 
+    // TODO: remove after switching to XR_KHR_vulkan_enable2
+    VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
+    timelineSemaphoreFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+    timelineSemaphoreFeatures.timelineSemaphore = true;
+    indexingFeatures.pNext = &timelineSemaphoreFeatures;
+
 #ifdef __APPLE__
     VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilitySubsetFeatures{};
     portabilitySubsetFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR;
     portabilitySubsetFeatures.mutableComparisonSamplers = VK_TRUE;
-    indexingFeatures.pNext = &portabilitySubsetFeatures;
+    timelineSemaphoreFeatures.pNext = &portabilitySubsetFeatures;
 #endif
 
     VkDeviceCreateInfo deviceCreateInfo{};
