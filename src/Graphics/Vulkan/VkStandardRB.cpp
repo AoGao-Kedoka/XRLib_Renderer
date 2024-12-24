@@ -152,7 +152,7 @@ const std::string_view VkStandardRB::defaultPhongFrag = R"(
 std::shared_ptr<Buffer> CreateModelPositionBuffer(VkCore& core, Scene& scene) {
     std::vector<glm::mat4> modelPositions(scene.Meshes().size());
     for (int i = 0; i < modelPositions.size(); ++i) {
-        modelPositions[i] = scene.Meshes()[i].GetTransform().GetMatrix();
+        modelPositions[i] = scene.Meshes()[i]->GetTransform().GetMatrix();
     }
 
     if (modelPositions.empty()) {
@@ -168,7 +168,7 @@ std::shared_ptr<Buffer> CreateModelPositionBuffer(VkCore& core, Scene& scene) {
     EventSystem::Callback<> modelPositionBufferCallback = [&scene, &buffer = *modelPositionsBuffer]() {
         std::vector<glm::mat4> modelPositions(scene.Meshes().size());
         for (int i = 0; i < modelPositions.size(); ++i) {
-            modelPositions[i] = scene.Meshes()[i].GetTransform().GetMatrix();
+            modelPositions[i] = scene.Meshes()[i]->GetTransform().GetMatrix();
         }
         buffer.UpdateBuffer(sizeof(glm::mat4) * modelPositions.size(), static_cast<void*>(modelPositions.data()));
     };
@@ -234,8 +234,8 @@ std::vector<std::shared_ptr<Image>> CreateTextures(VkCore& core, Scene& scene) {
 
     for (int i = 0; i < textures.size(); ++i) {
         textures[i] = std::make_shared<Image>(
-            core, scene.Meshes()[i].GetTextureData().data, scene.Meshes()[i].GetTextureData().textureWidth,
-            scene.Meshes()[i].GetTextureData().textureHeight, scene.Meshes()[i].GetTextureData().textureChannels,
+            core, scene.Meshes()[i]->GetTextureData().data, scene.Meshes()[i]->GetTextureData().textureWidth,
+            scene.Meshes()[i]->GetTextureData().textureHeight, scene.Meshes()[i]->GetTextureData().textureChannels,
             VK_FORMAT_R8G8B8A8_SRGB);
     }
 
@@ -257,8 +257,8 @@ std::pair<std::shared_ptr<Buffer>, std::shared_ptr<Buffer>> CreateLightBuffer(Vk
 ////////////////////////////////////////////////////
 // Default DescriptorLayout and Renderpasses binding
 ////////////////////////////////////////////////////
-void VkStandardRB::PrepareDefaultRenderPasses(std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages, bool isStereo,
-                                std::shared_ptr<Buffer> viewProjBuffer) {
+void VkStandardRB::PrepareDefaultRenderPasses(std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages,
+                                              bool isStereo, std::shared_ptr<Buffer> viewProjBuffer) {
     auto modelPositionsBuffer = std::move(CreateModelPositionBuffer(core, scene));
     auto textures = std::move(CreateTextures(core, scene));
     auto [lightsCountBuffer, lightsBuffer] = std::move(CreateLightBuffer(core, scene));
@@ -285,7 +285,7 @@ void VkStandardRB::InitVerticesIndicesShader() {
     vertexBuffers.resize(scene.Meshes().size());
     indexBuffers.resize(scene.Meshes().size());
     for (int i = 0; i < scene.Meshes().size(); ++i) {
-        auto mesh = scene.Meshes()[i];
+        auto& mesh = *scene.Meshes()[i];
         if (mesh.GetVerticies().empty() || mesh.GetIndices().empty()) {
             vertexBuffers[i] = nullptr;
             indexBuffers[i] = nullptr;
@@ -305,25 +305,29 @@ void VkStandardRB::InitVerticesIndicesShader() {
     }
 }
 
-void VkStandardRB::PrepareDefaultStereoRenderPasses(
-    Primitives::ViewProjectionStereo& viewProj,
-    std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses) {
+void VkStandardRB::PrepareDefaultStereoRenderPasses(Primitives::ViewProjectionStereo& viewProj,
+                                                    std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses) {
     PrepareDefaultRenderPasses(swapchain->GetSwapchainImages(), true,
                                std::move(CreateViewProjectionBuffer(core, viewProj)));
 }
 
 void VkStandardRB::PrepareDefaultFlatRenderPasses(Primitives::ViewProjection& viewProj,
-                                                    std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses) {
+                                                  std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses) {
     viewProj.view = scene.CameraTransform().GetMatrix();
     viewProj.proj = scene.CameraProjection();
     PrepareDefaultRenderPasses(swapchain->GetSwapchainImages(), false,
                                std::move(CreateViewProjectionBuffer(core, scene, viewProj)));
 }
 
+////////////////////////////////////////////////////
+// Render Loop
+////////////////////////////////////////////////////
 bool VkStandardRB::StartFrame(uint32_t& imageIndex) {
     vkWaitForFences(core.GetRenderDevice(), 1, &core.GetInFlightFence(), VK_TRUE, UINT64_MAX);
+
     auto result = vkAcquireNextImageKHR(core.GetRenderDevice(), swapchain->GetSwaphcain(), UINT64_MAX,
                                         core.GetImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
+
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         auto [width, height] = WindowHandler::GetFrameBufferSize();
         EventSystem::TriggerEvent(Events::XRLIB_EVENT_WINDOW_RESIZED, width, height);
@@ -352,7 +356,7 @@ void VkStandardRB::RecordFrame(uint32_t& imageIndex) {
                 .BindIndexBuffer(indexBuffers[i]->GetBuffer(), 0);
         }
 
-        commandBuffer.DrawIndexed(scene.Meshes()[i].GetIndices().size(), 1, 0, 0, 0);
+        commandBuffer.DrawIndexed(scene.Meshes()[i]->GetIndices().size(), 1, 0, 0, 0);
     }
 
     // represents how many passes left to draw
@@ -372,9 +376,9 @@ void VkStandardRB::RecordFrame(uint32_t& imageIndex) {
 void VkStandardRB::EndFrame(uint32_t& imageIndex) {
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = &core.GetRenderFinishedSemaphore();
+
     VkSwapchainKHR swapChains[] = {swapchain->GetSwaphcain()};
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapChains;
@@ -382,7 +386,6 @@ void VkStandardRB::EndFrame(uint32_t& imageIndex) {
 
     vkQueuePresentKHR(core.GetGraphicsQueue(), &presentInfo);
 }
-
 
 }    // namespace Graphics
 }    // namespace XRLib

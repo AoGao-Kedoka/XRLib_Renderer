@@ -2,6 +2,9 @@
 
 namespace XRLib {
 Scene::Scene() {
+
+    sceneHierarchy.push_back(std::make_unique<Camera>());
+
     EventSystem::Callback<> allMeshesLoadCallback = [this]() {
         // validate meshes
         Validate();
@@ -11,6 +14,7 @@ Scene::Scene() {
             LOGGER(LOGGER::WARNING) << "No light in the scene is defined, creating default light at location (0,0,0)";
             Transform defaultTransform;
             lights.push_back({defaultTransform, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.5f});
+            sceneHierarchy.push_back(std::make_unique<PointLight>(defaultTransform, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.5f));
         }
     };
     EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_INIT_STARTED, allMeshesLoadCallback);
@@ -22,9 +26,9 @@ Scene& Scene::LoadMeshAsync(Mesh::MeshLoadInfo loadInfo) {
 }
 
 void Scene::Validate() {
-    for (auto& mesh : meshManager.Meshes()) {
-        if (Util::VectorContains(mesh.Tags(), Mesh::MESH_TAG::MESH_LEFT_CONTROLLER) &&
-            Util::VectorContains(mesh.Tags(), Mesh::MESH_TAG::MESH_RIGHT_CONTROLLER)) {
+    for (auto& mesh : meshes) {
+        if (Util::VectorContains(mesh->Tags(), Mesh::MESH_TAG::MESH_LEFT_CONTROLLER) &&
+            Util::VectorContains(mesh->Tags(), Mesh::MESH_TAG::MESH_RIGHT_CONTROLLER)) {
             Util::ErrorPopup("Mesh can't be left and right controller and the same time");
         }
     }

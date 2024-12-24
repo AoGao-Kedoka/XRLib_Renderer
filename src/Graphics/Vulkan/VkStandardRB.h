@@ -14,14 +14,16 @@ class VkStandardRB : StandardRB {
    public:
     VkStandardRB(VkCore& core, Scene& scene);
     ~VkStandardRB() = default;
+
     ////////////////////////////////////////////////////
     // Shaders
     ////////////////////////////////////////////////////
+
     static const std::string_view defaultVertFlat;
     static const std::string_view defaultPhongFrag;
     static const std::string_view defaultVertStereo;
 
-    constexpr static std::string_view defaultShaderCachePath = "./ShaderCache";
+    inline constexpr static std::string_view defaultShaderCachePath = "./ShaderCache";
 
     ////////////////////////////////////////////////////
     // Default render passes
@@ -33,6 +35,10 @@ class VkStandardRB : StandardRB {
                                         std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses);
 
     void InitVerticesIndicesShader();
+
+    ////////////////////////////////////////////////////
+    // Frame Rendering
+    ////////////////////////////////////////////////////
 
     std::unique_ptr<Swapchain>& GetSwapchain() { return swapchain; }
     bool StartFrame(uint32_t& imageIndex) override;

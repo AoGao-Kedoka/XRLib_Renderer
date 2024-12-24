@@ -56,4 +56,14 @@ Transform& Transform::Scale(glm::vec3 scale) {
     transform = glm::scale(transform, scale);
     return *this;
 }
+
+Transform Transform::operator*(Transform const& t) {
+    return {transform * t.GetMatrix()};
+}
+Transform Transform::operator+(Transform const& t) {
+    return {transform + t.GetMatrix()};
+}
+Transform Transform::operator-(Transform const& t) {
+    return {transform - t.GetMatrix()};
+}
 }    // namespace XRLib

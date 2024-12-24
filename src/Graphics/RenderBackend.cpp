@@ -5,12 +5,8 @@ namespace XRLib {
 namespace Graphics {
 RenderBackend::RenderBackend(Info& info, VkCore& vkCore, XR::XrCore& xrCore, XRLib::Scene& scene)
     : info{info}, vkCore{vkCore}, xrCore{xrCore}, scene{scene} {
-    vkCore.CreateVkInstance(info, xrCore.VkAdditionalInstanceExts());
-    if (xrCore.IsXRValid())
-        xrCore.VkSetPhysicalDevice(vkCore.GetRenderInstance(), &vkCore.VkPhysicalDeviceRef());
-    else
-        vkCore.SelectPhysicalDevice();
-    vkCore.CreateVkDevice(info, xrCore.VkAdditionalDeviceExts(), xrCore.IsXRValid());
+
+    InitVulkan();
 
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_RENDERBACKEND_INIT_FINISHED);
 
@@ -20,6 +16,15 @@ RenderBackend::RenderBackend(Info& info, VkCore& vkCore, XR::XrCore& xrCore, XRL
 }
 
 RenderBackend::~RenderBackend() {}
+
+void RenderBackend::InitVulkan() {
+    vkCore.CreateVkInstance(info, xrCore.VkAdditionalInstanceExts());
+    if (xrCore.IsXRValid())
+        xrCore.VkSetPhysicalDevice(vkCore.GetRenderInstance(), &vkCore.VkPhysicalDeviceRef());
+    else
+        vkCore.SelectPhysicalDevice();
+    vkCore.CreateVkDevice(info, xrCore.VkAdditionalDeviceExts(), xrCore.IsXRValid());
+}
 
 void RenderBackend::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& passes) {
     if (passes.empty()) {

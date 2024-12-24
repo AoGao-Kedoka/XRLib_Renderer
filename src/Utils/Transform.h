@@ -23,6 +23,10 @@ class Transform {
 
     glm::mat4 GetMatrix() const;
 
+    Transform operator*(Transform const& t);
+    Transform operator+(Transform const& t);
+    Transform operator-(Transform const& t);
+
    private:
     glm::mat4 transform{1.0f};
 };

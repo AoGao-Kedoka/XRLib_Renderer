@@ -2,15 +2,20 @@
 
 #include "Graphics/Primitives.h"
 #include "Utils/Transform.h"
+#include "Entity.h"
 
 namespace XRLib {
-class Mesh {
+class Mesh : public Entity{
    public:
+    Mesh() : Entity{"DefaultMesh"} {}
     struct MeshLoadInfo {
         std::string meshPath{""};
         std::string texturePath{""};
         Transform transform;
+
+        // used by program
         int localLoadingIndex = -1;
+        Mesh* destPtr;
     };
 
     enum MESH_TAG {
@@ -27,7 +32,6 @@ class Mesh {
 
     std::vector<Graphics::Primitives::Vertex>& GetVerticies() { return vertices; }
     std::vector<uint16_t>& GetIndices() { return indices; }
-    std::string& GetName() { return name; }
     Transform& GetTransform() { return transform; }
     TextureData& GetTextureData() { return textureData; }
     std::vector<MESH_TAG>& Tags() { return tags; }
@@ -35,8 +39,6 @@ class Mesh {
    private:
     std::vector<Graphics::Primitives::Vertex> vertices;
     std::vector<uint16_t> indices;
-    std::string name;
-    Transform transform;
     TextureData textureData;
 
     std::vector<MESH_TAG> tags;

@@ -5,7 +5,8 @@
 
 namespace XRLib {
 
-MeshManager::MeshManager() : done{false}, stop{false} {
+MeshManager::MeshManager(std::vector<Mesh*>& meshesContainer, std::vector<std::unique_ptr<Entity>>& hiearchyRoot)
+    : done{false}, stop{false}, meshes{meshesContainer}, hiearchyRoot{hiearchyRoot} {
     workerThread = std::thread(&MeshManager::MeshLoadingThread, this);
 }
 MeshManager::~MeshManager() {
@@ -32,11 +33,15 @@ void MeshManager::WaitForAllMeshesToLoad() {
 void MeshManager::LoadMeshAsync(Mesh::MeshLoadInfo loadInfo) {
     {
         std::lock_guard<std::mutex> lock(queueMutex);
-        Mesh meshPlaceHolder;
-        meshes.push_back(std::move(meshPlaceHolder));
+        // Mesh meshPlaceHolder;
+        auto meshPlaceHolder = std::make_unique<Mesh>();
+        meshes.push_back(meshPlaceHolder.get());
+        loadInfo.destPtr = meshPlaceHolder.get();
 
         loadingIndex++;
         loadInfo.localLoadingIndex = loadingIndex;
+
+        hiearchyRoot.push_back(std::move(meshPlaceHolder));
         meshQueue.push(loadInfo);
     }
     cv.notify_all();
@@ -57,19 +62,19 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo) {
         importer.ReadFile(meshLoadInfo.meshPath, aiProcess_Triangulate | aiProcess_FlipUVs |
                                                      aiProcess_JoinIdenticalVertices | aiProcess_PreTransformVertices);
 
-    Mesh newMesh;
+    auto& newMesh = meshLoadInfo.destPtr;
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         LOGGER(LOGGER::ERR) << importer.GetErrorString();
         Transform transform;
-        newMesh.GetTransform() = transform;
-        newMesh.GetName() = meshLoadInfo.meshPath;
-        CreateTempTexture(newMesh, 255);
-        AddNewMesh(newMesh, meshLoadInfo);
+        newMesh->GetTransform() = transform;
+        newMesh->Rename(meshLoadInfo.meshPath);
+        CreateTempTexture(*newMesh, 255);
+        AddNewMesh(*newMesh, meshLoadInfo);
         return;
     }
 
     if (scene->mNumMeshes != 1) {
-        Util::ErrorPopup("Loading models with multiple meshes is currently not supported.\nThis will be worked on very soon!");
+         Util::ErrorPopup("Loading models with multiple meshes is currently not supported.\nThis will be worked on very soon!");
     }
 
     for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
@@ -87,14 +92,14 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo) {
             } else {
                 vertex.texCoords = {0.0f, 0.0f};
             }
-            newMesh.GetVerticies().push_back(vertex);
+            newMesh->GetVerticies().push_back(vertex);
         }
 
         // Process indices
         for (unsigned int j = 0; j < aiMesh->mNumFaces; j++) {
             aiFace face = aiMesh->mFaces[j];
             for (unsigned int k = 0; k < face.mNumIndices; k++) {
-                newMesh.GetIndices().push_back(face.mIndices[k]);
+                newMesh->GetIndices().push_back(face.mIndices[k]);
             }
         }
 
@@ -109,8 +114,8 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo) {
                     if (embeddedTexture) {
                         if (embeddedTexture->mHeight == 0) {
                             // Compressed texture data
-                            newMesh.GetTextureData().data.resize(embeddedTexture->mWidth);
-                            memcpy(newMesh.GetTextureData().data.data(), embeddedTexture->pcData,
+                            newMesh->GetTextureData().data.resize(embeddedTexture->mWidth);
+                            memcpy(newMesh->GetTextureData().data.data(), embeddedTexture->pcData,
                                    embeddedTexture->mWidth);
 
                             int width, height, channels;
@@ -118,46 +123,46 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo) {
                                 reinterpret_cast<const unsigned char*>(embeddedTexture->pcData),
                                 embeddedTexture->mWidth, &width, &height, &channels, STBI_rgb_alpha);
                             if (decodedData) {
-                                newMesh.GetTextureData().textureWidth = width;
-                                newMesh.GetTextureData().textureHeight = height;
-                                newMesh.GetTextureData().textureChannels = 4;
-                                newMesh.GetTextureData().data.resize(width * height * 4);
-                                memcpy(newMesh.GetTextureData().data.data(), decodedData, width * height * 4);
+                                newMesh->GetTextureData().textureWidth = width;
+                                newMesh->GetTextureData().textureHeight = height;
+                                newMesh->GetTextureData().textureChannels = 4;
+                                newMesh->GetTextureData().data.resize(width * height * 4);
+                                memcpy(newMesh->GetTextureData().data.data(), decodedData, width * height * 4);
                                 stbi_image_free(decodedData);
                             } else {
-                                newMesh.GetTextureData().textureWidth = embeddedTexture->mWidth;
-                                newMesh.GetTextureData().textureHeight = embeddedTexture->mHeight;
-                                newMesh.GetTextureData().textureChannels = 4;
-                                newMesh.GetTextureData().data.resize(newMesh.GetTextureData().textureWidth *
-                                                                     newMesh.GetTextureData().textureHeight * 4);
-                                memcpy(newMesh.GetTextureData().data.data(), embeddedTexture->pcData,
-                                       newMesh.GetTextureData().data.size());
+                                newMesh->GetTextureData().textureWidth = embeddedTexture->mWidth;
+                                newMesh->GetTextureData().textureHeight = embeddedTexture->mHeight;
+                                newMesh->GetTextureData().textureChannels = 4;
+                                newMesh->GetTextureData().data.resize(newMesh->GetTextureData().textureWidth *
+                                                                     newMesh->GetTextureData().textureHeight * 4);
+                                memcpy(newMesh->GetTextureData().data.data(), embeddedTexture->pcData,
+                                       newMesh->GetTextureData().data.size());
                             }
                         } else {
                             // Raw texture data
-                            newMesh.GetTextureData().textureWidth = embeddedTexture->mWidth;
-                            newMesh.GetTextureData().textureHeight = embeddedTexture->mHeight;
-                            newMesh.GetTextureData().textureChannels = 4;
-                            newMesh.GetTextureData().data.resize(newMesh.GetTextureData().textureWidth *
-                                                                 newMesh.GetTextureData().textureHeight * 4);
-                            memcpy(newMesh.GetTextureData().data.data(), embeddedTexture->pcData,
-                                   newMesh.GetTextureData().data.size());
+                            newMesh->GetTextureData().textureWidth = embeddedTexture->mWidth;
+                            newMesh->GetTextureData().textureHeight = embeddedTexture->mHeight;
+                            newMesh->GetTextureData().textureChannels = 4;
+                            newMesh->GetTextureData().data.resize(newMesh->GetTextureData().textureWidth *
+                                                                 newMesh->GetTextureData().textureHeight * 4);
+                            memcpy(newMesh->GetTextureData().data.data(), embeddedTexture->pcData,
+                                   newMesh->GetTextureData().data.size());
                         }
                     }
                 }
             }
         }
 
-        if (newMesh.GetTextureData().data.empty() && !meshLoadInfo.texturePath.empty()) {
+        if (newMesh->GetTextureData().data.empty() && !meshLoadInfo.texturePath.empty()) {
             unsigned char* imageData = stbi_load(
-                meshLoadInfo.texturePath.c_str(), &newMesh.GetTextureData().textureWidth,
-                &newMesh.GetTextureData().textureHeight, &newMesh.GetTextureData().textureChannels, STBI_rgb_alpha);
+                meshLoadInfo.texturePath.c_str(), &newMesh->GetTextureData().textureWidth,
+                &newMesh->GetTextureData().textureHeight, &newMesh->GetTextureData().textureChannels, STBI_rgb_alpha);
 
             if (imageData) {
-                size_t imageSize = newMesh.GetTextureData().textureWidth * newMesh.GetTextureData().textureHeight * 4;
-                newMesh.GetTextureData().textureChannels = 4;
-                newMesh.GetTextureData().data.resize(imageSize);
-                memcpy(newMesh.GetTextureData().data.data(), imageData, imageSize);
+                size_t imageSize = newMesh->GetTextureData().textureWidth * newMesh->GetTextureData().textureHeight * 4;
+                newMesh->GetTextureData().textureChannels = 4;
+                newMesh->GetTextureData().data.resize(imageSize);
+                memcpy(newMesh->GetTextureData().data.data(), imageData, imageSize);
                 stbi_image_free(imageData);
             } else {
                 LOGGER(LOGGER::ERR) << "Failed to load texture: " << meshLoadInfo.texturePath;
@@ -167,13 +172,13 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo) {
         // Add the new mesh to the list
         {
 
-            if (newMesh.GetTextureData().data.empty()) {
-                CreateTempTexture(newMesh, 255);
+            if (newMesh->GetTextureData().data.empty()) {
+                CreateTempTexture(*newMesh, 255);
             }
 
-            newMesh.GetName() = meshLoadInfo.meshPath;
-            newMesh.GetTransform() = meshLoadInfo.transform;
-            AddNewMesh(newMesh, meshLoadInfo);
+            newMesh->Rename(meshLoadInfo.meshPath);
+            newMesh->GetTransform() = meshLoadInfo.transform;
+            AddNewMesh(*newMesh, meshLoadInfo);
             LOGGER(LOGGER::INFO) << "Loaded mesh: " << aiMesh->mName.C_Str();
         }
     }
@@ -199,9 +204,9 @@ void MeshManager::MeshLoadingThread() {
         futures.push_back(std::move(future));
     }
 }
-void MeshManager::AddNewMesh(const Mesh& newMesh, const Mesh::MeshLoadInfo& meshLoadInfo) {
+void MeshManager::AddNewMesh(Mesh& newMesh, const Mesh::MeshLoadInfo& meshLoadInfo) {
     std::lock_guard<std::mutex> lock(queueMutex);
-    meshes[meshLoadInfo.localLoadingIndex] = newMesh;
+    meshes[meshLoadInfo.localLoadingIndex] = &newMesh;
     loadingStatuscounter++;
 }
 
@@ -212,12 +217,12 @@ void MeshManager::AttachLeftControllerPose() {
         return;
     }
     EventSystem::Callback<> tagCallback = [this, currentLoadingIndex]() {
-        meshes[currentLoadingIndex].Tags().push_back(Mesh::MESH_TAG::MESH_LEFT_CONTROLLER);
+        meshes[currentLoadingIndex]->Tags().push_back(Mesh::MESH_TAG::MESH_LEFT_CONTROLLER);
     };
     EventSystem::RegisterListener(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, tagCallback);
 
     EventSystem::Callback<Transform> positionCallback = [this, currentLoadingIndex](Transform transform) {
-        meshes[currentLoadingIndex].GetTransform() = transform;
+        meshes[currentLoadingIndex]->GetTransform() = transform;
     };
     EventSystem::RegisterListener<Transform>(Events::XRLIB_EVENT_LEFT_CONTROLLER_POSITION, positionCallback);
 }
@@ -228,12 +233,12 @@ void MeshManager::AttachRightControllerPose() {
         return;
     }
     EventSystem::Callback<> tagCallback = [this, currentLoadingIndex]() {
-        meshes[currentLoadingIndex].Tags().push_back(Mesh::MESH_TAG::MESH_RIGHT_CONTROLLER);
+        meshes[currentLoadingIndex]->Tags().push_back(Mesh::MESH_TAG::MESH_RIGHT_CONTROLLER);
     };
     EventSystem::RegisterListener(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, tagCallback);
 
     EventSystem::Callback<Transform> positionCallback = [this, currentLoadingIndex](Transform transform) {
-        meshes[currentLoadingIndex].GetTransform() = transform;
+        meshes[currentLoadingIndex]->GetTransform() = transform;
     };
     EventSystem::RegisterListener<Transform>(Events::XRLIB_EVENT_RIGHT_CONTROLLER_POSITION, positionCallback);
 }
@@ -245,7 +250,7 @@ void MeshManager::BindToPointer(Mesh*& meshPtr) {
         return;
     }
     EventSystem::Callback<> callback = [this, &meshPtr, currentLoadingIndex]() {
-        meshPtr = &meshes[currentLoadingIndex];
+        meshPtr = meshes[currentLoadingIndex];
     };
     EventSystem::RegisterListener(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, callback);
 }

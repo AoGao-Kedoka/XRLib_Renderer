@@ -4,16 +4,16 @@
 #include "Event/Events.h"
 #include "Logger.h"
 #include "Utils/Util.h"
-#include "Mesh.h"
+#include "EntityType/Mesh.h"
 
 namespace XRLib {
 class MeshManager {
    public:
-    MeshManager();
+    MeshManager(std::vector<Mesh*>& meshesContainer, std::vector<std::unique_ptr<Entity>>& hiearchyRoot);
     ~MeshManager();
     void WaitForAllMeshesToLoad();
     void LoadMeshAsync(Mesh::MeshLoadInfo loadInfo);
-    std::vector<Mesh>& Meshes() { return meshes; }
+    std::vector<Mesh*>& Meshes() { return meshes; }
     int GetCurrentLoadingIndex() { return loadingIndex; }
 
     void AttachLeftControllerPose();
@@ -24,11 +24,12 @@ class MeshManager {
    private:
     void LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo);
     void MeshLoadingThread();
-    void AddNewMesh(const Mesh& newMesh, const Mesh::MeshLoadInfo& meshLoadInfo);
+    void AddNewMesh(Mesh& newMesh, const Mesh::MeshLoadInfo& meshLoadInfo);
     bool MeshLoaded() { return loadingIndex != -1; }
 
    private:
-    std::vector<Mesh> meshes;
+    std::vector<Mesh*>& meshes;
+    std::vector<std::unique_ptr<Entity>>& hiearchyRoot;
     // synchronization
     std::vector<std::future<void>> futures;
     std::queue<Mesh::MeshLoadInfo> meshQueue;
