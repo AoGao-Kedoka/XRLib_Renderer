@@ -61,6 +61,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 file(GLOB_RECURSE XRLIB_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.tpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/*.h

@@ -12,7 +12,7 @@ class MeshManager {
     MeshManager(std::vector<Mesh*>& meshesContainer, std::vector<std::unique_ptr<Entity>>& hiearchyRoot);
     ~MeshManager();
     void WaitForAllMeshesToLoad();
-    void LoadMeshAsync(Mesh::MeshLoadInfo loadInfo);
+    void LoadMeshAsync(Mesh::MeshLoadInfo loadInfo, Entity* parent = nullptr);
     std::vector<Mesh*>& Meshes() { return meshes; }
     int GetCurrentLoadingIndex() { return loadingIndex; }
 

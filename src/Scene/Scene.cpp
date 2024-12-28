@@ -1,44 +1,45 @@
-#include "Scene.h"
+﻿#include "Scene.h"
+#include "Scene.tpp"
 
 namespace XRLib {
 Scene::Scene() {
-
-    sceneHierarchy.push_back(std::make_unique<Camera>());
+    AddMandatoryMainCamera();
 
     EventSystem::Callback<> allMeshesLoadCallback = [this]() {
         // validate meshes
         Validate();
 
         // validate lights. if no light, add a default white light
-        if (lights.empty()) {
+        if (pointLights.empty()) {
             LOGGER(LOGGER::WARNING) << "No light in the scene is defined, creating default light at location (0,0,0)";
-            Transform defaultTransform;
-            lights.push_back({defaultTransform, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.5f});
-            sceneHierarchy.push_back(std::make_unique<PointLight>(defaultTransform, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.5f));
+            AddPointLights({}, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.5f);
         }
     };
     EventSystem::RegisterListener(Events::XRLIB_EVENT_APPLICATION_INIT_STARTED, allMeshesLoadCallback);
 }
+void Scene::AddMandatoryMainCamera() {
+    auto camera = std::make_unique<Camera>();
+    camera->Tags().push_back(Entity::TAG::MAIN_CAMERA);
+    cam = camera.get();
+    sceneHierarchy.push_back(std::move(camera));
+}
 
-Scene& Scene::LoadMeshAsync(Mesh::MeshLoadInfo loadInfo) {
-    meshManager.LoadMeshAsync(loadInfo);
+Scene& Scene::LoadMeshAsync(Mesh::MeshLoadInfo loadInfo, Entity* parent) {
+    auto meshPlaceHolder = std::make_unique<Mesh>();
+    loadInfo.destPtr = meshPlaceHolder.get();
+    AddEntityInternal<Mesh>(meshPlaceHolder, parent, &meshes);
+
+    meshManager.LoadMeshAsync(loadInfo, parent);
     return *this;
 }
 
 void Scene::Validate() {
     for (auto& mesh : meshes) {
-        if (Util::VectorContains(mesh->Tags(), Mesh::MESH_TAG::MESH_LEFT_CONTROLLER) &&
-            Util::VectorContains(mesh->Tags(), Mesh::MESH_TAG::MESH_RIGHT_CONTROLLER)) {
+        if (Util::VectorContains(mesh->Tags(), Mesh::TAG::MESH_LEFT_CONTROLLER) &&
+            Util::VectorContains(mesh->Tags(), Mesh::TAG::MESH_RIGHT_CONTROLLER)) {
             Util::ErrorPopup("Mesh can't be left and right controller and the same time");
         }
     }
-}
-
-glm::mat4 Scene::CameraProjection() {
-    auto [width, height] = Graphics::WindowHandler::GetFrameBufferSize();
-    auto proj = glm::perspective(glm::radians(45.0f), width / (float)height, 0.1f, 10.0f);
-    proj[1][1] *= -1;
-    return proj;
 }
 
 Scene& Scene::AttachLeftControllerPose() {
@@ -56,8 +57,25 @@ Scene& Scene::BindToPointer(Mesh*& meshPtr) {
     return *this;
 }
 
-Scene& Scene::AddLights(const Light& light) {
-    lights.push_back(light);
+Scene& Scene::AddPointLights(Transform transform, glm::vec4 color, float intensity, Entity* parent) {
+    auto light = std::make_unique<PointLight>(transform, color, intensity);
+    AddPointLightsInternal(light, parent);
+    return *this;
+}
+
+Scene& Scene::AddPointLights(Transform transform, glm::vec4 color, float intensity, std::string name, Entity* parent) {
+    auto light = std::make_unique<PointLight>(transform, color, intensity, name);
+    AddPointLightsInternal(light, parent);
+    return *this;
+}
+
+void Scene::AddPointLightsInternal(std::unique_ptr<PointLight>& light, Entity* parent) {
+    AddEntityInternal<PointLight>(light, parent, &pointLights);
+}
+
+Scene& Scene::AddEntity(Transform transform, std::string name, Entity* parent) {
+    auto entity = std::make_unique<Entity>(transform, name);
+    AddEntityInternal<Entity>(entity, parent);
     return *this;
 }
 
@@ -65,4 +83,23 @@ void Scene::WaitForAllMeshesToLoad() {
     meshManager.WaitForAllMeshesToLoad();
 }
 
+void buildTreeStr(Entity* node, std::ostringstream& oss, const std::string& prefix = "", bool isLast = true) {
+    oss << prefix << (isLast ? "+-- " : "|-- ") << node->GetName() << "\n";
+
+    std::string childPrefix = prefix + (isLast ? "    " : "|   ");
+
+    for (size_t i = 0; i < node->GetChilds().size(); ++i) {
+        // Recursively print each child
+        buildTreeStr(node->GetChilds()[i].get(), oss, childPrefix, i == node->GetChilds().size() - 1);
+    }
+}
+
+void Scene::LogSceneHiearchy() {
+    std::ostringstream oss;
+    for (size_t i = 0; i < sceneHierarchy.size(); ++i) {
+        buildTreeStr(sceneHierarchy[i].get(), oss);
+    }
+
+    LOGGER(LOGGER::INFO) << "\nScene Hiearchy: \n" << oss.str();
+}
 }    // namespace XRLib

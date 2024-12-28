@@ -8,6 +8,7 @@ namespace XRLib {
 class Mesh : public Entity{
    public:
     Mesh() : Entity{"DefaultMesh"} {}
+
     struct MeshLoadInfo {
         std::string meshPath{""};
         std::string texturePath{""};
@@ -15,12 +16,7 @@ class Mesh : public Entity{
 
         // used by program
         int localLoadingIndex = -1;
-        Mesh* destPtr;
-    };
-
-    enum MESH_TAG {
-        MESH_LEFT_CONTROLLER,
-        MESH_RIGHT_CONTROLLER,
+        Mesh* destPtr{nullptr};
     };
 
     struct TextureData {
@@ -34,13 +30,11 @@ class Mesh : public Entity{
     std::vector<uint16_t>& GetIndices() { return indices; }
     Transform& GetTransform() { return transform; }
     TextureData& GetTextureData() { return textureData; }
-    std::vector<MESH_TAG>& Tags() { return tags; }
 
    private:
     std::vector<Graphics::Primitives::Vertex> vertices;
     std::vector<uint16_t> indices;
     TextureData textureData;
 
-    std::vector<MESH_TAG> tags;
 };
 }    // namespace XRLib

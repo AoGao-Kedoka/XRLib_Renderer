@@ -44,7 +44,8 @@ void RenderBackendFlat::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void RenderBackendFlat::OnMouseMovement(double deltaX, double deltaY) {
-    auto& cam = scene.CameraTransform();
+    auto& cam = scene.MainCamera()->GetRelativeTransform();
+
     auto camMatrix = cam.GetMatrix();
 
     const float sensitivity = 0.1f;
@@ -68,12 +69,12 @@ void RenderBackendFlat::OnMouseMovement(double deltaX, double deltaY) {
     glm::vec3 rightVector = glm::vec3(camMatrix[0][0], camMatrix[1][0], camMatrix[2][0]);
     glm::mat4 rotationPitch = glm::rotate(glm::mat4(1.0f), glm::radians(pitch), rightVector);
     camMatrix = rotationYaw * rotationPitch * camMatrix;
-    scene.CameraTransform() = camMatrix;
+    scene.MainCamera()->GetRelativeTransform() = camMatrix;
 }
 
 void RenderBackendFlat::OnKeyPressed(int keyCode) {
     float movementSensitivity = 0.02;
-    auto& cam = scene.CameraTransform();
+    auto& cam = scene.MainCamera()->GetRelativeTransform();
     if (keyCode == GLFW_KEY_W) {
         cam.Translate(-cam.FrontVector() * movementSensitivity);
     }

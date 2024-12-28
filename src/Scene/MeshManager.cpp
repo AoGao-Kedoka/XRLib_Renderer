@@ -30,18 +30,14 @@ void MeshManager::WaitForAllMeshesToLoad() {
         future.wait();
     }
 }
-void MeshManager::LoadMeshAsync(Mesh::MeshLoadInfo loadInfo) {
+void MeshManager::LoadMeshAsync(Mesh::MeshLoadInfo loadInfo, Entity* parent) {
     {
         std::lock_guard<std::mutex> lock(queueMutex);
         // Mesh meshPlaceHolder;
-        auto meshPlaceHolder = std::make_unique<Mesh>();
-        meshes.push_back(meshPlaceHolder.get());
-        loadInfo.destPtr = meshPlaceHolder.get();
 
         loadingIndex++;
         loadInfo.localLoadingIndex = loadingIndex;
 
-        hiearchyRoot.push_back(std::move(meshPlaceHolder));
         meshQueue.push(loadInfo);
     }
     cv.notify_all();
@@ -217,7 +213,7 @@ void MeshManager::AttachLeftControllerPose() {
         return;
     }
     EventSystem::Callback<> tagCallback = [this, currentLoadingIndex]() {
-        meshes[currentLoadingIndex]->Tags().push_back(Mesh::MESH_TAG::MESH_LEFT_CONTROLLER);
+        meshes[currentLoadingIndex]->Tags().push_back(Mesh::TAG::MESH_LEFT_CONTROLLER);
     };
     EventSystem::RegisterListener(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, tagCallback);
 
@@ -233,7 +229,7 @@ void MeshManager::AttachRightControllerPose() {
         return;
     }
     EventSystem::Callback<> tagCallback = [this, currentLoadingIndex]() {
-        meshes[currentLoadingIndex]->Tags().push_back(Mesh::MESH_TAG::MESH_RIGHT_CONTROLLER);
+        meshes[currentLoadingIndex]->Tags().push_back(Mesh::TAG::MESH_RIGHT_CONTROLLER);
     };
     EventSystem::RegisterListener(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, tagCallback);
 
@@ -249,9 +245,6 @@ void MeshManager::BindToPointer(Mesh*& meshPtr) {
         LOGGER(LOGGER::WARNING) << "Undefined behavior, ignored";
         return;
     }
-    EventSystem::Callback<> callback = [this, &meshPtr, currentLoadingIndex]() {
-        meshPtr = meshes[currentLoadingIndex];
-    };
-    EventSystem::RegisterListener(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, callback);
+    meshPtr = meshes[currentLoadingIndex];
 }
 }    // namespace XRLib

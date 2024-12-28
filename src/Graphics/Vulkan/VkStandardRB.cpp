@@ -207,7 +207,7 @@ std::shared_ptr<Buffer> CreateViewProjectionBuffer(VkCore& core, Scene& scene, P
         static_cast<void*>(&viewProj), false);
     EventSystem::Callback<int> bufferOnKeyShouldUpdateCallback = [&scene, &viewProj,
                                                                   &buffer1 = *viewProjBuffer](int keyCode) {
-        viewProj.view = scene.CameraTransform().GetMatrix();
+        viewProj.view = scene.MainCamera()->GetGlobalTransform().GetMatrix();
         buffer1.UpdateBuffer(sizeof(Primitives::ViewProjection), static_cast<void*>(&viewProj));
     };
 
@@ -215,7 +215,7 @@ std::shared_ptr<Buffer> CreateViewProjectionBuffer(VkCore& core, Scene& scene, P
 
     EventSystem::Callback<double, double> bufferOnMouseShouldUpdateCallback =
         [&scene, &viewProj, &buffer2 = *viewProjBuffer](double deltaX, double deltaY) {
-            viewProj.view = scene.CameraTransform().GetMatrix();
+            viewProj.view = scene.MainCamera()->GetGlobalTransform().GetMatrix();
             buffer2.UpdateBuffer(sizeof(Primitives::ViewProjection), static_cast<void*>(&viewProj));
         };
 
@@ -244,10 +244,24 @@ std::vector<std::shared_ptr<Image>> CreateTextures(VkCore& core, Scene& scene) {
 
 std::pair<std::shared_ptr<Buffer>, std::shared_ptr<Buffer>> CreateLightBuffer(VkCore& core, Scene& scene) {
     VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    auto lightsBuffer = std::make_unique<Buffer>(core, sizeof(Scene::Light) * scene.Lights().size() + sizeof(int),
-                                                 usage, static_cast<void*>(scene.Lights().data()), false);
+
+    struct PointLightData{
+        Transform transform;
+        glm::vec4 color;
+        float intensity;
+    };
+
+    std::vector<PointLightData> pointLightDataBuffer(scene.PointLights().size());
+    for (size_t i = 0; i < pointLightDataBuffer.size(); ++i) {
+        pointLightDataBuffer[i].transform = scene.PointLights()[i]->GetGlobalTransform();
+        pointLightDataBuffer[i].color = scene.PointLights()[i]->GetColor();
+        pointLightDataBuffer[i].intensity = scene.PointLights()[i]->GetIntensity();
+    }
+
+    auto lightsBuffer = std::make_unique<Buffer>(core, sizeof(PointLightData) * scene.PointLights().size(),
+                                                 usage, static_cast<void*>(pointLightDataBuffer.data()), false);
     usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    int lightsCount = scene.Lights().size();
+    int lightsCount = scene.PointLights().size();
     auto lightsCountBuffer =
         std::make_shared<Buffer>(core, sizeof(int), usage, static_cast<void*>(&lightsCount), false);
 
@@ -313,8 +327,9 @@ void VkStandardRB::PrepareDefaultStereoRenderPasses(Primitives::ViewProjectionSt
 
 void VkStandardRB::PrepareDefaultFlatRenderPasses(Primitives::ViewProjection& viewProj,
                                                   std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses) {
-    viewProj.view = scene.CameraTransform().GetMatrix();
-    viewProj.proj = scene.CameraProjection();
+    auto mainCamera = scene.MainCamera();
+    viewProj.view = mainCamera->GetGlobalTransform().GetMatrix();
+    viewProj.proj = mainCamera->CameraProjection();
     PrepareDefaultRenderPasses(swapchain->GetSwapchainImages(), false,
                                std::move(CreateViewProjectionBuffer(core, scene, viewProj)));
 }
