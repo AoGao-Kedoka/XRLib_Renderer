@@ -4,8 +4,7 @@
 namespace XRLib {
 class Transform {
    public:
-    Transform(glm::vec3 translation, glm::vec3 rotation, float rotationRadians,
-              glm::vec3 scale);
+    Transform(glm::vec3 translation, glm::vec3 rotation, float rotationRadians, glm::vec3 scale);
     Transform(glm::mat4 transform);
     Transform() = default;
 
@@ -30,4 +29,10 @@ class Transform {
    private:
     glm::mat4 transform{1.0f};
 };
+
+inline std::ostream& operator<<(std::ostream& str, const Transform& t) {
+    str << glm::to_string(t.GetMatrix());
+    return str;
+}
+
 }    // namespace XRLib

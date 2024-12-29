@@ -13,9 +13,6 @@ class Mesh : public Entity{
         std::string meshPath{""};
         std::string texturePath{""};
         Transform transform;
-
-        // used by program
-        int localLoadingIndex = -1;
         Mesh* destPtr{nullptr};
     };
 

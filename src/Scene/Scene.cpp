@@ -83,23 +83,4 @@ void Scene::WaitForAllMeshesToLoad() {
     meshManager.WaitForAllMeshesToLoad();
 }
 
-void buildTreeStr(Entity* node, std::ostringstream& oss, const std::string& prefix = "", bool isLast = true) {
-    oss << prefix << (isLast ? "+-- " : "|-- ") << node->GetName() << "\n";
-
-    std::string childPrefix = prefix + (isLast ? "    " : "|   ");
-
-    for (size_t i = 0; i < node->GetChilds().size(); ++i) {
-        // Recursively print each child
-        buildTreeStr(node->GetChilds()[i].get(), oss, childPrefix, i == node->GetChilds().size() - 1);
-    }
-}
-
-void Scene::LogSceneHiearchy() {
-    std::ostringstream oss;
-    for (size_t i = 0; i < sceneHierarchy.size(); ++i) {
-        buildTreeStr(sceneHierarchy[i].get(), oss);
-    }
-
-    LOGGER(LOGGER::INFO) << "\nScene Hiearchy: \n" << oss.str();
-}
 }    // namespace XRLib

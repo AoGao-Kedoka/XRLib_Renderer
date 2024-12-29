@@ -34,12 +34,11 @@ class Scene {
     Scene& AddPointLights(Transform transform, glm::vec4 color, float intensity, std::string name,
                           Entity* parent = nullptr);
 
-
     std::vector<PointLight*>& PointLights() { return pointLights; }
 
     Camera*& MainCamera() { return cam; }
 
-    void LogSceneHiearchy();
+    const std::vector<std::unique_ptr<Entity>>& GetHiearchy() const { return sceneHierarchy; }
 
    private:
     void AddPointLightsInternal(std::unique_ptr<PointLight>& light, Entity* parent);
@@ -58,4 +57,26 @@ class Scene {
 
     MeshManager meshManager{meshes, sceneHierarchy};
 };
+
+inline void buildTreeStr(Entity* node, std::ostringstream& oss, const std::string& prefix = "", bool isLast = true) {
+    oss << prefix << (isLast ? "+-- " : "|-- ") << node->GetName() << "\n";
+
+    std::string childPrefix = prefix + (isLast ? "    " : "|   ");
+
+    for (size_t i = 0; i < node->GetChilds().size(); ++i) {
+        // Recursively print each child
+        buildTreeStr(node->GetChilds()[i].get(), oss, childPrefix, i == node->GetChilds().size() - 1);
+    }
+}
+
+inline std::ostream& operator<<(std::ostream& str, const Scene& scene) {
+    str << "\nScene hiearchy:\n";
+    std::ostringstream oss;
+    for (size_t i = 0; i < scene.GetHiearchy().size(); ++i) {
+        buildTreeStr(scene.GetHiearchy()[i].get(), oss);
+    }
+    str << oss.str();
+    return str;
+}
+
 }    // namespace XRLib
