@@ -1,10 +1,10 @@
 #pragma once
 
+#include "EntityType/Mesh.h"
 #include "Event/EventSystem.h"
 #include "Event/Events.h"
 #include "Logger.h"
 #include "Utils/Util.h"
-#include "EntityType/Mesh.h"
 
 namespace XRLib {
 class MeshManager {
@@ -31,6 +31,7 @@ class MeshManager {
    private:
     std::vector<Mesh*>& meshes;
     std::vector<std::unique_ptr<Entity>>& hiearchyRoot;
+
     // synchronization
     std::vector<std::future<void>> futures;
     std::queue<Mesh::MeshLoadInfo> meshQueue;
@@ -38,6 +39,10 @@ class MeshManager {
     std::mutex queueMutex;
     std::atomic<bool> stop;
     std::thread workerThread;
+
+    // count for loading tasks registered
+    int loadingRegistrationCounter{-1};
+    // count when loading tasks finished
     int loadingStatusCounter{-1};
 };
 }    // namespace XRLib

@@ -21,6 +21,23 @@ MeshManager::~MeshManager() {
     }
 }
 
+void IncreaseLoadingStatusCounter(int& loadingStatusCounter, std::mutex& queueMutex, std::condition_variable& cv) {
+    {
+        std::lock_guard<std::mutex> lock(queueMutex);
+        loadingStatusCounter++;
+        cv.notify_all();
+    }
+}
+
+void IncreaseLoadingRegistrationcounter(int& loadingRegistrationCounter, std::mutex& queueMutex,
+                                        std::condition_variable& cv) {
+    {
+        std::lock_guard<std::mutex> lock(queueMutex);
+        loadingRegistrationCounter++;
+        cv.notify_all();
+    }
+}
+
 void MeshManager::WaitForAllMeshesToLoad() {
     {
         std::unique_lock<std::mutex> lock(queueMutex);
@@ -41,6 +58,7 @@ void MeshManager::LoadMeshAsync(Mesh::MeshLoadInfo loadInfo, Entity* parent) {
         meshQueue.push(loadInfo);
     }
     cv.notify_all();
+    IncreaseLoadingRegistrationcounter(loadingRegistrationCounter, queueMutex, cv);
 }
 
 void CreateTempTexture(XRLib::Mesh& newMesh, uint8_t color) {
@@ -50,14 +68,6 @@ void CreateTempTexture(XRLib::Mesh& newMesh, uint8_t color) {
     textureData.textureWidth = 1;
     textureData.data.resize(textureData.textureChannels * textureData.textureHeight * textureData.textureWidth, color);
     newMesh.GetTextureData() = textureData;
-}
-
-void IncreaseLoadingStatusCounter(int& loadingStatusCounter, std::mutex& queueMutex, std::condition_variable& cv) {
-    {
-        std::lock_guard<std::mutex> lock(queueMutex);
-        loadingStatusCounter++;
-        cv.notify_all();
-    }
 }
 
 void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo) {
@@ -188,7 +198,6 @@ void MeshManager::LoadMeshTextures(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh*
         }
     }
 
-    
     // last fallback, create temporary white texture
     if (newMesh->GetTextureData().data.empty()) {
         CreateTempTexture(*newMesh, 255);
@@ -221,31 +230,26 @@ void MeshManager::HandleInvalidMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh
 }
 
 void MeshManager::AttachLeftControllerPose() {
-    auto currentLoadingIndex = loadingStatusCounter;
+    auto currentLoadingIndex = loadingRegistrationCounter;
     if (currentLoadingIndex < 0 || currentLoadingIndex > meshes.size()) {
         LOGGER(LOGGER::WARNING) << "Undefined behavior, ignored";
         return;
     }
-    EventSystem::Callback<> tagCallback = [this, currentLoadingIndex]() {
-        meshes[currentLoadingIndex]->Tags().push_back(Mesh::TAG::MESH_LEFT_CONTROLLER);
-    };
-    EventSystem::RegisterListener(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, tagCallback);
+    meshes[currentLoadingIndex]->Tags().push_back(Mesh::TAG::MESH_LEFT_CONTROLLER);
 
     EventSystem::Callback<Transform> positionCallback = [this, currentLoadingIndex](Transform transform) {
         meshes[currentLoadingIndex]->GetTransform() = transform;
     };
     EventSystem::RegisterListener<Transform>(Events::XRLIB_EVENT_LEFT_CONTROLLER_POSITION, positionCallback);
 }
+
 void MeshManager::AttachRightControllerPose() {
-    auto currentLoadingIndex = loadingStatusCounter;
+    auto currentLoadingIndex = loadingRegistrationCounter;
     if (currentLoadingIndex < 0 || currentLoadingIndex > meshes.size()) {
         LOGGER(LOGGER::WARNING) << "Undefined behavior, ignored";
         return;
     }
-    EventSystem::Callback<> tagCallback = [this, currentLoadingIndex]() {
-        meshes[currentLoadingIndex]->Tags().push_back(Mesh::TAG::MESH_RIGHT_CONTROLLER);
-    };
-    EventSystem::RegisterListener(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, tagCallback);
+    meshes[currentLoadingIndex]->Tags().push_back(Mesh::TAG::MESH_RIGHT_CONTROLLER);
 
     EventSystem::Callback<Transform> positionCallback = [this, currentLoadingIndex](Transform transform) {
         meshes[currentLoadingIndex]->GetTransform() = transform;
@@ -254,8 +258,8 @@ void MeshManager::AttachRightControllerPose() {
 }
 
 void MeshManager::BindToPointer(Mesh*& meshPtr) {
-    auto currentLoadingIndex = loadingStatusCounter;
-    if (currentLoadingIndex < 0 || currentLoadingIndex > meshes.size()) {
+    auto currentLoadingIndex = loadingRegistrationCounter;
+    if (currentLoadingIndex < 0 || currentLoadingIndex > meshes.size() - 1) {
         LOGGER(LOGGER::WARNING) << "Undefined behavior, ignored";
         return;
     }
