@@ -4,6 +4,12 @@ namespace XRLib {
 
 XRLib::XRLib() {
     Util::CheckPlatformSupport();
+
+    if (instance == nullptr) {
+        instance = this;
+    } else {
+        Util::ErrorPopup("Only one instance of XRLib is allowed.");
+    }
 }
 
 XRLib::~XRLib() {

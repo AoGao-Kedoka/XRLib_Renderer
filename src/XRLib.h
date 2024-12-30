@@ -41,4 +41,6 @@ class XRLib {
     void InitXRBackend();
     void InitRenderBackend();
 };
+
+static XRLib* instance;
 }    // namespace XRLib
