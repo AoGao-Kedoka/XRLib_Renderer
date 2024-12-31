@@ -26,7 +26,7 @@ class Scene {
 
     Scene& AttachLeftControllerPose();
     Scene& AttachRightControllerPose();
-    Scene& BindToPointer(Mesh*& meshPtr);
+    Scene& BindToPointer(Entity*& meshPtr);
 
     Scene& AddEntity(Transform transform, std::string name, Entity* parent = nullptr);
 
@@ -43,9 +43,6 @@ class Scene {
    private:
     void AddPointLightsInternal(std::unique_ptr<PointLight>& light, Entity* parent);
     void AddMandatoryMainCamera();
-
-    template <typename T>
-    void AddEntityInternal(std::unique_ptr<T>& entity, Entity* parent, std::vector<T*>* renderReferenceVec = nullptr);
 
    private:
     std::vector<std::unique_ptr<Entity>> sceneHierarchy;

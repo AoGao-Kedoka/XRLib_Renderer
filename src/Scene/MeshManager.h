@@ -18,7 +18,7 @@ class MeshManager {
     void AttachLeftControllerPose();
     void AttachRightControllerPose();
 
-    void BindToPointer(Mesh*& meshPtr);
+    void BindToPointer(Entity*& ptr);
 
    private:
     void LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo);
@@ -39,6 +39,7 @@ class MeshManager {
     std::mutex queueMutex;
     std::atomic<bool> stop;
     std::thread workerThread;
+
 
     // count for loading tasks registered
     int loadingRegistrationCounter{-1};

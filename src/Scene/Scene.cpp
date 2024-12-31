@@ -1,5 +1,4 @@
 ﻿#include "Scene.h"
-#include "Scene.tpp"
 
 namespace XRLib {
 Scene::Scene() {
@@ -25,10 +24,6 @@ void Scene::AddMandatoryMainCamera() {
 }
 
 Scene& Scene::LoadMeshAsync(Mesh::MeshLoadInfo loadInfo, Entity* parent) {
-    auto meshPlaceHolder = std::make_unique<Mesh>();
-    loadInfo.destPtr = meshPlaceHolder.get();
-    AddEntityInternal<Mesh>(meshPlaceHolder, parent, &meshes);
-
     meshManager.LoadMeshAsync(loadInfo, parent);
     return *this;
 }
@@ -52,7 +47,7 @@ Scene& Scene::AttachRightControllerPose() {
     return *this;
 }
 
-Scene& Scene::BindToPointer(Mesh*& meshPtr) {
+Scene& Scene::BindToPointer(Entity*& meshPtr) {
     meshManager.BindToPointer(meshPtr);
     return *this;
 }
@@ -70,12 +65,21 @@ Scene& Scene::AddPointLights(Transform transform, glm::vec4 color, float intensi
 }
 
 void Scene::AddPointLightsInternal(std::unique_ptr<PointLight>& light, Entity* parent) {
-    AddEntityInternal<PointLight>(light, parent, &pointLights);
+    if (parent == nullptr) {
+        Entity::AddEntity(light, sceneHierarchy, &pointLights);
+    } else {
+        Entity::AddEntity(light, parent, &pointLights);
+    }
+
 }
 
 Scene& Scene::AddEntity(Transform transform, std::string name, Entity* parent) {
     auto entity = std::make_unique<Entity>(transform, name);
-    AddEntityInternal<Entity>(entity, parent);
+    if (parent == nullptr)
+        Entity::AddEntity(entity, sceneHierarchy);
+    else {
+        Entity::AddEntity(entity, parent);
+    }
     return *this;
 }
 

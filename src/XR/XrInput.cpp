@@ -113,7 +113,7 @@ void XrInput::UpdatePosePosition() {
     if (xrLocateSpace(leftHandSpace, core->GetXrSpace(), core->GetXrFrameState().predictedDisplayTime,
                       &spaceLocation) == XR_SUCCESS) {
         if (spaceLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) {
-            EventSystem::TriggerEvent(Events::XRLIB_EVENT_LEFT_CONTROLLER_POSITION,
+            EventSystem::TriggerEvent<Transform>(Events::XRLIB_EVENT_LEFT_CONTROLLER_POSITION,
                                       Transform{MathUtil::XrPoseToMatrix(spaceLocation.pose)});
         }
     }
@@ -121,7 +121,7 @@ void XrInput::UpdatePosePosition() {
     if (xrLocateSpace(rightHandSpace, core->GetXrSpace(), core->GetXrFrameState().predictedDisplayTime,
                       &spaceLocation) == XR_SUCCESS) {
         if (spaceLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) {
-            EventSystem::TriggerEvent(Events::XRLIB_EVENT_RIGHT_CONTROLLER_POSITION,
+            EventSystem::TriggerEvent<Transform>(Events::XRLIB_EVENT_RIGHT_CONTROLLER_POSITION,
                                       Transform{MathUtil::XrPoseToMatrix(spaceLocation.pose)});
         }
     }

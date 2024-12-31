@@ -5,7 +5,7 @@ namespace Graphics {
 RenderBackendFlat::RenderBackendFlat(Info& info, VkCore& core, XR::XrCore& xrCore, Scene& scene)
     : RenderBackend(info, core, xrCore, scene) {
     PrepareFlatWindow();
-    vkSRB.GetSwapchain()  = std::make_unique<Swapchain>(core);
+    vkSRB.GetSwapchain() = std::make_unique<Swapchain>(core);
 }
 RenderBackendFlat::~RenderBackendFlat() {
     vkDeviceWaitIdle(vkCore.GetRenderDevice());
@@ -45,31 +45,17 @@ void RenderBackendFlat::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>
 
 void RenderBackendFlat::OnMouseMovement(double deltaX, double deltaY) {
     auto& cam = scene.MainCamera()->GetRelativeTransform();
-
     auto camMatrix = cam.GetMatrix();
 
-    const float sensitivity = 0.1f;
+    float sensitivity = 5;
+    float yaw = deltaX * sensitivity;
+    float pitch = deltaY * sensitivity;
 
-    float yaw = static_cast<float>(deltaX) * sensitivity;
-    float pitch = static_cast<float>(deltaY) * sensitivity;
+    glm::mat4 rotationYaw = glm::rotate(glm::mat4(1.0f), glm::radians(yaw), cam.UpVector());
+    glm::mat4 rotationPitch = glm::rotate(glm::mat4(1.0f), glm::radians(pitch), cam.RightVector());
 
-    static float accumulatedPitch = 0.0f;
-    accumulatedPitch += pitch;
-    const float maxPitch = 89.0f;
-    if (accumulatedPitch > maxPitch) {
-        pitch -= (accumulatedPitch - maxPitch);
-        accumulatedPitch = maxPitch;
-    } else if (accumulatedPitch < -maxPitch) {
-        pitch -= (accumulatedPitch + maxPitch);
-        accumulatedPitch = -maxPitch;
-    }
-
-    glm::mat4 rotationYaw = glm::rotate(glm::mat4(1.0f), glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    glm::vec3 rightVector = glm::vec3(camMatrix[0][0], camMatrix[1][0], camMatrix[2][0]);
-    glm::mat4 rotationPitch = glm::rotate(glm::mat4(1.0f), glm::radians(pitch), rightVector);
-    camMatrix = rotationYaw * rotationPitch * camMatrix;
-    scene.MainCamera()->GetRelativeTransform() = camMatrix;
+    cam.Rotate(cam.UpVector(), glm::radians(yaw));
+    cam.Rotate(cam.RightVector(), glm::radians(pitch));
 }
 
 void RenderBackendFlat::OnKeyPressed(int keyCode) {

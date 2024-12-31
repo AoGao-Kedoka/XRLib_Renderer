@@ -39,6 +39,31 @@ class Entity {
     void Rename(const std::string& n) { name = n; }
     std::vector<TAG>& Tags() { return tags; }
 
+    template <typename T>
+    static constexpr void AddEntity(std::unique_ptr<T>& entity, Entity* parent,
+                                    std::vector<T*>* renderReferenceVec = nullptr) {
+        static_assert(std::is_base_of<Entity, T>::value, "T must be a child of Entity");
+
+        if (renderReferenceVec) {
+            renderReferenceVec->push_back(entity.get());
+        }
+
+        entity->SetParent(parent);
+        parent->GetChilds().push_back(std::move(entity));
+    }
+
+    template <typename T>
+    static constexpr void AddEntity(std::unique_ptr<T>& entity, std::vector<std::unique_ptr<Entity>>& hiearchy,
+        std::vector<T*>* renderReferenceVec = nullptr) {
+        static_assert(std::is_base_of<Entity, T>::value, "T must be a child of Entity");
+
+        if (renderReferenceVec) {
+            renderReferenceVec->push_back(entity.get());
+        }
+        entity->SetParent(nullptr);
+        hiearchy.push_back(std::move(entity));
+    }
+
    protected:
     std::string name;
     std::vector<std::unique_ptr<Entity>> childs;
