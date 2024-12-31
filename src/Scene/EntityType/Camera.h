@@ -11,7 +11,7 @@ class Camera : public Entity {
            glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -0.1f), const std::string& name = "DefaultCamera");
     ~Camera() = default;
 
-    glm::mat4 CameraProjection();
+    glm::mat4 CameraProjection(float fov = 45.0f, float near = 0.1f, float far = 1000.0f);
 
    private:
     glm::vec3 up;

@@ -456,7 +456,7 @@ void XrBackend::UpdateViews() {
         cpLayerProjectionView.fov = view.fov;
 
         viewMatrices[i] = glm::inverse(MathUtil::XrPoseToMatrix(cpLayerProjectionView.pose));
-        projectionMatrices[i] = MathUtil::XrCreateProjectionMatrix(cpLayerProjectionView.fov, 0.01f, 250.0f);
+        projectionMatrices[i] = MathUtil::XrCreateProjectionMatrix(cpLayerProjectionView.fov, 0.01f, 1000.0f);
     }
 
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_HEAD_MOVEMENT, viewMatrices, projectionMatrices);
