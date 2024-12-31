@@ -4,7 +4,7 @@ This is a personal library aimed at accelerating the development of XR applicati
 
 This project is currently in the very early stages of development and is subject to significant changes. As this is an ongoing personal project, stability and feature completeness cannot be guaranteed at this time.
 
-![image](https://github.com/user-attachments/assets/074dd331-db27-45c4-864a-ca3945b7c0d4)
+![image](./imgs/screenshot.png)
 
 
 
