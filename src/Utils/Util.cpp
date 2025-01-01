@@ -160,6 +160,9 @@ bool Util::WriteFile(const std::filesystem::path& filePath, const std::vector<ui
     return true;
 }
 
+std::string Util::GetFileNameWithoutExtension(const std::filesystem::path& filePath) {
+    return filePath.stem().generic_string();
+}
 std::size_t Util::HashString(const std::string& content) {
     std::hash<std::string> hashFunction;
     return hashFunction(content);

@@ -19,6 +19,7 @@ class Util {
     static bool WriteFile(const std::filesystem::path& filePath, const std::vector<uint32_t>& data);
     static std::size_t HashString(const std::string& content);
     static std::filesystem::path ResolvePath(const std::filesystem::path& path);
+    static std::string GetFileNameWithoutExtension(const std::filesystem::path& filePath);
 
     static std::vector<const char*> SplitStringToCharPtr(const std::string& input);
 

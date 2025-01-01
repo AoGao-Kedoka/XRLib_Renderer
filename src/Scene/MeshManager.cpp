@@ -111,7 +111,7 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Entity*& bind
     }
 
     if (scene->mNumMeshes > 0) {
-        auto entityParent = (scene->mNumMeshes > 1) ? std::make_unique<Entity>() : nullptr;
+        auto entityParent = (scene->mNumMeshes > 1) ? std::make_unique<Entity>(Util::GetFileNameWithoutExtension(meshLoadInfo.meshPath)) : nullptr;
 
         for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
             aiMesh* aiMesh = scene->mMeshes[i];
