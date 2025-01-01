@@ -21,17 +21,23 @@ class Scene {
     std::vector<Mesh*>& Meshes() { return meshes; }
 
     Scene& LoadMeshAsync(Mesh::MeshLoadInfo loadInfo, Entity* parent = nullptr);
+    Scene& LoadMeshAsyncWithBinding(Mesh::MeshLoadInfo loadInfo, Entity*& bindPtr, Entity* parent = nullptr);
 
     void WaitForAllMeshesToLoad();
 
-    Scene& AttachLeftControllerPose();
-    Scene& AttachRightControllerPose();
-    Scene& BindToPointer(Entity*& meshPtr);
+    Scene& AttachEntityToLeftControllerPose(Entity*& entity);
+    Scene& AttachEntityToRightcontrollerPose(Entity*& entity);
 
     Scene& AddEntity(Transform transform, std::string name, Entity* parent = nullptr);
+    Scene& AddEntityWithBinding(Transform transform, std::string name, Entity*& bindPtr, Entity* parent = nullptr);
 
     Scene& AddPointLights(Transform transform, glm::vec4 color, float intensity, Entity* parent = nullptr);
+    Scene& AddPointLightsWithBinding(Transform transform, glm::vec4 color, float intensity, Entity*& bindPtr,
+                          Entity* parent = nullptr);
+
     Scene& AddPointLights(Transform transform, glm::vec4 color, float intensity, std::string name,
+                          Entity* parent = nullptr);
+    Scene& AddPointLightsWithBinding(Transform transform, glm::vec4 color, float intensity, std::string name, Entity*& bindPtr,
                           Entity* parent = nullptr);
 
     std::vector<PointLight*>& PointLights() { return pointLights; }

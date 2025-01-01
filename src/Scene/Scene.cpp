@@ -24,7 +24,13 @@ void Scene::AddMandatoryMainCamera() {
 }
 
 Scene& Scene::LoadMeshAsync(Mesh::MeshLoadInfo loadInfo, Entity* parent) {
-    meshManager.LoadMeshAsync(loadInfo, parent);
+    Entity* _ = nullptr;
+    meshManager.LoadMeshAsync(loadInfo, _, parent);
+    return *this;
+}
+
+Scene& Scene::LoadMeshAsyncWithBinding(Mesh::MeshLoadInfo loadInfo, Entity*& bindPtr, Entity* parent) {
+    meshManager.LoadMeshAsync(loadInfo, bindPtr, parent);
     return *this;
 }
 
@@ -37,29 +43,66 @@ void Scene::Validate() {
     }
 }
 
-Scene& Scene::AttachLeftControllerPose() {
-    meshManager.AttachLeftControllerPose();
+Scene& Scene::AttachEntityToLeftControllerPose(Entity*& entity) {
+    EventSystem::Callback<> tagCallback = [this, &entity] (){
+        if (entity == nullptr)
+            return;
+        entity->Tags().push_back(Entity::TAG::MESH_LEFT_CONTROLLER);
+    };
+    EventSystem::RegisterListener(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, tagCallback);
+
+    EventSystem::Callback<Transform> positionCallback = [this, &entity](Transform transform) {
+        if (entity == nullptr)
+            return;
+        entity->GetRelativeTransform() = transform;
+    };
+    EventSystem::RegisterListener<Transform>(Events::XRLIB_EVENT_LEFT_CONTROLLER_POSITION, positionCallback);
+
     return *this;
 }
 
-Scene& Scene::AttachRightControllerPose() {
-    meshManager.AttachRightControllerPose();
-    return *this;
-}
+Scene& Scene::AttachEntityToRightcontrollerPose(Entity*& entity) {
+    EventSystem::Callback<> tagCallback = [this, &entity] (){
+        if (entity == nullptr)
+            return;
+        entity->Tags().push_back(Entity::TAG::MESH_RIGHT_CONTROLLER);
+    };
+    EventSystem::RegisterListener(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, tagCallback);
 
-Scene& Scene::BindToPointer(Entity*& meshPtr) {
-    meshManager.BindToPointer(meshPtr);
+    EventSystem::Callback<Transform> positionCallback = [this, &entity](Transform transform) {
+        if (entity == nullptr)
+            return;
+        entity->GetRelativeTransform() = transform;
+    };
+    EventSystem::RegisterListener<Transform>(Events::XRLIB_EVENT_RIGHT_CONTROLLER_POSITION, positionCallback);
+
     return *this;
 }
 
 Scene& Scene::AddPointLights(Transform transform, glm::vec4 color, float intensity, Entity* parent) {
+    Entity* _ = nullptr;
+    AddPointLightsWithBinding(transform, color, intensity, _, parent);
+    return *this;
+}
+
+Scene& Scene::AddPointLightsWithBinding(Transform transform, glm::vec4 color, float intensity, Entity*& bindPtr,
+                                        Entity* parent) {
     auto light = std::make_unique<PointLight>(transform, color, intensity);
+    bindPtr = light.get();
     AddPointLightsInternal(light, parent);
     return *this;
 }
 
 Scene& Scene::AddPointLights(Transform transform, glm::vec4 color, float intensity, std::string name, Entity* parent) {
+    Entity* _ = nullptr;
+    AddPointLightsWithBinding(transform, color, intensity, name, _, parent);
+    return *this;
+}
+
+Scene& Scene::AddPointLightsWithBinding(Transform transform, glm::vec4 color, float intensity, std::string name,
+                                        Entity*& bindPtr, Entity* parent) {
     auto light = std::make_unique<PointLight>(transform, color, intensity, name);
+    bindPtr = light.get();
     AddPointLightsInternal(light, parent);
     return *this;
 }
@@ -70,11 +113,17 @@ void Scene::AddPointLightsInternal(std::unique_ptr<PointLight>& light, Entity* p
     } else {
         Entity::AddEntity(light, parent, &pointLights);
     }
-
 }
 
 Scene& Scene::AddEntity(Transform transform, std::string name, Entity* parent) {
+    Entity* _ = nullptr;
+    AddEntityWithBinding(transform, name, _, parent);
+    return *this;
+}
+
+Scene& Scene::AddEntityWithBinding(Transform transform, std::string name, Entity*& bindPtr, Entity* parent) {
     auto entity = std::make_unique<Entity>(transform, name);
+    bindPtr = entity.get();
     if (parent == nullptr)
         Entity::AddEntity(entity, sceneHierarchy);
     else {

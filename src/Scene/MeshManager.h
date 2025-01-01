@@ -12,16 +12,11 @@ class MeshManager {
     MeshManager(std::vector<Mesh*>& meshesContainer, std::vector<std::unique_ptr<Entity>>& hiearchyRoot);
     ~MeshManager();
     void WaitForAllMeshesToLoad();
-    void LoadMeshAsync(Mesh::MeshLoadInfo loadInfo, Entity* parent = nullptr);
+    void LoadMeshAsync(Mesh::MeshLoadInfo loadInfo, Entity*& bindPtr, Entity* parent = nullptr);
     std::vector<Mesh*>& Meshes() { return meshes; }
 
-    void AttachLeftControllerPose();
-    void AttachRightControllerPose();
-
-    void BindToPointer(Entity*& ptr);
-
    private:
-    void LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo);
+    void LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Entity*& bindPtr);
     void LoadMeshVerticesIndices(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh* newMesh, aiMesh* aiMesh);
     void LoadMeshTextures(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
     void MeshLoadingThread();
@@ -34,7 +29,7 @@ class MeshManager {
 
     // synchronization
     std::vector<std::future<void>> futures;
-    std::queue<Mesh::MeshLoadInfo> meshQueue;
+    std::queue<std::pair<Mesh::MeshLoadInfo, Entity*&>> meshQueue;
     std::condition_variable cv;
     std::mutex queueMutex;
     std::atomic<bool> stop;

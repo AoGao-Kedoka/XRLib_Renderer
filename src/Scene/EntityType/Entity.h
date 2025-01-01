@@ -64,6 +64,12 @@ class Entity {
         hiearchy.push_back(std::move(entity));
     }
 
+    template <typename T>
+    T* ToType(Entity* entity) {
+        static_assert(std::is_base_of<Entity, T>::value, "T must be a child of Entity");
+        return dynamic_cast<T*>(entity);
+    }
+
    protected:
     std::string name;
     std::vector<std::unique_ptr<Entity>> childs;

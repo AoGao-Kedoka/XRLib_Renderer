@@ -50,13 +50,15 @@ void MeshManager::WaitForAllMeshesToLoad() {
         }
     }
     futures.clear();
+
+    loadingStatusCounter = -1;
+    loadingRegistrationCounter = -1;
 }
 
-void MeshManager::LoadMeshAsync(Mesh::MeshLoadInfo loadInfo, Entity* parent) {
-
+void MeshManager::LoadMeshAsync(Mesh::MeshLoadInfo loadInfo, Entity*& bindPtr, Entity* parent) {
     {
         std::lock_guard<std::mutex> lock(queueMutex);
-        meshQueue.push(loadInfo);
+        meshQueue.push({loadInfo, bindPtr});
     }
     cv.notify_all();
     IncreaseLoadingRegistrationcounter(loadingRegistrationCounter, queueMutex, cv);
@@ -71,7 +73,7 @@ void CreateTempTexture(XRLib::Mesh& newMesh, uint8_t color) {
     newMesh.GetTextureData() = textureData;
 }
 
-void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo) {
+void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Entity*& bindPtr) {
     Assimp::Importer importer;
 
     const aiScene* scene =
@@ -85,6 +87,7 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo) {
     auto createMeshPlaceHolder = [&]() -> Mesh* {
         auto meshPlaceHolder = std::make_unique<Mesh>();
         Mesh* meshPtr = meshPlaceHolder.get();
+        bindPtr = meshPtr;
         meshes.push_back(meshPtr);
         Entity::AddEntity(meshPlaceHolder, hiearchyRoot, &meshes);
         return meshPtr;
@@ -114,9 +117,12 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo) {
             aiMesh* aiMesh = scene->mMeshes[i];
             auto meshChild = std::make_unique<Mesh>();
             auto newMesh = meshChild.get();
+
             if (entityParent) {
+                bindPtr = entityParent.get();
                 Entity::AddEntity(meshChild, entityParent.get(), &meshes);
             } else {
+                bindPtr = newMesh;
                 Entity::AddEntity(meshChild, hiearchyRoot, &meshes);
             }
 
@@ -235,19 +241,15 @@ void MeshManager::LoadMeshTextures(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh*
 
 void MeshManager::MeshLoadingThread() {
     while (true) {
-        Mesh::MeshLoadInfo loadInfo;
-        {
-            std::unique_lock<std::mutex> lock(queueMutex);
-            cv.wait(lock, [this] { return !meshQueue.empty() || stop; });
-            if (stop && meshQueue.empty()) {
-                return;
-            }
-
-            loadInfo = meshQueue.front();
-            meshQueue.pop();
+        std::unique_lock<std::mutex> lock(queueMutex);
+        cv.wait(lock, [this] { return !meshQueue.empty() || stop; });
+        if (stop && meshQueue.empty()) {
+            return;
         }
 
-        std::future<void> future = std::async(std::launch::async, &MeshManager::LoadMesh, this, loadInfo);
+        auto [loadInfo, entityPtr] = meshQueue.front();
+        meshQueue.pop();
+        std::future<void> future = std::async(std::launch::async, &MeshManager::LoadMesh, this, loadInfo, std::ref(entityPtr));
         futures.push_back(std::move(future));
     }
 }
@@ -259,52 +261,4 @@ void MeshManager::HandleInvalidMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh
     CreateTempTexture(*newMesh, 255);
 }
 
-void MeshManager::AttachLeftControllerPose() {
-    auto currentLoadingIndex = loadingRegistrationCounter;
-    if (currentLoadingIndex < 0) {
-        LOGGER(LOGGER::WARNING) << "Undefined behavior, ignored";
-        return;
-    }
-    EventSystem::Callback<> tagCallback = [this, currentLoadingIndex]() {
-        hiearchyRoot[currentLoadingIndex]->Tags().push_back(Mesh::TAG::MESH_LEFT_CONTROLLER);
-    };
-    EventSystem::RegisterListener(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, tagCallback);
-
-    EventSystem::Callback<Transform> positionCallback = [this, currentLoadingIndex](Transform transform) {
-        hiearchyRoot[currentLoadingIndex]->GetRelativeTransform() = transform;
-    };
-    EventSystem::RegisterListener<Transform>(Events::XRLIB_EVENT_LEFT_CONTROLLER_POSITION, positionCallback);
-}
-
-void MeshManager::AttachRightControllerPose() {
-    auto currentLoadingIndex = loadingRegistrationCounter;
-    if (currentLoadingIndex < 0) {
-        LOGGER(LOGGER::WARNING) << "Undefined behavior, ignored";
-        return;
-    }
-
-    EventSystem::Callback<> tagCallback = [this, currentLoadingIndex]() {
-        hiearchyRoot[currentLoadingIndex]->Tags().push_back(Mesh::TAG::MESH_RIGHT_CONTROLLER);
-    };
-    EventSystem::RegisterListener(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, tagCallback);
-
-    EventSystem::Callback<Transform> positionCallback = [this, currentLoadingIndex](Transform transform) {
-        hiearchyRoot[currentLoadingIndex]->GetRelativeTransform() = transform;
-    };
-    EventSystem::RegisterListener<Transform>(Events::XRLIB_EVENT_RIGHT_CONTROLLER_POSITION, positionCallback);
-}
-
-void MeshManager::BindToPointer(Entity*& ptr) {
-    auto currentLoadingIndex = loadingRegistrationCounter;
-    if (currentLoadingIndex < 0 || currentLoadingIndex > meshes.size()) {
-        LOGGER(LOGGER::WARNING) << "Undefined behavior, ignored";
-        return;
-    }
-
-    EventSystem::Callback<> ptrCallback = [&]() {
-        ptr = hiearchyRoot[currentLoadingIndex].get();
-    };
-
-    EventSystem::RegisterListener<>(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED, ptrCallback);
-}
 }    // namespace XRLib
