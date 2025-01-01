@@ -42,17 +42,10 @@ void MeshManager::WaitForAllMeshesToLoad() {
     {
         std::unique_lock<std::mutex> lock(queueMutex);
         cv.wait(lock, [this] { return loadingStatusCounter == loadingRegistrationCounter; });
-    }
 
-    for (auto& future : futures) {
-        if (future.valid()) {
-            future.get();
-        }
+        loadingStatusCounter = -1;
+        loadingRegistrationCounter = -1;
     }
-    futures.clear();
-
-    loadingStatusCounter = -1;
-    loadingRegistrationCounter = -1;
 }
 
 void MeshManager::LoadMeshAsync(Mesh::MeshLoadInfo loadInfo, Entity*& bindPtr, Entity* parent) {
@@ -101,7 +94,6 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Entity*& bind
         LOGGER(LOGGER::INFO) << "Loaded mesh: " << aiMesh->mName.C_Str();
     };
 
-
     if (meshPathValid()) {
         LOGGER(LOGGER::ERR) << importer.GetErrorString();
         auto newMesh = createMeshPlaceHolder();
@@ -111,7 +103,9 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Entity*& bind
     }
 
     if (scene->mNumMeshes > 0) {
-        auto entityParent = (scene->mNumMeshes > 1) ? std::make_unique<Entity>(Util::GetFileNameWithoutExtension(meshLoadInfo.meshPath)) : nullptr;
+        auto entityParent = (scene->mNumMeshes > 1)
+                                ? std::make_unique<Entity>(Util::GetFileNameWithoutExtension(meshLoadInfo.meshPath))
+                                : nullptr;
 
         for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
             aiMesh* aiMesh = scene->mMeshes[i];
@@ -249,7 +243,8 @@ void MeshManager::MeshLoadingThread() {
 
         auto [loadInfo, entityPtr] = meshQueue.front();
         meshQueue.pop();
-        std::future<void> future = std::async(std::launch::async, &MeshManager::LoadMesh, this, loadInfo, std::ref(entityPtr));
+        std::future<void> future =
+            std::async(std::launch::async, &MeshManager::LoadMesh, this, loadInfo, std::ref(entityPtr));
         futures.push_back(std::move(future));
     }
 }
