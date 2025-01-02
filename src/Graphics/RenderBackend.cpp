@@ -26,14 +26,15 @@ void RenderBackend::InitVulkan() {
     vkCore.CreateVkDevice(info, xrCore.VkAdditionalDeviceExts(), xrCore.IsXRValid());
 }
 
+void RenderBackend::Prepare()
+{
+    vkSRB.InitVerticesIndicesShader();
+    vkSRB.PrepareDefaultStereoRenderPasses(viewProj, RenderPasses);
+}
+
 void RenderBackend::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& passes) {
-    if (passes.empty()) {
-        vkSRB.InitVerticesIndicesShader();
-        vkSRB.PrepareDefaultStereoRenderPasses(viewProj, RenderPasses);
-    } else {
-        LOGGER(LOGGER::INFO) << "Using custom render pass";
-        this->RenderPasses = std::move(passes);
-    }
+    LOGGER(LOGGER::INFO) << "Using custom render pass";
+    this->RenderPasses = std::move(passes);
 }
 
 void RenderBackend::GetSwapchainInfo() {

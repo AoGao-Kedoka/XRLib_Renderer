@@ -35,4 +35,14 @@ inline std::ostream& operator<<(std::ostream& str, const Transform& t) {
     return str;
 }
 
+inline std::ostream& operator<<(std::ostream& str, const glm::vec3& vec) {
+    str << glm::to_string(vec);
+    return str;
+}
+
+inline std::ostream& operator<<(std::ostream& str, const glm::mat4& mat) {
+    str << glm::to_string(mat);
+    return str;
+}
+
 }    // namespace XRLib

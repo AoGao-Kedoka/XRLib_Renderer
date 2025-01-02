@@ -7,8 +7,8 @@ class Entity {
    public:
     Entity(Transform transform, const std::string& name) : transform{transform}, name{name} {}
     Entity(Transform transform) : transform{transform}, name{"DefaultEntity}"} {}
-    Entity(std::string name) : transform{{}}, name{name} {}
-    Entity() : transform{{}}, name{"DefaultEntity"} {}
+    Entity(std::string name) : transform{}, name{name} {}
+    Entity() : transform{}, name{"DefaultEntity"} {}
     ~Entity() = default;
 
     enum TAG {
@@ -22,8 +22,8 @@ class Entity {
     void SetParent(Entity* parent) { this->parent = parent; }
     bool IsRoot() { return parent == nullptr; }
 
-    Transform& GetRelativeTransform() { return transform; }
-    Transform GetGlobalTransform() {
+    Transform& GetLocalTransform() { return transform; }
+    const Transform GetGlobalTransform() {
         Transform globalTransform = transform;
         Entity* current = this;
 
@@ -54,7 +54,7 @@ class Entity {
 
     template <typename T>
     static constexpr void AddEntity(std::unique_ptr<T>& entity, std::vector<std::unique_ptr<Entity>>& hiearchy,
-        std::vector<T*>* renderReferenceVec = nullptr) {
+                                    std::vector<T*>* renderReferenceVec = nullptr) {
         static_assert(std::is_base_of<Entity, T>::value, "T must be a child of Entity");
 
         if (renderReferenceVec) {

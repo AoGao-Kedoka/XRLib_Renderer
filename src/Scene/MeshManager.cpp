@@ -90,7 +90,7 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Entity*& bind
         LoadMeshVerticesIndices(meshLoadInfo, mesh, aiMesh);
         LoadMeshTextures(meshLoadInfo, mesh, aiMesh, scene);
         mesh->Rename(aiMesh->mName.C_Str());
-        mesh->GetTransform() = meshLoadInfo.transform;
+        mesh->GetLocalTransform() = meshLoadInfo.transform;
         LOGGER(LOGGER::INFO) << "Loaded mesh: " << aiMesh->mName.C_Str();
     };
 
@@ -251,7 +251,7 @@ void MeshManager::MeshLoadingThread() {
 
 void MeshManager::HandleInvalidMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh* newMesh) {
     Transform transform;
-    newMesh->GetTransform() = transform;
+    newMesh->GetLocalTransform() = transform;
     newMesh->Rename(meshLoadInfo.meshPath);
     CreateTempTexture(*newMesh, 255);
 }

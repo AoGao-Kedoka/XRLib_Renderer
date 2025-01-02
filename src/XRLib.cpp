@@ -60,29 +60,32 @@ void XRLib::Init(bool xr) {
     Graphics::WindowHandler::Init(info);
     InitRenderBackend();
 
-    LOGGER(LOGGER::INFO) << "XRLib Initialized";
-}
-
-void XRLib::Prepare(std::vector<std::unique_ptr<Graphics::IGraphicsRenderpass>> customRenderpass) {
-    LOGGER(LOGGER::DEBUG) << "Preparing renderer";
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_INIT_STARTED);
 
     SceneBackend().WaitForAllMeshesToLoad();
 
-    renderBackend->Prepare(customRenderpass);
-    initialized = true;
+    if (customRenderPasses)
+        renderBackend->Prepare(*customRenderPasses);
+    else {
+        renderBackend->Prepare();
+    }
 
     if (!xrCore.IsXRValid()) {
         Graphics::WindowHandler::ShowWindow();
     }
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_INIT_FINISHED);
+
+    initialized = true;
+    LOGGER(LOGGER::INFO) << "XRLib Initialized";
+}
+
+XRLib& XRLib::SetCustomRenderPasses(std::vector<std::unique_ptr<Graphics::IGraphicsRenderpass>>& customRenderPasses) {
+    useCustomPass = true;
+    this->customRenderPasses = &customRenderPasses;
+    return *this;
 }
 
 void XRLib::Run(std::function<void(uint32_t&, Graphics::CommandBuffer&)> customRecordingFunction) {
-
-    if (!initialized) {
-        Prepare();
-    }
 
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING);
 

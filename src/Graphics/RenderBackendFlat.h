@@ -9,6 +9,7 @@ class RenderBackendFlat : public RenderBackend {
     RenderBackendFlat(Info& info, VkCore& core, XR::XrCore& xrCore, Scene& scene);
     ~RenderBackendFlat();
 
+    void Prepare() override;
     void Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& passes) override;
 
     void OnWindowResized(int width, int height) override;

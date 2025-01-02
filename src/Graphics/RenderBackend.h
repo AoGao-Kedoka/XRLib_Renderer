@@ -14,6 +14,7 @@ class RenderBackend {
 
     virtual bool WindowShouldClose() { return false; }
 
+    virtual void Prepare();
     virtual void Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& passes);
 
     virtual void OnWindowResized(int width, int height) { Util::ErrorPopup("Undefined image resize"); };
@@ -32,7 +33,7 @@ class RenderBackend {
     XR::XrCore& xrCore;
     VkCore& vkCore;
 
-    VkStandardRB vkSRB{vkCore, scene};
+    VkStandardRB vkSRB{vkCore, scene, RenderPasses};
 
    private:
     void InitVulkan();

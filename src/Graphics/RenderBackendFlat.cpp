@@ -12,6 +12,11 @@ RenderBackendFlat::~RenderBackendFlat() {
     VkUtil::VkSafeClean(vkDestroySurfaceKHR, vkCore.GetRenderInstance(), vkCore.GetFlatSurface(), nullptr);
 }
 
+void RenderBackendFlat::Prepare() {
+    std::vector<std::unique_ptr<IGraphicsRenderpass>> emptyPasses;
+    Prepare(emptyPasses);
+}
+
 void RenderBackendFlat::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& passes) {
     // register window resize callback
     EventSystem::Callback<int, int> windowResizeCallback =
@@ -44,7 +49,7 @@ void RenderBackendFlat::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void RenderBackendFlat::OnMouseMovement(double deltaX, double deltaY) {
-    auto& cam = scene.MainCamera()->GetRelativeTransform();
+    auto& cam = scene.MainCamera()->GetLocalTransform();
     auto camMatrix = cam.GetMatrix();
 
     float sensitivity = 5;
@@ -60,7 +65,7 @@ void RenderBackendFlat::OnMouseMovement(double deltaX, double deltaY) {
 
 void RenderBackendFlat::OnKeyPressed(int keyCode) {
     float movementSensitivity = 0.02;
-    auto& cam = scene.MainCamera()->GetRelativeTransform();
+    auto& cam = scene.MainCamera()->GetLocalTransform();
     if (keyCode == GLFW_KEY_W) {
         cam.Translate(-cam.FrontVector() * movementSensitivity);
     }

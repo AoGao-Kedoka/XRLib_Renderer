@@ -54,7 +54,7 @@ Scene& Scene::AttachEntityToLeftControllerPose(Entity*& entity) {
     EventSystem::Callback<Transform> positionCallback = [this, &entity](Transform transform) {
         if (entity == nullptr)
             return;
-        entity->GetRelativeTransform() = transform;
+        entity->GetLocalTransform() = transform;
     };
     EventSystem::RegisterListener<Transform>(Events::XRLIB_EVENT_LEFT_CONTROLLER_POSITION, positionCallback);
 
@@ -72,7 +72,7 @@ Scene& Scene::AttachEntityToRightcontrollerPose(Entity*& entity) {
     EventSystem::Callback<Transform> positionCallback = [this, &entity](Transform transform) {
         if (entity == nullptr)
             return;
-        entity->GetRelativeTransform() = transform;
+        entity->GetLocalTransform() = transform;
     };
     EventSystem::RegisterListener<Transform>(Events::XRLIB_EVENT_RIGHT_CONTROLLER_POSITION, positionCallback);
 

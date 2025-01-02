@@ -3,7 +3,8 @@
 namespace XRLib {
 namespace Graphics {
 
-VkStandardRB::VkStandardRB(VkCore& core, Scene& scene) : core{core}, scene{scene} {}
+VkStandardRB::VkStandardRB(VkCore& core, Scene& scene, std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses)
+    : core{core}, scene{scene}, renderPasses{renderPasses} {}
 
 const std::string_view VkStandardRB::defaultVertFlat = R"(
     #version 450
@@ -152,7 +153,7 @@ const std::string_view VkStandardRB::defaultPhongFrag = R"(
 std::shared_ptr<Buffer> CreateModelPositionBuffer(VkCore& core, Scene& scene) {
     std::vector<glm::mat4> modelPositions(scene.Meshes().size());
     for (int i = 0; i < modelPositions.size(); ++i) {
-        modelPositions[i] = scene.Meshes()[i]->GetTransform().GetMatrix();
+        modelPositions[i] = scene.Meshes()[i]->GetGlobalTransform().GetMatrix();
     }
 
     if (modelPositions.empty()) {
@@ -168,7 +169,7 @@ std::shared_ptr<Buffer> CreateModelPositionBuffer(VkCore& core, Scene& scene) {
     EventSystem::Callback<> modelPositionBufferCallback = [&scene, &buffer = *modelPositionsBuffer]() {
         std::vector<glm::mat4> modelPositions(scene.Meshes().size());
         for (int i = 0; i < modelPositions.size(); ++i) {
-            modelPositions[i] = scene.Meshes()[i]->GetTransform().GetMatrix();
+            modelPositions[i] = scene.Meshes()[i]->GetGlobalTransform().GetMatrix();
         }
         buffer.UpdateBuffer(sizeof(glm::mat4) * modelPositions.size(), static_cast<void*>(modelPositions.data()));
     };

@@ -25,7 +25,6 @@ class Mesh : public Entity{
 
     std::vector<Graphics::Primitives::Vertex>& GetVerticies() { return vertices; }
     std::vector<uint16_t>& GetIndices() { return indices; }
-    Transform& GetTransform() { return transform; }
     TextureData& GetTextureData() { return textureData; }
 
    private:

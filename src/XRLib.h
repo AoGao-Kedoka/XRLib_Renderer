@@ -17,7 +17,7 @@ class XRLib {
     XRLib& EnableValidationLayer();
     XRLib& SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath);
     void Init(bool xr = true);
-    void Prepare(std::vector<std::unique_ptr<Graphics::IGraphicsRenderpass>> customRenderpass = {});
+    XRLib& SetCustomRenderPasses(std::vector<std::unique_ptr<Graphics::IGraphicsRenderpass>>& customRenderPasses);
     void Run(std::function<void(uint32_t&, Graphics::CommandBuffer&)> customRecordingFunction = nullptr);
     bool ShouldStop();
     XRLib& SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode);
@@ -40,6 +40,9 @@ class XRLib {
 
     void InitXRBackend();
     void InitRenderBackend();
+
+    bool useCustomPass = false;
+    std::vector<std::unique_ptr<Graphics::IGraphicsRenderpass>>* customRenderPasses{nullptr};
 };
 
 static XRLib* instance;
