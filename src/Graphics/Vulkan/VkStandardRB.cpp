@@ -235,8 +235,8 @@ std::vector<std::shared_ptr<Image>> CreateTextures(VkCore& core, Scene& scene) {
 
     for (int i = 0; i < textures.size(); ++i) {
         textures[i] = std::make_shared<Image>(
-            core, scene.Meshes()[i]->GetTextureData().data, scene.Meshes()[i]->GetTextureData().textureWidth,
-            scene.Meshes()[i]->GetTextureData().textureHeight, scene.Meshes()[i]->GetTextureData().textureChannels,
+            core, scene.Meshes()[i]->Diffuse.textureData, scene.Meshes()[i]->Diffuse.textureWidth,
+            scene.Meshes()[i]->Diffuse.textureHeight, scene.Meshes()[i]->Diffuse.textureChannels,
             VK_FORMAT_R8G8B8A8_SRGB);
     }
 

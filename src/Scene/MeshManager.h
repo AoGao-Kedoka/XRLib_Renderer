@@ -19,6 +19,8 @@ class MeshManager {
     void LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Entity*& bindPtr);
     void LoadMeshVerticesIndices(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh* newMesh, aiMesh* aiMesh);
     void LoadMeshTextures(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
+    void LoadEmbeddedTextures(Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
+    void LoadSpecifiedTextures(Mesh::TextureData& texture, const std::string& path);
     void MeshLoadingThread();
 
     void HandleInvalidMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh* newMesh);

@@ -62,8 +62,8 @@ void CreateTempTexture(XRLib::Mesh& newMesh, uint8_t color) {
     textureData.textureChannels = 4;
     textureData.textureHeight = 1;
     textureData.textureWidth = 1;
-    textureData.data.resize(textureData.textureChannels * textureData.textureHeight * textureData.textureWidth, color);
-    newMesh.GetTextureData() = textureData;
+    textureData.textureData.resize(textureData.textureChannels * textureData.textureHeight * textureData.textureWidth, color);
+    newMesh.Diffuse = textureData;
 }
 
 void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Entity*& bindPtr) {
@@ -164,72 +164,108 @@ void MeshManager::LoadMeshTextures(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh*
                                    const aiScene* scene) {
 
     // get embedded textures
-    if (aiMesh->mMaterialIndex >= 0) {
-        aiMaterial* material = scene->mMaterials[aiMesh->mMaterialIndex];
-        aiString texturePath;
-
-        if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS) {
-            const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(texturePath.C_Str());
-            if (embeddedTexture) {
-                if (embeddedTexture->mHeight == 0) {
-                    // Compressed texture data
-                    newMesh->GetTextureData().data.resize(embeddedTexture->mWidth);
-                    memcpy(newMesh->GetTextureData().data.data(), embeddedTexture->pcData, embeddedTexture->mWidth);
-
-                    int width, height, channels;
-                    unsigned char* decodedData =
-                        stbi_load_from_memory(reinterpret_cast<const unsigned char*>(embeddedTexture->pcData),
-                                              embeddedTexture->mWidth, &width, &height, &channels, STBI_rgb_alpha);
-                    if (decodedData) {
-                        newMesh->GetTextureData().textureWidth = width;
-                        newMesh->GetTextureData().textureHeight = height;
-                        newMesh->GetTextureData().textureChannels = 4;
-                        newMesh->GetTextureData().data.resize(width * height * 4);
-                        memcpy(newMesh->GetTextureData().data.data(), decodedData, width * height * 4);
-                        stbi_image_free(decodedData);
-                    } else {
-                        newMesh->GetTextureData().textureWidth = embeddedTexture->mWidth;
-                        newMesh->GetTextureData().textureHeight = embeddedTexture->mHeight;
-                        newMesh->GetTextureData().textureChannels = 4;
-                        newMesh->GetTextureData().data.resize(newMesh->GetTextureData().textureWidth *
-                                                              newMesh->GetTextureData().textureHeight * 4);
-                        memcpy(newMesh->GetTextureData().data.data(), embeddedTexture->pcData,
-                               newMesh->GetTextureData().data.size());
-                    }
-                } else {
-                    // Raw texture data
-                    newMesh->GetTextureData().textureWidth = embeddedTexture->mWidth;
-                    newMesh->GetTextureData().textureHeight = embeddedTexture->mHeight;
-                    newMesh->GetTextureData().textureChannels = 4;
-                    newMesh->GetTextureData().data.resize(newMesh->GetTextureData().textureWidth *
-                                                          newMesh->GetTextureData().textureHeight * 4);
-                    memcpy(newMesh->GetTextureData().data.data(), embeddedTexture->pcData,
-                           newMesh->GetTextureData().data.size());
-                }
-            }
-        }
-    }
+    LoadEmbeddedTextures(newMesh, aiMesh, scene);
 
     // get meshloadinfo specified texture
-    if (newMesh->GetTextureData().data.empty() && !meshLoadInfo.texturePath.empty()) {
-        unsigned char* imageData = stbi_load(meshLoadInfo.texturePath.c_str(), &newMesh->GetTextureData().textureWidth,
-                                             &newMesh->GetTextureData().textureHeight,
-                                             &newMesh->GetTextureData().textureChannels, STBI_rgb_alpha);
+    LoadSpecifiedTextures(newMesh->Diffuse, meshLoadInfo.diffuseTexturePath);
+    LoadSpecifiedTextures(newMesh->Normal, meshLoadInfo.normalTexturePath);
+    LoadSpecifiedTextures(newMesh->Roughness, meshLoadInfo.roughnessTexturePath);
+    LoadSpecifiedTextures(newMesh->Emissive, meshLoadInfo.emissiveTexturePath);
 
-        if (imageData) {
-            size_t imageSize = newMesh->GetTextureData().textureWidth * newMesh->GetTextureData().textureHeight * 4;
-            newMesh->GetTextureData().textureChannels = 4;
-            newMesh->GetTextureData().data.resize(imageSize);
-            memcpy(newMesh->GetTextureData().data.data(), imageData, imageSize);
-            stbi_image_free(imageData);
-        } else {
-            LOGGER(LOGGER::ERR) << "Failed to load texture: " << meshLoadInfo.texturePath;
+    // last fallback, create temporary white texture
+    if (newMesh->Diffuse.textureData.empty()) {
+        CreateTempTexture(*newMesh, 255);
+    }
+}
+
+void MeshManager::LoadEmbeddedTextures(Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene) {
+    if (aiMesh->mMaterialIndex < 0) {
+        return;
+    }
+    aiMaterial* material = scene->mMaterials[aiMesh->mMaterialIndex];
+    aiString texturePath;
+    auto loadTextureFromEmbedding = [](const aiTexture* texture, Mesh::TextureData& textureData) {
+            if (texture->mHeight == 0) {
+                // Compressed texture data
+                textureData.textureData.resize(texture->mWidth);
+                memcpy(textureData.textureData.data(), texture->pcData, texture->mWidth);
+
+                int width, height, channels;
+                unsigned char* decodedData =
+                    stbi_load_from_memory(reinterpret_cast<const unsigned char*>(texture->pcData),
+                                          texture->mWidth, &width, &height, &channels, STBI_rgb_alpha);
+                if (decodedData) {
+                    textureData.textureWidth = width;
+                    textureData.textureHeight = height;
+                    textureData.textureChannels = 4;
+                    textureData.textureData.resize(width * height * 4);
+                    memcpy(textureData.textureData.data(), decodedData, width * height * 4);
+                    stbi_image_free(decodedData);
+                } else {
+                    textureData.textureWidth = texture->mWidth;
+                    textureData.textureHeight = texture->mHeight;
+                    textureData.textureChannels = 4;
+                    textureData.textureData.resize(textureData.textureWidth * textureData.textureHeight * 4);
+                    memcpy(textureData.textureData.data(), texture->pcData, textureData.textureData.size());
+                }
+            } else {
+                // Raw texture data
+                textureData.textureWidth = texture->mWidth;
+                textureData.textureHeight = texture->mHeight;
+                textureData.textureChannels = 4;
+                textureData.textureData.resize(textureData.textureWidth * textureData.textureHeight * 4);
+                memcpy(textureData.textureData.data(), texture->pcData, textureData.textureData.size());
+            }
+    };
+
+    // Diffuse
+    if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS) {
+        const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(texturePath.C_Str());
+        if (embeddedTexture) {
+            loadTextureFromEmbedding(embeddedTexture, newMesh->Diffuse);
         }
     }
 
-    // last fallback, create temporary white texture
-    if (newMesh->GetTextureData().data.empty()) {
-        CreateTempTexture(*newMesh, 255);
+    // Normal Map
+    if (material->GetTexture(aiTextureType_NORMALS, 0, &texturePath) == AI_SUCCESS ||
+        material->GetTexture(aiTextureType_HEIGHT, 0, &texturePath) == AI_SUCCESS) {
+        const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(texturePath.C_Str());
+        if (embeddedTexture) {
+            loadTextureFromEmbedding(embeddedTexture, newMesh->Normal);
+        }
+    }
+
+    // Roughness
+    if (material->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &texturePath) == AI_SUCCESS) {
+        const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(texturePath.C_Str());
+        if (embeddedTexture) {
+            loadTextureFromEmbedding(embeddedTexture, newMesh->Roughness);
+        }
+    }
+
+    // Emissive
+    if (material->GetTexture(aiTextureType_EMISSIVE, 0, &texturePath) == AI_SUCCESS) {
+        const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(texturePath.C_Str());
+        if (embeddedTexture) {
+            loadTextureFromEmbedding(embeddedTexture, newMesh->Emissive);
+        }
+    }
+}
+
+void MeshManager::LoadSpecifiedTextures(Mesh::TextureData& texture, const std::string& path) {
+    if (texture.textureData.empty() && !path.empty()) {
+        unsigned char* imageData = stbi_load(path.c_str(), &texture.textureWidth, &texture.textureHeight,
+                      &texture.textureChannels, STBI_rgb_alpha);
+
+        if (imageData) {
+            size_t imageSize = texture.textureWidth * texture.textureHeight * 4;
+            texture.textureChannels = 4;
+            texture.textureData.resize(imageSize);
+            memcpy(texture.textureData.data(), imageData, imageSize);
+            stbi_image_free(imageData);
+        } else {
+            LOGGER(LOGGER::ERR) << "Failed to load texture: " << path;
+        }
     }
 }
 

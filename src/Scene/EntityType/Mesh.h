@@ -11,13 +11,17 @@ class Mesh : public Entity{
 
     struct MeshLoadInfo {
         std::string meshPath{""};
-        std::string texturePath{""};
-        Transform transform;
-        Mesh* destPtr{nullptr};
+
+        Transform transform{};
+
+        std::string diffuseTexturePath{""};
+        std::string normalTexturePath{""};
+        std::string roughnessTexturePath{""};
+        std::string emissiveTexturePath{""};
     };
 
     struct TextureData {
-        std::vector<uint8_t> data;
+        std::vector<uint8_t> textureData;
         int textureWidth = 0;
         int textureHeight = 0;
         int textureChannels = 0;
@@ -25,12 +29,14 @@ class Mesh : public Entity{
 
     std::vector<Graphics::Primitives::Vertex>& GetVerticies() { return vertices; }
     std::vector<uint16_t>& GetIndices() { return indices; }
-    TextureData& GetTextureData() { return textureData; }
+
+    TextureData Diffuse;
+    TextureData Normal;
+    TextureData Roughness;
+    TextureData Emissive;
 
    private:
     std::vector<Graphics::Primitives::Vertex> vertices;
     std::vector<uint16_t> indices;
-    TextureData textureData;
-
 };
 }    // namespace XRLib
