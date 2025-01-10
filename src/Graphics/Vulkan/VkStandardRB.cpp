@@ -234,10 +234,10 @@ std::vector<std::shared_ptr<Image>> CreateTextures(VkCore& core, Scene& scene) {
     }
 
     for (int i = 0; i < textures.size(); ++i) {
-        textures[i] = std::make_shared<Image>(
-            core, scene.Meshes()[i]->Diffuse.textureData, scene.Meshes()[i]->Diffuse.textureWidth,
-            scene.Meshes()[i]->Diffuse.textureHeight, scene.Meshes()[i]->Diffuse.textureChannels,
-            VK_FORMAT_R8G8B8A8_SRGB);
+        textures[i] =
+            std::make_shared<Image>(core, scene.Meshes()[i]->Diffuse.textureData,
+                                    scene.Meshes()[i]->Diffuse.textureWidth, scene.Meshes()[i]->Diffuse.textureHeight,
+                                    scene.Meshes()[i]->Diffuse.textureChannels, VK_FORMAT_R8G8B8A8_SRGB);
     }
 
     return textures;
@@ -246,7 +246,7 @@ std::vector<std::shared_ptr<Image>> CreateTextures(VkCore& core, Scene& scene) {
 std::pair<std::shared_ptr<Buffer>, std::shared_ptr<Buffer>> CreateLightBuffer(VkCore& core, Scene& scene) {
     VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
-    struct PointLightData{
+    struct PointLightData {
         Transform transform;
         glm::vec4 color;
         float intensity;
@@ -259,8 +259,8 @@ std::pair<std::shared_ptr<Buffer>, std::shared_ptr<Buffer>> CreateLightBuffer(Vk
         pointLightDataBuffer[i].intensity = scene.PointLights()[i]->GetIntensity();
     }
 
-    auto lightsBuffer = std::make_unique<Buffer>(core, sizeof(PointLightData) * scene.PointLights().size(),
-                                                 usage, static_cast<void*>(pointLightDataBuffer.data()), false);
+    auto lightsBuffer = std::make_unique<Buffer>(core, sizeof(PointLightData) * scene.PointLights().size(), usage,
+                                                 static_cast<void*>(pointLightDataBuffer.data()), false);
     usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     int lightsCount = scene.PointLights().size();
     auto lightsCountBuffer =

@@ -35,6 +35,8 @@ class WindowHandler {
 
     static void HandleKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
+    static void HandleKeyPress();
+
    private:
     static GLFWwindow* window;
 };

@@ -26,8 +26,7 @@ void RenderBackend::InitVulkan() {
     vkCore.CreateVkDevice(info, xrCore.VkAdditionalDeviceExts(), xrCore.IsXRValid());
 }
 
-void RenderBackend::Prepare()
-{
+void RenderBackend::Prepare() {
     vkSRB.InitVerticesIndicesShader();
     vkSRB.PrepareDefaultStereoRenderPasses(viewProj, RenderPasses);
 }

@@ -4,10 +4,11 @@ namespace XRLib {
 namespace Graphics {
 
 GLFWwindow* WindowHandler::window = nullptr;
-static double leftMouseDown = false;
-static double rightMouseDown = false;
+static bool leftMouseDown = false;
+static bool rightMouseDown = false;
 static double lastLeftX = 0.0, lastLeftY = 0.0;
 static double lastRightX = 0.0, lastRightY = 0.0;
+bool inputActivated = false;
 
 void WindowHandler::Init(Info& info) {
     WindowMode mode = static_cast<WindowMode>(info.windowMode);
@@ -34,6 +35,9 @@ void WindowHandler::Init(Info& info) {
 
     window = glfwCreateWindow(width, height, info.applicationName.c_str(), monitor, nullptr);
     glfwMakeContextCurrent(window);
+
+    lastLeftX = lastRightX = static_cast<float>(info.defaultWindowWidth) / 2;
+    lastLeftY = lastRightY = static_cast<float>(info.defaultWindowHeight) / 2;
 }
 
 void WindowHandler::Deinitialize() {
@@ -41,9 +45,9 @@ void WindowHandler::Deinitialize() {
 }
 
 void WindowHandler::ActivateInput() {
+    inputActivated = true;
     glfwSetMouseButtonCallback(window, MouseButtonCallback);
     glfwSetCursorPosCallback(window, MouseMoveCallback);
-    glfwSetKeyCallback(window, HandleKeyCallback);
 }
 
 void WindowHandler::ShowWindow() {
@@ -52,8 +56,17 @@ void WindowHandler::ShowWindow() {
 
 void WindowHandler::Update() {
     glfwPollEvents();
+    if (inputActivated)
+        HandleKeyPress();
 }
 
+void WindowHandler::HandleKeyPress() {
+    for (int key = GLFW_KEY_SPACE; key <= GLFW_KEY_LAST; ++key) {
+        if (glfwGetKey(window, key) == GLFW_PRESS) {
+            EventSystem::TriggerEvent(Events::XRLIB_EVENT_KEY_PRESSED, key);
+        }
+    }
+}
 void WindowHandler::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
         if (action == GLFW_PRESS) {
@@ -80,25 +93,17 @@ void WindowHandler::MouseButtonCallback(GLFWwindow* window, int button, int acti
 void WindowHandler::MouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
     if (leftMouseDown) {
         double deltaX = xpos - lastLeftX;
-        double deltaY = ypos - lastLeftY;
+        double deltaY = lastLeftY - ypos;
         EventSystem::TriggerEvent(Events::XRLIB_EVENT_MOUSE_LEFT_MOVEMENT_EVENT, deltaX, deltaY);
         lastLeftX = xpos;
         lastLeftY = ypos;
     }
     if (rightMouseDown) {
         double deltaX = xpos - lastRightX;
-        double deltaY = ypos - lastRightY;
+        double deltaY = lastRightY - ypos;
         EventSystem::TriggerEvent(Events::XRLIB_EVENT_MOUSE_RIGHT_MOVEMENT_EVENT, deltaX, deltaY);
         lastRightX = xpos;
         lastRightY = ypos;
-    }
-}
-
-void WindowHandler::HandleKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (action == GLFW_REPEAT || action == GLFW_PRESS) {
-        if (key == -1)
-            return;
-        EventSystem::TriggerEvent(Events::XRLIB_EVENT_KEY_PRESSED, key);
     }
 }
 

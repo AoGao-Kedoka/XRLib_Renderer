@@ -17,8 +17,6 @@ class RenderBackend {
     virtual void Prepare();
     virtual void Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& passes);
 
-    virtual void OnWindowResized(int width, int height) { Util::ErrorPopup("Undefined image resize"); };
-
     Swapchain& GetSwapchain() { return *vkSRB.GetSwapchain(); }
     bool StartFrame(uint32_t& imageIndex);
     void RecordFrame(uint32_t& imageIndex);

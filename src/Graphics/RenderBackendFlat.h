@@ -12,10 +12,10 @@ class RenderBackendFlat : public RenderBackend {
     void Prepare() override;
     void Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& passes) override;
 
-    void OnWindowResized(int width, int height) override;
     bool WindowShouldClose() override { return WindowHandler::WindowShouldClose(); }
 
    private:
+    void OnWindowResized(int width, int height);
     void OnMouseMovement(double deltaX, double deltaY);
     void OnKeyPressed(int keyCode);
     void CreateFlatSwapChain();

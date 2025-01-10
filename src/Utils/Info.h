@@ -17,5 +17,9 @@ class Info {
     int windowMode = 0;
     unsigned int defaultWindowWidth = 720;
     unsigned int defaultWindowHeight = 480;
+
+    // input
+    float mouseSensitivity = 0.1f;
+    float movementSpeed = 0.02;
 };
 }    // namespace XRLib

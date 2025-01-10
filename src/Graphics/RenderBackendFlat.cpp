@@ -22,6 +22,7 @@ void RenderBackendFlat::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>
     EventSystem::Callback<int, int> windowResizeCallback =
         std::bind(&RenderBackendFlat::OnWindowResized, this, std::placeholders::_1, std::placeholders::_2);
     EventSystem::RegisterListener(Events::XRLIB_EVENT_WINDOW_RESIZED, windowResizeCallback);
+
     // register key press callback
     EventSystem::Callback<int> keyPressCallback =
         std::bind(&RenderBackendFlat::OnKeyPressed, this, std::placeholders::_1);
@@ -49,22 +50,28 @@ void RenderBackendFlat::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void RenderBackendFlat::OnMouseMovement(double deltaX, double deltaY) {
-    auto& cam = scene.MainCamera()->GetLocalTransform();
-    auto camMatrix = cam.GetMatrix();
+    auto cam = scene.MainCamera();
 
-    float sensitivity = 5;
-    float yaw = deltaX * sensitivity;
-    float pitch = deltaY * sensitivity;
+    cam->Yaw += deltaX * info.mouseSensitivity;
+    cam->Pitch += deltaY * info.mouseSensitivity;
 
-    glm::mat4 rotationYaw = glm::rotate(glm::mat4(1.0f), glm::radians(yaw), cam.UpVector());
-    glm::mat4 rotationPitch = glm::rotate(glm::mat4(1.0f), glm::radians(pitch), cam.RightVector());
+    if (cam->Pitch > 89.0f)
+        cam->Pitch = 89.0f;
+    if (cam->Pitch < -89.0f)
+        cam->Pitch = -89.0f;
 
-    cam.Rotate(cam.UpVector(), glm::radians(yaw));
-    cam.Rotate(cam.RightVector(), glm::radians(pitch));
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(cam->Yaw)) * cos(glm::radians(cam->Pitch));
+    direction.y = sin(glm::radians(cam->Pitch));
+    direction.z = sin(glm::radians(cam->Yaw)) * cos(glm::radians(cam->Pitch));
+
+    glm::vec3 cameraFront = glm::normalize(direction);
+
+    scene.MainCamera()->UpdateCamera(cameraFront);
 }
 
 void RenderBackendFlat::OnKeyPressed(int keyCode) {
-    float movementSensitivity = 0.02;
+    float movementSensitivity = info.movementSpeed;
     auto& cam = scene.MainCamera()->GetLocalTransform();
     if (keyCode == GLFW_KEY_W) {
         cam.Translate(-cam.FrontVector() * movementSensitivity);

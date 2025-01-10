@@ -43,7 +43,7 @@ glm::vec3 Transform::RightVector() const {
 }
 
 Transform& Transform::Rotate(glm::vec3 rotation, float rotationRadians) {
-    transform = glm::rotate(transform, glm::radians(rotationRadians), rotation);
+    transform = transform * glm::rotate(glm::mat4(1), glm::radians(rotationRadians), rotation);
     return *this;
 }
 
