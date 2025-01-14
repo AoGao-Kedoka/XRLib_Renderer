@@ -273,7 +273,7 @@ std::pair<std::shared_ptr<Buffer>, std::shared_ptr<Buffer>> CreateLightBuffer(Vk
 // Default DescriptorLayout and Renderpasses binding
 ////////////////////////////////////////////////////
 void VkStandardRB::PrepareDefaultRenderPasses(std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages,
-                                              bool isStereo, std::shared_ptr<Buffer> viewProjBuffer) {
+                                              std::shared_ptr<Buffer> viewProjBuffer) {
     auto modelPositionsBuffer = std::move(CreateModelPositionBuffer(core, scene));
     auto textures = std::move(CreateTextures(core, scene));
     auto [lightsCountBuffer, lightsBuffer] = std::move(CreateLightBuffer(core, scene));
@@ -288,7 +288,7 @@ void VkStandardRB::PrepareDefaultRenderPasses(std::vector<std::vector<std::uniqu
     descriptorSets.push_back(std::move(descriptorSet2));
 
     std::unique_ptr<IGraphicsRenderpass> graphicsRenderPass =
-        std::make_unique<VkGraphicsRenderpass>(core, isStereo, swapchainImages, std::move(descriptorSets));
+        std::make_unique<VkGraphicsRenderpass>(core, stereo, swapchainImages, std::move(descriptorSets));
     renderPasses.push_back(std::move(graphicsRenderPass));
 }
 
@@ -322,16 +322,17 @@ void VkStandardRB::InitVerticesIndicesShader() {
 
 void VkStandardRB::PrepareDefaultStereoRenderPasses(Primitives::ViewProjectionStereo& viewProj,
                                                     std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses) {
-    PrepareDefaultRenderPasses(swapchain->GetSwapchainImages(), true,
-                               std::move(CreateViewProjectionBuffer(core, viewProj)));
+    stereo = true;
+    PrepareDefaultRenderPasses(swapchain->GetSwapchainImages(), std::move(CreateViewProjectionBuffer(core, viewProj)));
 }
 
 void VkStandardRB::PrepareDefaultFlatRenderPasses(Primitives::ViewProjection& viewProj,
                                                   std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses) {
+    stereo = false;
     auto mainCamera = scene.MainCamera();
     viewProj.view = mainCamera->GetGlobalTransform().GetMatrix();
     viewProj.proj = mainCamera->CameraProjection();
-    PrepareDefaultRenderPasses(swapchain->GetSwapchainImages(), false,
+    PrepareDefaultRenderPasses(swapchain->GetSwapchainImages(),
                                std::move(CreateViewProjectionBuffer(core, scene, viewProj)));
 }
 
@@ -386,7 +387,23 @@ void VkStandardRB::RecordFrame(uint32_t& imageIndex) {
         commandBuffer.BarrierBetweenPasses(imageIndex, currentPass);
     }
 
-    commandBuffer.EndRecord();
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    // submit frame
+    VkSemaphore waitSemaphores[] = {core.GetImageAvailableSemaphore()};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submitInfo.waitSemaphoreCount = 0;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer.GetCommandBuffer();
+    if (!stereo) {
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = &core.GetRenderFinishedSemaphore();
+    }
+    commandBuffer.EndRecord(&submitInfo, core.GetInFlightFence());
 }
 
 void VkStandardRB::EndFrame(uint32_t& imageIndex) {

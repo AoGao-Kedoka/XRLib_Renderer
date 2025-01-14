@@ -2,8 +2,8 @@
 
 #include "Buffer.h"
 #include "CommandBuffer.h"
-#include "Scene/Scene.h"
 #include "Graphics/StandardRB.h"
+#include "Scene/Scene.h"
 #include "Swapchain.h"
 #include "VkGraphicsRenderpass.h"
 
@@ -34,6 +34,9 @@ class VkStandardRB : StandardRB {
     void PrepareDefaultFlatRenderPasses(Primitives::ViewProjection& viewProj,
                                         std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses);
 
+    void PrepareDefaultRenderPasses(Primitives::ViewProjection& viewProj,
+                                    std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses);
+
     void InitVerticesIndicesShader();
 
     ////////////////////////////////////////////////////
@@ -45,15 +48,15 @@ class VkStandardRB : StandardRB {
     void RecordFrame(uint32_t& imageIndex) override;
     void EndFrame(uint32_t& imageIndex) override;
 
-
-
    private:
-    void PrepareDefaultRenderPasses(std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages, bool isStereo,
+    void PrepareDefaultRenderPasses(std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages,
                                     std::shared_ptr<Buffer> viewProjBuffer);
 
    private:
     VkCore& core;
     Scene& scene;
+
+    bool stereo;
 
     std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses;
     std::vector<std::unique_ptr<Buffer>> vertexBuffers;

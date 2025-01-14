@@ -145,24 +145,6 @@ CommandBuffer& CommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount,
     return *this;
 }
 
-void CommandBuffer::EndRecord() {
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-    VkSemaphore waitSemaphores[] = {core.GetImageAvailableSemaphore()};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
-
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &GetCommandBuffer();
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = &core.GetRenderFinishedSemaphore();
-
-    EndRecord(&submitInfo, core.GetInFlightFence());
-}
-
 void CommandBuffer::EndRecord(VkSubmitInfo* submitInfo, VkFence fence) {
     if (currentPass != nullptr) {
         vkCmdEndRenderPass(commandBuffer);
@@ -173,24 +155,24 @@ void CommandBuffer::EndRecord(VkSubmitInfo* submitInfo, VkFence fence) {
 }
 
 void CommandBuffer::BarrierBetweenPasses(uint32_t imageIndex, VkGraphicsRenderpass& pass) {
-        for (const auto& renderTarget : pass.GetRenderpass().GetRenderTargets()[imageIndex]) {
-            VkImageMemoryBarrier barrier = {};
-            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.image = renderTarget->GetImage();
-            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            barrier.subresourceRange.baseMipLevel = 0;
-            barrier.subresourceRange.levelCount = 1;
-            barrier.subresourceRange.baseArrayLayer = 0;
-            barrier.subresourceRange.layerCount = 1;
-            PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                          VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-        }
+    for (const auto& renderTarget : pass.GetRenderpass().GetRenderTargets()[imageIndex]) {
+        VkImageMemoryBarrier barrier = {};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = renderTarget->GetImage();
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+        PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0,
+                        nullptr, 0, nullptr, 1, &barrier);
+    }
 }
 
 void CommandBuffer::PipelineBarrier(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,

@@ -27,7 +27,6 @@ class CommandBuffer {
     CommandBuffer& Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
     CommandBuffer& PushConstant(VkGraphicsRenderpass& pass, uint32_t size, const void* ptr);
     void EndRecord(VkSubmitInfo* submitInfo, VkFence fence);
-    void EndRecord();
 
     void BarrierBetweenPasses(uint32_t imageIndex, VkGraphicsRenderpass& pass);
 
