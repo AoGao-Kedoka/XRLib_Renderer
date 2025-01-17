@@ -86,6 +86,7 @@ XRLib& XRLib::SetCustomRenderPasses(std::vector<std::unique_ptr<Graphics::IGraph
 }
 
 void XRLib::Run(std::function<void(uint32_t&, Graphics::CommandBuffer&)> customRecordingFunction) {
+    UpdateDeltaTIme();
 
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING);
 
@@ -114,6 +115,15 @@ void XRLib::Run(std::function<void(uint32_t&, Graphics::CommandBuffer&)> customR
     }
 
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_POST_RENDERING);
+}
+
+void XRLib::UpdateDeltaTIme() {
+    auto currentTime = std::chrono::steady_clock::now();
+
+    std::chrono::duration<float> deltaTime = currentTime - prevTime;
+    deltaTimeSeconds = deltaTime.count();
+
+    prevTime = currentTime;
 }
 
 bool XRLib::ShouldStop() {

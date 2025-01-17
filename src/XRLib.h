@@ -29,6 +29,11 @@ class XRLib {
     Graphics::VkCore& GetVkCore() { return vkCore; }
     XR::XrCore& GetXrCore() { return xrCore; }
 
+    const float GetDeltaTime() { return deltaTimeSeconds; }
+
+   private:
+    void UpdateDeltaTIme();
+
    private:
     Info info;
     Scene scene;
@@ -43,6 +48,9 @@ class XRLib {
 
     bool useCustomPass = false;
     std::vector<std::unique_ptr<Graphics::IGraphicsRenderpass>>* customRenderPasses{nullptr};
+
+    std::chrono::steady_clock::time_point prevTime{std::chrono::steady_clock::now()};
+    float deltaTimeSeconds{0};
 };
 
 static XRLib* instance;
