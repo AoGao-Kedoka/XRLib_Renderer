@@ -154,6 +154,25 @@ void CommandBuffer::EndRecord(VkSubmitInfo* submitInfo, VkFence fence) {
     vkQueueWaitIdle(core.GetGraphicsQueue());
 }
 
+void CommandBuffer::EndRecord(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores,
+                              VkFence fence) {
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    // submit frame
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submitInfo.waitSemaphoreCount = 0;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+    submitInfo.waitSemaphoreCount = waitSemaphores.size();
+    submitInfo.pWaitSemaphores = waitSemaphores.data();
+    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.signalSemaphoreCount = signalSemaphores.size();
+    submitInfo.pSignalSemaphores = signalSemaphores.data();
+    EndRecord(&submitInfo, fence);
+}
+
 void CommandBuffer::BarrierBetweenPasses(uint32_t imageIndex, VkGraphicsRenderpass& pass) {
     for (const auto& renderTarget : pass.GetRenderpass().GetRenderTargets()[imageIndex]) {
         VkImageMemoryBarrier barrier = {};

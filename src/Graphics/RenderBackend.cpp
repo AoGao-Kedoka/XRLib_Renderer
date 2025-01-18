@@ -61,8 +61,17 @@ void RenderBackend::RecordFrame(uint32_t& imageIndex,
     CommandBuffer commandBuffer{vkCore};
     vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
 
+    commandBuffer.StartRecord();
+
     // custom frame recording
     recordingFunction(imageIndex, commandBuffer);
+
+    if (!xrCore.IsXRValid())
+        commandBuffer.EndRecord({vkCore.GetImageAvailableSemaphore()}, {vkCore.GetRenderFinishedSemaphore()},
+                                vkCore.GetInFlightFence());
+    else {
+        commandBuffer.EndRecord({}, {}, vkCore.GetInFlightFence());
+    }
 }
 
 void RenderBackend::EndFrame(uint32_t& imageIndex) {

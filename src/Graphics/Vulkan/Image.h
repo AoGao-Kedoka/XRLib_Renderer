@@ -7,8 +7,8 @@ namespace Graphics {
 class Image {
    public:
     // image with data
-    Image(VkCore& core, std::vector<uint8_t> textureData, const unsigned int width, const unsigned int height, const unsigned int channels,
-          VkFormat format);
+    Image(VkCore& core, std::vector<uint8_t> textureData, const unsigned int width, const unsigned int height,
+          const unsigned int channels, VkFormat format);
 
     // raw image
     Image(VkCore& core, const unsigned int width, const unsigned int height, VkFormat format,
@@ -18,7 +18,8 @@ class Image {
           VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uint32_t layerCount = 1);
 
     // image predefined from other apis
-    Image(VkCore& core, VkImage image, VkFormat format, const unsigned int width, const unsigned int height, uint32_t layerCount = 1);
+    Image(VkCore& core, VkImage image, VkFormat format, const unsigned int width, const unsigned int height,
+          uint32_t layerCount = 1);
 
     ~Image();
 
@@ -32,12 +33,14 @@ class Image {
     void Resize(unsigned int width, unsigned int height);
     void ResetImage();
 
+    void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+
    private:
     void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                      VkMemoryPropertyFlags properties);
-    void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-    void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-    void StoreImageProperties(VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags);
+    void StoreImageProperties(VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags,
+                              VkMemoryPropertyFlags propertyFlags);
 
    private:
     VkCore& core;

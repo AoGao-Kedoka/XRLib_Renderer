@@ -387,23 +387,12 @@ void VkStandardRB::RecordFrame(uint32_t& imageIndex) {
         commandBuffer.BarrierBetweenPasses(imageIndex, currentPass);
     }
 
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-    // submit frame
-    VkSemaphore waitSemaphores[] = {core.GetImageAvailableSemaphore()};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    submitInfo.waitSemaphoreCount = 0;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer.GetCommandBuffer();
-    if (!stereo) {
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = &core.GetRenderFinishedSemaphore();
+    if (!stereo)
+        commandBuffer.EndRecord({core.GetImageAvailableSemaphore()}, {core.GetRenderFinishedSemaphore()},
+                                core.GetInFlightFence());
+    else {
+        commandBuffer.EndRecord({}, {}, core.GetInFlightFence());
     }
-    commandBuffer.EndRecord(&submitInfo, core.GetInFlightFence());
 }
 
 void VkStandardRB::EndFrame(uint32_t& imageIndex) {
