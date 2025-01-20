@@ -70,8 +70,8 @@ Pipeline::Pipeline(VkCore& core, Shader& vertexShader, Shader& fragmentShader, R
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
 
+    VkPushConstantRange pushConstantRange{};
     if (!descriptorSets.empty()) {
-        VkPushConstantRange pushConstantRange{};
         for (const auto& descriptorSet : descriptorSets) {
             if (descriptorSet != nullptr && descriptorSet->GetPushConstantSize() != 0) {
                 pushConstantRange.offset = 0;
