@@ -10,7 +10,6 @@ class RenderBackendFlat : public RenderBackend {
     ~RenderBackendFlat();
 
     void Prepare() override;
-    void Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& passes) override;
 
     bool WindowShouldClose() override { return WindowHandler::WindowShouldClose(); }
 

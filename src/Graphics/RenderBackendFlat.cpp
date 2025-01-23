@@ -5,7 +5,6 @@ namespace Graphics {
 RenderBackendFlat::RenderBackendFlat(Info& info, VkCore& core, XR::XrCore& xrCore, Scene& scene)
     : RenderBackend(info, core, xrCore, scene) {
     PrepareFlatWindow();
-    vkSRB.GetSwapchain() = std::make_unique<Swapchain>(core);
 }
 RenderBackendFlat::~RenderBackendFlat() {
     vkDeviceWaitIdle(vkCore.GetRenderDevice());
@@ -13,11 +12,8 @@ RenderBackendFlat::~RenderBackendFlat() {
 }
 
 void RenderBackendFlat::Prepare() {
-    std::vector<std::unique_ptr<IGraphicsRenderpass>> emptyPasses;
-    Prepare(emptyPasses);
-}
+    vkSRB->GetSwapchain() = std::make_unique<Swapchain>(vkCore);
 
-void RenderBackendFlat::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& passes) {
     // register window resize callback
     EventSystem::Callback<int, int> windowResizeCallback =
         std::bind(&RenderBackendFlat::OnWindowResized, this, std::placeholders::_1, std::placeholders::_2);
@@ -35,14 +31,8 @@ void RenderBackendFlat::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>
 
     WindowHandler::ActivateInput();
 
-    // prepare shader
-    if (passes.empty()) {
-        vkSRB.InitVerticesIndicesShader();
-        vkSRB.PrepareDefaultFlatRenderPasses(viewProj, RenderPasses);
-    } else {
-        LOGGER(LOGGER::INFO) << "Using custom render pass";
-        this->RenderPasses = std::move(passes);
-    }
+    vkSRB->InitVerticesIndicesBuffers();
+    vkSRB->PrepareDefaultFlatRenderPasses(viewProj, RenderPasses);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////

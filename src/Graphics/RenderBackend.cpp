@@ -27,13 +27,8 @@ void RenderBackend::InitVulkan() {
 }
 
 void RenderBackend::Prepare() {
-    vkSRB.InitVerticesIndicesShader();
-    vkSRB.PrepareDefaultStereoRenderPasses(viewProj, RenderPasses);
-}
-
-void RenderBackend::Prepare(std::vector<std::unique_ptr<IGraphicsRenderpass>>& passes) {
-    LOGGER(LOGGER::INFO) << "Using custom render pass";
-    this->RenderPasses = std::move(passes);
+    vkSRB->InitVerticesIndicesBuffers();
+    vkSRB->PrepareDefaultStereoRenderPasses(viewProj, RenderPasses);
 }
 
 void RenderBackend::GetSwapchainInfo() {
@@ -44,38 +39,19 @@ void RenderBackend::GetSwapchainInfo() {
                                                           static_cast<VkFormat>(xrCore.SwapchainFormats()[0]), width,
                                                           height, 2));
     }
-    vkSRB.GetSwapchain() = std::make_unique<Swapchain>(vkCore, swapchainImages);
+    vkSRB->GetSwapchain() = std::make_unique<Swapchain>(vkCore, swapchainImages);
 }
 
 bool RenderBackend::StartFrame(uint32_t& imageIndex) {
-    return vkSRB.StartFrame(imageIndex);
+    return renderBahavior->StartFrame(imageIndex);
 }
 
 void RenderBackend::RecordFrame(uint32_t& imageIndex) {
-    vkSRB.RecordFrame(imageIndex);
-}
-
-void RenderBackend::RecordFrame(uint32_t& imageIndex,
-                                std::function<void(uint32_t&, CommandBuffer&)> recordingFunction) {
-    vkResetFences(vkCore.GetRenderDevice(), 1, &vkCore.GetInFlightFence());
-    CommandBuffer commandBuffer{vkCore};
-    vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
-
-    commandBuffer.StartRecord();
-
-    // custom frame recording
-    recordingFunction(imageIndex, commandBuffer);
-
-    if (!xrCore.IsXRValid())
-        commandBuffer.EndRecord({vkCore.GetImageAvailableSemaphore()}, {vkCore.GetRenderFinishedSemaphore()},
-                                vkCore.GetInFlightFence());
-    else {
-        commandBuffer.EndRecord({}, {}, vkCore.GetInFlightFence());
-    }
+    renderBahavior->RecordFrame(imageIndex);
 }
 
 void RenderBackend::EndFrame(uint32_t& imageIndex) {
-    vkSRB.EndFrame(imageIndex);
+    renderBahavior->EndFrame(imageIndex);
 }
 }    // namespace Graphics
 }    // namespace XRLib

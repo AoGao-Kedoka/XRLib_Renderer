@@ -50,7 +50,9 @@ XRLib& XRLib::SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath) {
     return *this;
 }
 
-void XRLib::Init(bool xr) {
+XRLib& XRLib::Init(bool xr) {
+    EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_INIT_STARTED);
+
     if (!xr) {
         xrCore.SetXRValid(false);
     } else {
@@ -60,32 +62,28 @@ void XRLib::Init(bool xr) {
     Graphics::WindowHandler::Init(info);
     InitRenderBackend();
 
-    EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_INIT_STARTED);
-
-    SceneBackend().WaitForAllMeshesToLoad();
-
-    if (customRenderPasses)
-        renderBackend->Prepare(*customRenderPasses);
-    else {
-        renderBackend->Prepare();
-    }
-
-    if (!xrCore.IsXRValid()) {
-        Graphics::WindowHandler::ShowWindow();
-    }
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_INIT_FINISHED);
 
     initialized = true;
     LOGGER(LOGGER::INFO) << "XRLib Initialized";
-}
 
-XRLib& XRLib::SetCustomRenderPasses(std::vector<std::unique_ptr<Graphics::IGraphicsRenderpass>>& customRenderPasses) {
-    useCustomPass = true;
-    this->customRenderPasses = &customRenderPasses;
+    SceneBackend().WaitForAllMeshesToLoad();
+
+    renderBackend->Prepare();
+
+    if (!xrCore.IsXRValid()) {
+        Graphics::WindowHandler::ShowWindow();
+    }
     return *this;
 }
 
-void XRLib::Run(std::function<void(uint32_t&, Graphics::CommandBuffer&)> customRecordingFunction) {
+XRLib& XRLib::Init(bool xr, std::unique_ptr<Graphics::StandardRB> renderBahavior) {
+    Init(xr);
+    renderBackend->SetRenderBahavior(renderBahavior);
+    return *this;
+}
+
+void XRLib::Run() {
     UpdateDeltaTIme();
 
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING);
@@ -97,11 +95,7 @@ void XRLib::Run(std::function<void(uint32_t&, Graphics::CommandBuffer&)> customR
     uint32_t imageIndex = 0;
 
     auto recordFrame = [&](uint32_t index) {
-        if (customRecordingFunction) {
-            renderBackend->RecordFrame(index, customRecordingFunction);
-        } else {
-            renderBackend->RecordFrame(index);
-        }
+        renderBackend->RecordFrame(index);
     };
 
     if (xrCore.IsXRValid()) {

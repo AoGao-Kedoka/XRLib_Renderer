@@ -16,9 +16,12 @@ class XRLib {
     XRLib& SetVersionNumber(unsigned int majorVersion, unsigned int minorVersion, unsigned int patchVersion);
     XRLib& EnableValidationLayer();
     XRLib& SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath);
-    void Init(bool xr = true);
+    XRLib& Init(bool xr = true);
+    XRLib& Init(bool xr, std::unique_ptr<Graphics::StandardRB> renderBahavior);
     XRLib& SetCustomRenderPasses(std::vector<std::unique_ptr<Graphics::IGraphicsRenderpass>>& customRenderPasses);
-    void Run(std::function<void(uint32_t&, Graphics::CommandBuffer&)> customRecordingFunction = nullptr);
+    XRLib& InitDefaultRenderPasses();
+
+    void Run();
     bool ShouldStop();
     XRLib& SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode);
     XRLib& SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode, unsigned int width, unsigned int height);
@@ -45,9 +48,6 @@ class XRLib {
 
     void InitXRBackend();
     void InitRenderBackend();
-
-    bool useCustomPass = false;
-    std::vector<std::unique_ptr<Graphics::IGraphicsRenderpass>>* customRenderPasses{nullptr};
 
     std::chrono::steady_clock::time_point prevTime{std::chrono::steady_clock::now()};
     float deltaTimeSeconds{0};

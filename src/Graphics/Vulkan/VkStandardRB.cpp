@@ -292,7 +292,7 @@ void VkStandardRB::PrepareDefaultRenderPasses(std::vector<std::vector<std::uniqu
     renderPasses.push_back(std::move(graphicsRenderPass));
 }
 
-void VkStandardRB::InitVerticesIndicesShader() {
+void VkStandardRB::InitVerticesIndicesBuffers() {
     if (scene.Meshes().empty()) {
         return;
     }

@@ -10,7 +10,7 @@
 // Vulkan Standard Rendering Behavior
 namespace XRLib {
 namespace Graphics {
-class VkStandardRB : StandardRB {
+class VkStandardRB : public StandardRB {
    public:
     VkStandardRB(VkCore& core, Scene& scene, std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses);
     ~VkStandardRB() = default;
@@ -29,15 +29,12 @@ class VkStandardRB : StandardRB {
     // Default render passes
     ////////////////////////////////////////////////////
 
-    void PrepareDefaultStereoRenderPasses(Primitives::ViewProjectionStereo& viewProj,
-                                          std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses);
-    void PrepareDefaultFlatRenderPasses(Primitives::ViewProjection& viewProj,
-                                        std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses);
+    virtual void PrepareDefaultStereoRenderPasses(Primitives::ViewProjectionStereo& viewProj,
+                                                  std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses);
+    virtual void PrepareDefaultFlatRenderPasses(Primitives::ViewProjection& viewProj,
+                                                std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses);
 
-    void PrepareDefaultRenderPasses(Primitives::ViewProjection& viewProj,
-                                    std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses);
-
-    void InitVerticesIndicesShader();
+    virtual void InitVerticesIndicesBuffers();
 
     ////////////////////////////////////////////////////
     // Frame Rendering
@@ -52,7 +49,7 @@ class VkStandardRB : StandardRB {
     void PrepareDefaultRenderPasses(std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages,
                                     std::shared_ptr<Buffer> viewProjBuffer);
 
-   private:
+   protected:
     VkCore& core;
     Scene& scene;
 
