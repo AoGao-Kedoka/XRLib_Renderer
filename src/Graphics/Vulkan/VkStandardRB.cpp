@@ -3,8 +3,9 @@
 namespace XRLib {
 namespace Graphics {
 
-VkStandardRB::VkStandardRB(VkCore& core, Scene& scene, std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses)
-    : core{core}, scene{scene}, renderPasses{renderPasses} {}
+VkStandardRB::VkStandardRB(VkCore& core, Scene& scene, std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses,
+                           bool stereo)
+    : core{core}, StandardRB{scene, renderPasses, stereo} {}
 
 const std::string_view VkStandardRB::defaultVertFlat = R"(
     #version 450
@@ -320,20 +321,16 @@ void VkStandardRB::InitVerticesIndicesBuffers() {
     }
 }
 
-void VkStandardRB::PrepareDefaultStereoRenderPasses(Primitives::ViewProjectionStereo& viewProj,
-                                                    std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses) {
-    stereo = true;
-    PrepareDefaultRenderPasses(swapchain->GetSwapchainImages(), std::move(CreateViewProjectionBuffer(core, viewProj)));
-}
-
-void VkStandardRB::PrepareDefaultFlatRenderPasses(Primitives::ViewProjection& viewProj,
-                                                  std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses) {
-    stereo = false;
-    auto mainCamera = scene.MainCamera();
-    viewProj.view = mainCamera->GetGlobalTransform().GetMatrix();
-    viewProj.proj = mainCamera->CameraProjection();
-    PrepareDefaultRenderPasses(swapchain->GetSwapchainImages(),
-                               std::move(CreateViewProjectionBuffer(core, scene, viewProj)));
+void VkStandardRB::Prepare() {
+    if (stereo) {
+        PrepareDefaultRenderPasses(swapchain->GetSwapchainImages(), std::move(CreateViewProjectionBuffer(core, viewProjStereo)));
+    } else {
+        auto mainCamera = scene.MainCamera();
+        viewProj.view = mainCamera->GetGlobalTransform().GetMatrix();
+        viewProj.proj = mainCamera->CameraProjection();
+        PrepareDefaultRenderPasses(swapchain->GetSwapchainImages(),
+                                   std::move(CreateViewProjectionBuffer(core, scene, viewProj)));
+    }
 }
 
 ////////////////////////////////////////////////////

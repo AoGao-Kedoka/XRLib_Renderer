@@ -35,7 +35,8 @@ class RenderBackend {
     XR::XrCore& xrCore;
     VkCore& vkCore;
 
-    std::unique_ptr<StandardRB> renderBahavior = std::make_unique<VkStandardRB>(vkCore, scene, RenderPasses);
+    std::unique_ptr<StandardRB> renderBahavior =
+        std::make_unique<VkStandardRB>(vkCore, scene, RenderPasses, xrCore.IsXRValid());
     VkStandardRB* vkSRB = dynamic_cast<VkStandardRB*>(renderBahavior.get());
 
    private:

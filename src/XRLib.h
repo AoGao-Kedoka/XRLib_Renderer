@@ -18,7 +18,6 @@ class XRLib {
     XRLib& SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath);
     XRLib& Init(bool xr = true);
     XRLib& Init(bool xr, std::unique_ptr<Graphics::StandardRB> renderBahavior);
-    XRLib& SetCustomRenderPasses(std::vector<std::unique_ptr<Graphics::IGraphicsRenderpass>>& customRenderPasses);
     XRLib& InitDefaultRenderPasses();
 
     void Run();

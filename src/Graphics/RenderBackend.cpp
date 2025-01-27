@@ -28,7 +28,7 @@ void RenderBackend::InitVulkan() {
 
 void RenderBackend::Prepare() {
     vkSRB->InitVerticesIndicesBuffers();
-    vkSRB->PrepareDefaultStereoRenderPasses(viewProj, RenderPasses);
+    vkSRB->Prepare();
 }
 
 void RenderBackend::GetSwapchainInfo() {

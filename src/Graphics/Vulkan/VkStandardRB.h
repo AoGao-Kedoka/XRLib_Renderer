@@ -3,7 +3,6 @@
 #include "Buffer.h"
 #include "CommandBuffer.h"
 #include "Graphics/StandardRB.h"
-#include "Scene/Scene.h"
 #include "Swapchain.h"
 #include "VkGraphicsRenderpass.h"
 
@@ -12,7 +11,7 @@ namespace XRLib {
 namespace Graphics {
 class VkStandardRB : public StandardRB {
    public:
-    VkStandardRB(VkCore& core, Scene& scene, std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses);
+    VkStandardRB(VkCore& core, Scene& scene, std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses, bool stereo);
     ~VkStandardRB() = default;
 
     ////////////////////////////////////////////////////
@@ -29,10 +28,7 @@ class VkStandardRB : public StandardRB {
     // Default render passes
     ////////////////////////////////////////////////////
 
-    virtual void PrepareDefaultStereoRenderPasses(Primitives::ViewProjectionStereo& viewProj,
-                                                  std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses);
-    virtual void PrepareDefaultFlatRenderPasses(Primitives::ViewProjection& viewProj,
-                                                std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses);
+    void Prepare() override;
 
     virtual void InitVerticesIndicesBuffers();
 
@@ -46,16 +42,14 @@ class VkStandardRB : public StandardRB {
     void EndFrame(uint32_t& imageIndex) override;
 
    private:
+
     void PrepareDefaultRenderPasses(std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages,
                                     std::shared_ptr<Buffer> viewProjBuffer);
 
    protected:
     VkCore& core;
-    Scene& scene;
-
-    bool stereo;
-
-    std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses;
+    Primitives::ViewProjectionStereo viewProjStereo;
+    Primitives::ViewProjection viewProj;
     std::vector<std::unique_ptr<Buffer>> vertexBuffers;
     std::vector<std::unique_ptr<Buffer>> indexBuffers;
     std::unique_ptr<Swapchain> swapchain;

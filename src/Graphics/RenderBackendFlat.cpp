@@ -32,7 +32,7 @@ void RenderBackendFlat::Prepare() {
     WindowHandler::ActivateInput();
 
     vkSRB->InitVerticesIndicesBuffers();
-    vkSRB->PrepareDefaultFlatRenderPasses(viewProj, RenderPasses);
+    vkSRB->Prepare();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
