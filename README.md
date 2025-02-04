@@ -15,7 +15,6 @@ This project is currently in the very early stages of development and is subject
 - controller binding "/khr/simple_controller"
 
 **WIP**:
-- custom renderpass
 - PBR
 - more controller profiles (Quest, Pico)
 - xr mirror view
