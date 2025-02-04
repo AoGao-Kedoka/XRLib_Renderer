@@ -11,7 +11,8 @@ namespace XRLib {
 namespace Graphics {
 class VkStandardRB : public StandardRB {
    public:
-    VkStandardRB(VkCore& core, Scene& scene, std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses, bool stereo);
+    VkStandardRB(VkCore& core, Scene& scene, std::vector<std::unique_ptr<IGraphicsRenderpass>>* renderPasses,
+                 bool stereo);
     ~VkStandardRB() = default;
 
     ////////////////////////////////////////////////////
@@ -42,7 +43,6 @@ class VkStandardRB : public StandardRB {
     void EndFrame(uint32_t& imageIndex) override;
 
    private:
-
     void PrepareDefaultRenderPasses(std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages,
                                     std::shared_ptr<Buffer> viewProjBuffer);
 

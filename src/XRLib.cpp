@@ -50,7 +50,7 @@ XRLib& XRLib::SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath) {
     return *this;
 }
 
-XRLib& XRLib::Init(bool xr) {
+XRLib& XRLib::Init(bool xr, std::unique_ptr<Graphics::StandardRB> renderBahavior) {
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_INIT_STARTED);
 
     if (!xr) {
@@ -69,17 +69,15 @@ XRLib& XRLib::Init(bool xr) {
 
     SceneBackend().WaitForAllMeshesToLoad();
 
+    if (renderBahavior) {
+        renderBackend->SetRenderBahavior(renderBahavior);
+    }
+
     renderBackend->Prepare();
 
     if (!xrCore.IsXRValid()) {
         Graphics::WindowHandler::ShowWindow();
     }
-    return *this;
-}
-
-XRLib& XRLib::Init(bool xr, std::unique_ptr<Graphics::StandardRB> renderBahavior) {
-    Init(xr);
-    renderBackend->SetRenderBahavior(renderBahavior);
     return *this;
 }
 

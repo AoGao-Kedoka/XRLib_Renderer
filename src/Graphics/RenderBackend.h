@@ -24,7 +24,8 @@ class RenderBackend {
 
     void SetRenderBahavior(std::unique_ptr<StandardRB>& renderBahavior) {
         this->renderBahavior = std::move(renderBahavior);
-        vkSRB = dynamic_cast<VkStandardRB*>(renderBahavior.get());
+        vkSRB = dynamic_cast<VkStandardRB*>(this->renderBahavior.get());
+        vkSRB->UpdateRenderPasses(RenderPasses);
     }
 
     std::vector<std::unique_ptr<IGraphicsRenderpass>> RenderPasses;
@@ -36,7 +37,7 @@ class RenderBackend {
     VkCore& vkCore;
 
     std::unique_ptr<StandardRB> renderBahavior =
-        std::make_unique<VkStandardRB>(vkCore, scene, RenderPasses, xrCore.IsXRValid());
+        std::make_unique<VkStandardRB>(vkCore, scene, &RenderPasses, xrCore.IsXRValid());
     VkStandardRB* vkSRB = dynamic_cast<VkStandardRB*>(renderBahavior.get());
 
    private:

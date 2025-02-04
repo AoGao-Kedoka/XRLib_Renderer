@@ -16,8 +16,7 @@ class XRLib {
     XRLib& SetVersionNumber(unsigned int majorVersion, unsigned int minorVersion, unsigned int patchVersion);
     XRLib& EnableValidationLayer();
     XRLib& SetCustomOpenXRRuntime(const std::filesystem::path& runtimePath);
-    XRLib& Init(bool xr = true);
-    XRLib& Init(bool xr, std::unique_ptr<Graphics::StandardRB> renderBahavior);
+    XRLib& Init(bool xr = true, std::unique_ptr<Graphics::StandardRB> renderBahavior = nullptr);
     XRLib& InitDefaultRenderPasses();
 
     void Run();

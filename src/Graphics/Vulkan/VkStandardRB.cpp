@@ -3,7 +3,7 @@
 namespace XRLib {
 namespace Graphics {
 
-VkStandardRB::VkStandardRB(VkCore& core, Scene& scene, std::vector<std::unique_ptr<IGraphicsRenderpass>>& renderPasses,
+VkStandardRB::VkStandardRB(VkCore& core, Scene& scene, std::vector<std::unique_ptr<IGraphicsRenderpass>>* renderPasses,
                            bool stereo)
     : core{core}, StandardRB{scene, renderPasses, stereo} {}
 
@@ -290,7 +290,7 @@ void VkStandardRB::PrepareDefaultRenderPasses(std::vector<std::vector<std::uniqu
 
     std::unique_ptr<IGraphicsRenderpass> graphicsRenderPass =
         std::make_unique<VkGraphicsRenderpass>(core, stereo, swapchainImages, std::move(descriptorSets));
-    renderPasses.push_back(std::move(graphicsRenderPass));
+    renderPasses->push_back(std::move(graphicsRenderPass));
 }
 
 void VkStandardRB::InitVerticesIndicesBuffers() {
@@ -323,7 +323,8 @@ void VkStandardRB::InitVerticesIndicesBuffers() {
 
 void VkStandardRB::Prepare() {
     if (stereo) {
-        PrepareDefaultRenderPasses(swapchain->GetSwapchainImages(), std::move(CreateViewProjectionBuffer(core, viewProjStereo)));
+        PrepareDefaultRenderPasses(swapchain->GetSwapchainImages(),
+                                   std::move(CreateViewProjectionBuffer(core, viewProjStereo)));
     } else {
         auto mainCamera = scene.MainCamera();
         viewProj.view = mainCamera->GetGlobalTransform().GetMatrix();
@@ -360,10 +361,10 @@ void VkStandardRB::RecordFrame(uint32_t& imageIndex) {
 
     // default frame recording
     auto currentPassIndex = 0;
-    auto& currentPass = static_cast<VkGraphicsRenderpass&>(*renderPasses[currentPassIndex]);
-    commandBuffer.StartRecord().StartPass(currentPass, imageIndex).BindDescriptorSets(currentPass, 0);
+    auto currentPass = static_cast<VkGraphicsRenderpass*>(renderPasses->at(currentPassIndex).get());
+    commandBuffer.StartRecord().StartPass(*currentPass, imageIndex).BindDescriptorSets(*currentPass, 0);
     for (uint32_t i = 0; i < scene.Meshes().size(); ++i) {
-        commandBuffer.PushConstant(currentPass, sizeof(uint32_t), &i);
+        commandBuffer.PushConstant(*currentPass, sizeof(uint32_t), &i);
         if (!vertexBuffers.empty() && !indexBuffers.empty() && vertexBuffers[i] != nullptr &&
             indexBuffers[i] != nullptr) {
             commandBuffer.BindVertexBuffer(0, {vertexBuffers[i]->GetBuffer()}, {0})
@@ -375,13 +376,13 @@ void VkStandardRB::RecordFrame(uint32_t& imageIndex) {
 
     // represents how many passes left to draw
     EventSystem::TriggerEvent<int, CommandBuffer&>(Events::XRLIB_EVENT_RENDERER_PRE_SUBMITTING,
-                                                   (renderPasses.size() - 1) - currentPassIndex, commandBuffer);
+                                                   (renderPasses->size() - 1) - currentPassIndex, commandBuffer);
 
     commandBuffer.EndPass();
 
     // add barrier synchronization between render passes
-    if (currentPassIndex != renderPasses.size() - 1) {
-        commandBuffer.BarrierBetweenPasses(imageIndex, currentPass);
+    if (currentPassIndex != renderPasses->size() - 1) {
+        commandBuffer.BarrierBetweenPasses(imageIndex, *currentPass);
     }
 
     if (!stereo)
