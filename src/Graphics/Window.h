@@ -4,14 +4,14 @@
 
 #include "Event/EventSystem.h"
 #include "Event/Events.h"
-#include "Utils/Info.h"
+#include "Utils/Config.h"
 #include "Utils/Util.h"
 
 namespace XRLib {
 namespace Graphics {
 class WindowHandler {
    public:
-    static void Init(Info& info);
+    static void Init(Config& info);
     static void ShowWindow();
     static void Update();
     static bool WindowShouldClose();

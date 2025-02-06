@@ -3,7 +3,7 @@
 
 namespace XRLib {
 namespace Graphics {
-RenderBackend::RenderBackend(Info& info, VkCore& vkCore, XR::XrCore& xrCore, XRLib::Scene& scene)
+RenderBackend::RenderBackend(Config& info, VkCore& vkCore, XR::XrCore& xrCore, XRLib::Scene& scene)
     : info{info}, vkCore{vkCore}, xrCore{xrCore}, scene{scene} {
 
     InitVulkan();
@@ -11,7 +11,7 @@ RenderBackend::RenderBackend(Info& info, VkCore& vkCore, XR::XrCore& xrCore, XRL
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_RENDERBACKEND_INIT_FINISHED);
 
     if (xrCore.IsXRValid()) {
-        GetSwapchainInfo();
+        GetSwapchainConfig();
     }
 }
 
@@ -31,7 +31,7 @@ void RenderBackend::Prepare() {
     vkSRB->Prepare();
 }
 
-void RenderBackend::GetSwapchainInfo() {
+void RenderBackend::GetSwapchainConfig() {
     std::vector<std::unique_ptr<Image>> swapchainImages;
     auto [width, height] = xrCore.SwapchainExtent();
     for (int i = 0; i < xrCore.GetSwapchainImages().size(); ++i) {

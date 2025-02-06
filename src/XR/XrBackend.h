@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Graphics/Vulkan/VkCore.h"
-#include "Utils/Info.h"
+#include "Utils/Config.h"
 #include "Utils/MathUtil.h"
 #include "XR/XrInput.h"
 
@@ -9,7 +9,7 @@ namespace XRLib {
 namespace XR {
 class XrBackend {
    public:
-    XrBackend(Info& info, Graphics::VkCore& core, XrCore& xrCore);
+    XrBackend(Config& config, Graphics::VkCore& core, XrCore& xrCore);
     ~XrBackend();
 
     XrResult StartFrame(uint32_t& imageIndex);
@@ -32,7 +32,7 @@ class XrBackend {
     void PollEvents();
 
    private:
-    Info& info;
+    Config& config;
     Graphics::VkCore& vkCore;
     XrCore& xrCore;
 

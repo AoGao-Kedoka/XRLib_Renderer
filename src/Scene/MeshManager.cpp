@@ -48,10 +48,10 @@ void MeshManager::WaitForAllMeshesToLoad() {
     }
 }
 
-void MeshManager::LoadMeshAsync(Mesh::MeshLoadInfo loadInfo, Entity*& bindPtr, Entity* parent) {
+void MeshManager::LoadMeshAsync(Mesh::MeshLoadConfig loadConfig, Entity*& bindPtr, Entity* parent) {
     {
         std::lock_guard<std::mutex> lock(queueMutex);
-        meshQueue.push({loadInfo, bindPtr});
+        meshQueue.push({loadConfig, bindPtr});
     }
     cv.notify_all();
     IncreaseLoadingRegistrationcounter(loadingRegistrationCounter, queueMutex, cv);
@@ -66,11 +66,11 @@ void CreateTempTexture(XRLib::Mesh& newMesh, uint8_t color) {
     newMesh.Diffuse = textureData;
 }
 
-void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Entity*& bindPtr) {
+void MeshManager::LoadMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Entity*& bindPtr) {
     Assimp::Importer importer;
 
     const aiScene* scene =
-        importer.ReadFile(meshLoadInfo.meshPath, aiProcess_Triangulate | aiProcess_FlipUVs |
+        importer.ReadFile(meshLoadConfig.meshPath, aiProcess_Triangulate | aiProcess_FlipUVs |
                                                      aiProcess_JoinIdenticalVertices | aiProcess_PreTransformVertices);
 
     auto meshPathValid = [&]() -> bool {
@@ -87,24 +87,24 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Entity*& bind
     };
 
     auto loadMeshData = [&](Mesh* mesh, aiMesh* aiMesh) {
-        LoadMeshVerticesIndices(meshLoadInfo, mesh, aiMesh);
-        LoadMeshTextures(meshLoadInfo, mesh, aiMesh, scene);
+        LoadMeshVerticesIndices(meshLoadConfig, mesh, aiMesh);
+        LoadMeshTextures(meshLoadConfig, mesh, aiMesh, scene);
         mesh->Rename(aiMesh->mName.C_Str());
-        mesh->GetLocalTransform() = meshLoadInfo.transform;
+        mesh->GetLocalTransform() = meshLoadConfig.transform;
         LOGGER(LOGGER::INFO) << "Loaded mesh: " << aiMesh->mName.C_Str();
     };
 
     if (meshPathValid()) {
         LOGGER(LOGGER::ERR) << importer.GetErrorString();
         auto newMesh = createMeshPlaceHolder();
-        HandleInvalidMesh(meshLoadInfo, newMesh);
+        HandleInvalidMesh(meshLoadConfig, newMesh);
         IncreaseLoadingStatusCounter(loadingStatusCounter, queueMutex, cv);
         return;
     }
 
     if (scene->mNumMeshes > 0) {
         auto entityParent = (scene->mNumMeshes > 1)
-                                ? std::make_unique<Entity>(Util::GetFileNameWithoutExtension(meshLoadInfo.meshPath))
+                                ? std::make_unique<Entity>(Util::GetFileNameWithoutExtension(meshLoadConfig.meshPath))
                                 : nullptr;
 
         for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
@@ -135,7 +135,7 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Entity*& bind
     }
 }
 
-void MeshManager::LoadMeshVerticesIndices(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh* newMesh, aiMesh* aiMesh) {
+void MeshManager::LoadMeshVerticesIndices(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh) {
     // Process vertices
     for (unsigned int j = 0; j < aiMesh->mNumVertices; j++) {
         Graphics::Primitives::Vertex vertex;
@@ -160,17 +160,17 @@ void MeshManager::LoadMeshVerticesIndices(const Mesh::MeshLoadInfo& meshLoadInfo
     }
 }
 
-void MeshManager::LoadMeshTextures(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh* newMesh, aiMesh* aiMesh,
+void MeshManager::LoadMeshTextures(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh,
                                    const aiScene* scene) {
 
     // get embedded textures
     LoadEmbeddedTextures(newMesh, aiMesh, scene);
 
     // get meshloadinfo specified texture
-    LoadSpecifiedTextures(newMesh->Diffuse, meshLoadInfo.diffuseTexturePath);
-    LoadSpecifiedTextures(newMesh->Normal, meshLoadInfo.normalTexturePath);
-    LoadSpecifiedTextures(newMesh->Roughness, meshLoadInfo.roughnessTexturePath);
-    LoadSpecifiedTextures(newMesh->Emissive, meshLoadInfo.emissiveTexturePath);
+    LoadSpecifiedTextures(newMesh->Diffuse, meshLoadConfig.diffuseTexturePath);
+    LoadSpecifiedTextures(newMesh->Normal, meshLoadConfig.normalTexturePath);
+    LoadSpecifiedTextures(newMesh->Roughness, meshLoadConfig.roughnessTexturePath);
+    LoadSpecifiedTextures(newMesh->Emissive, meshLoadConfig.emissiveTexturePath);
 
     // last fallback, create temporary white texture
     if (newMesh->Diffuse.textureData.empty()) {
@@ -277,18 +277,18 @@ void MeshManager::MeshLoadingThread() {
             return;
         }
 
-        auto [loadInfo, entityPtr] = meshQueue.front();
+        auto [loadConfig, entityPtr] = meshQueue.front();
         meshQueue.pop();
         std::future<void> future =
-            std::async(std::launch::async, &MeshManager::LoadMesh, this, loadInfo, std::ref(entityPtr));
+            std::async(std::launch::async, &MeshManager::LoadMesh, this, loadConfig, std::ref(entityPtr));
         futures.push_back(std::move(future));
     }
 }
 
-void MeshManager::HandleInvalidMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh* newMesh) {
+void MeshManager::HandleInvalidMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh) {
     Transform transform;
     newMesh->GetLocalTransform() = transform;
-    newMesh->Rename(meshLoadInfo.meshPath);
+    newMesh->Rename(meshLoadConfig.meshPath);
     CreateTempTexture(*newMesh, 255);
 }
 

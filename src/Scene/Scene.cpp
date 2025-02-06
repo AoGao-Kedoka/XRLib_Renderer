@@ -23,14 +23,14 @@ void Scene::AddMandatoryMainCamera() {
     sceneHierarchy.push_back(std::move(camera));
 }
 
-Scene& Scene::LoadMeshAsync(Mesh::MeshLoadInfo loadInfo, Entity* parent) {
+Scene& Scene::LoadMeshAsync(Mesh::MeshLoadConfig loadConfig, Entity* parent) {
     Entity* _ = nullptr;
-    meshManager.LoadMeshAsync(loadInfo, _, parent);
+    meshManager.LoadMeshAsync(loadConfig, _, parent);
     return *this;
 }
 
-Scene& Scene::LoadMeshAsyncWithBinding(Mesh::MeshLoadInfo loadInfo, Entity*& bindPtr, Entity* parent) {
-    meshManager.LoadMeshAsync(loadInfo, bindPtr, parent);
+Scene& Scene::LoadMeshAsyncWithBinding(Mesh::MeshLoadConfig loadConfig, Entity*& bindPtr, Entity* parent) {
+    meshManager.LoadMeshAsync(loadConfig, bindPtr, parent);
     return *this;
 }
 

@@ -2,7 +2,7 @@
 
 namespace XRLib {
 namespace Graphics {
-RenderBackendFlat::RenderBackendFlat(Info& info, VkCore& core, XR::XrCore& xrCore, Scene& scene)
+RenderBackendFlat::RenderBackendFlat(Config& info, VkCore& core, XR::XrCore& xrCore, Scene& scene)
     : RenderBackend(info, core, xrCore, scene) {
     PrepareFlatWindow();
 }

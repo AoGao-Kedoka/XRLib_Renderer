@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Graphics/Window.h"
-#include "Utils/Info.h"
+#include "Utils/Config.h"
 #include "Utils/Util.h"
 #include "VkUtil.h"
 
@@ -13,14 +13,14 @@ class VkCore {
     ~VkCore();
 
     // basis
-    void CreateVkInstance(Info& info, const std::vector<const char*>& additionalInstanceExts);
+    void CreateVkInstance(Config& config, const std::vector<const char*>& additionalInstanceExts);
     const VkInstance& GetRenderInstance() { return vkInstance; }
 
     void SelectPhysicalDevice();
     VkPhysicalDevice& VkPhysicalDeviceRef() { return vkPhysicalDevice; }
     const VkPhysicalDevice& GetRenderPhysicalDevice() { return vkPhysicalDevice; }
 
-    void CreateVkDevice(Info& info, const std::vector<const char*>& additionalDeviceExts, bool xr);
+    void CreateVkDevice(Config& config, const std::vector<const char*>& additionalDeviceExts, bool xr);
     const VkDevice& GetRenderDevice() { return vkDevice; }
 
     const VkQueue& GetGraphicsQueue() { return graphicsQueue; }

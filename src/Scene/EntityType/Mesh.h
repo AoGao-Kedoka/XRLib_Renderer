@@ -9,7 +9,7 @@ class Mesh : public Entity{
    public:
     Mesh() : Entity{"DefaultMesh"} {}
 
-    struct MeshLoadInfo {
+    struct MeshLoadConfig {
         std::string meshPath{""};
 
         Transform transform{};

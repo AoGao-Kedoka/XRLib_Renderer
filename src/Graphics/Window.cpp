@@ -10,7 +10,7 @@ static double lastLeftX = 0.0, lastLeftY = 0.0;
 static double lastRightX = 0.0, lastRightY = 0.0;
 bool inputActivated = false;
 
-void WindowHandler::Init(Info& info) {
+void WindowHandler::Init(Config& info) {
     WindowMode mode = static_cast<WindowMode>(info.windowMode);
 
     glfwInit();

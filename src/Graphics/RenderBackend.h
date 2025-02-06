@@ -9,7 +9,7 @@ namespace XRLib {
 namespace Graphics {
 class RenderBackend {
    public:
-    RenderBackend(Info& info, VkCore& vkCore, XR::XrCore& xrCore, Scene& scene);
+    RenderBackend(Config& info, VkCore& vkCore, XR::XrCore& xrCore, Scene& scene);
     ~RenderBackend();
 
     virtual bool WindowShouldClose() { return false; }
@@ -31,7 +31,7 @@ class RenderBackend {
     std::vector<std::unique_ptr<IGraphicsRenderpass>> RenderPasses;
 
    protected:
-    Info& info;
+    Config& info;
     Scene& scene;
     XR::XrCore& xrCore;
     VkCore& vkCore;
@@ -42,7 +42,7 @@ class RenderBackend {
 
    private:
     void InitVulkan();
-    void GetSwapchainInfo();
+    void GetSwapchainConfig();
 
    private:
     Primitives::ViewProjectionStereo viewProj;

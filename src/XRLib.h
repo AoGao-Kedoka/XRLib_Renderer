@@ -36,7 +36,7 @@ class XRLib {
     void UpdateDeltaTIme();
 
    private:
-    Info info;
+    Config info;
     Scene scene;
     Graphics::VkCore vkCore;
     XR::XrCore xrCore;

@@ -2,7 +2,7 @@
 
 namespace XRLib {
 namespace XR {
-XrBackend::XrBackend(Info& info, Graphics::VkCore& core, XrCore& xrCore) : info{info}, vkCore{core}, xrCore{xrCore} {
+XrBackend::XrBackend(Config& config, Graphics::VkCore& core, XrCore& xrCore) : config{config}, vkCore{core}, xrCore{xrCore} {
     try {
         for (const auto layer : apiLayers) {
             bool res = XrUtil::XrCheckLayerSupport(layer.c_str());
@@ -58,7 +58,7 @@ void XrBackend::Prepare() {
 }
 
 void XrBackend::CreateXrInstance() {
-    if (info.validationLayer) {
+    if (config.validationLayer) {
         activeInstanceExtensions.push_back(XR_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
@@ -111,28 +111,28 @@ void XrBackend::CreateXrInstance() {
         }
     }
 
-    if (std::strlen(info.applicationName.c_str()) > XR_MAX_APPLICATION_NAME_SIZE) {
+    if (std::strlen(config.applicationName.c_str()) > XR_MAX_APPLICATION_NAME_SIZE) {
         LOGGER(LOGGER::WARNING) << "Application name longer than the size allowed";
     }
 
     XrInstanceCreateInfo instanceCreateInfo{};
     instanceCreateInfo.type = XR_TYPE_INSTANCE_CREATE_INFO;
     instanceCreateInfo.createFlags = 0;
-    std::memcpy(instanceCreateInfo.applicationInfo.applicationName, info.applicationName.c_str(),
+    std::memcpy(instanceCreateInfo.applicationInfo.applicationName, config.applicationName.c_str(),
                 XR_MAX_APPLICATION_NAME_SIZE - 1);
     instanceCreateInfo.applicationInfo.applicationVersion =
-        XR_MAKE_VERSION(info.majorVersion, info.minorVersion, info.patchVersion);
-    std::memcpy(instanceCreateInfo.applicationInfo.engineName, info.applicationName.c_str(),
+        XR_MAKE_VERSION(config.majorVersion, config.minorVersion, config.patchVersion);
+    std::memcpy(instanceCreateInfo.applicationInfo.engineName, config.applicationName.c_str(),
                 XR_MAX_APPLICATION_NAME_SIZE - 1);
     instanceCreateInfo.applicationInfo.engineVersion =
-        XR_MAKE_VERSION(info.majorVersion, info.minorVersion, info.patchVersion);
+        XR_MAKE_VERSION(config.majorVersion, config.minorVersion, config.patchVersion);
     instanceCreateInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
     instanceCreateInfo.enabledApiLayerCount = static_cast<uint32_t>(activeAPILayers.size());
     instanceCreateInfo.enabledApiLayerNames = activeAPILayers.data();
     instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(activeInstanceExtensions.size());
     instanceCreateInfo.enabledExtensionNames = activeInstanceExtensions.data();
     XrDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfo{};
-    if (info.validationLayer) {
+    if (config.validationLayer) {
         debugUtilsMessengerCreateInfo.type = XR_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         debugUtilsMessengerCreateInfo.messageTypes =
             XR_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | XR_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
@@ -150,14 +150,14 @@ void XrBackend::CreateXrInstance() {
         Util::ErrorPopup("Failed to create XR instance, no OpenXR runtime set.");
     }
 
-    if (info.validationLayer) {
+    if (config.validationLayer) {
         PFN_xrCreateDebugUtilsMessengerEXT xrCreateDebugUtilsMessengerEXT =
             XrUtil::XrGetXRFunction<PFN_xrCreateDebugUtilsMessengerEXT>(xrCore.GetXRInstance(),
                                                                         "xrCreateDebugUtilsMessengerEXT");
         if (xrCreateDebugUtilsMessengerEXT(xrCore.GetXRInstance(), &debugUtilsMessengerCreateInfo,
                                            &xrDebugUtilsMessenger) != XR_SUCCESS) {
             LOGGER(LOGGER::ERR) << "Failed to create debug messenger";
-            info.validationLayer = false;
+            config.validationLayer = false;
         }
     }
 }
