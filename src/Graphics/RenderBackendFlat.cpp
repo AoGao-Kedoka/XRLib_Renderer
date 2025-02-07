@@ -12,6 +12,7 @@ RenderBackendFlat::~RenderBackendFlat() {
 }
 
 void RenderBackendFlat::Prepare() {
+    VkStandardRB* vkSRB = dynamic_cast<VkStandardRB*>(renderBahavior.get());
     vkSRB->GetSwapchain() = std::make_unique<Swapchain>(vkCore);
 
     // register window resize callback

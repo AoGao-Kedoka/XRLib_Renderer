@@ -27,6 +27,8 @@ void RenderBackend::InitVulkan() {
 }
 
 void RenderBackend::Prepare() {
+    // vulkan prepare
+    VkStandardRB* vkSRB = dynamic_cast<VkStandardRB*>(renderBahavior.get());
     vkSRB->InitVerticesIndicesBuffers();
     vkSRB->Prepare();
 }
@@ -39,6 +41,7 @@ void RenderBackend::GetSwapchainInfo() {
                                                           static_cast<VkFormat>(xrCore.SwapchainFormats()[0]), width,
                                                           height, 2));
     }
+    VkStandardRB* vkSRB = dynamic_cast<VkStandardRB*>(renderBahavior.get());
     vkSRB->GetSwapchain() = std::make_unique<Swapchain>(vkCore, swapchainImages);
 }
 
