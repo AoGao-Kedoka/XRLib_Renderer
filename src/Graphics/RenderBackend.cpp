@@ -9,10 +9,6 @@ RenderBackend::RenderBackend(Config& info, VkCore& vkCore, XR::XrCore& xrCore, X
     InitVulkan();
 
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_RENDERBACKEND_INIT_FINISHED);
-
-    if (xrCore.IsXRValid()) {
-        GetSwapchainConfig();
-    }
 }
 
 RenderBackend::~RenderBackend() {}
@@ -27,6 +23,10 @@ void RenderBackend::InitVulkan() {
 }
 
 void RenderBackend::Prepare() {
+    if (xrCore.IsXRValid()) {
+        GetSwapchainConfig();
+    }
+
     // vulkan prepare
     VkStandardRB* vkSRB = dynamic_cast<VkStandardRB*>(renderBahavior.get());
     vkSRB->InitVerticesIndicesBuffers();
