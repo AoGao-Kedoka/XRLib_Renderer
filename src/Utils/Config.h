@@ -3,7 +3,7 @@
 #include <string>
 
 namespace XRLib {
-class Info {
+class Config {
    public:
     bool validationLayer = false;
 

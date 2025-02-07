@@ -23,14 +23,14 @@ VkCore::~VkCore() {
     VkUtil::VkSafeClean(vkDestroyInstance, vkInstance, nullptr);
 }
 
-void VkCore::CreateVkInstance(Info& info, const std::vector<const char*>& additionalInstanceExts) {
-    if (info.validationLayer) {
+void VkCore::CreateVkInstance(Config& config, const std::vector<const char*>& additionalInstanceExts) {
+    if (config.validationLayer) {
         for (const char* layer : validataionLayers) {
             bool res = VkUtil::VkCheckLayerSupport(layer);
 
             // disable validataion if validation layer is not supported
             if (!res) {
-                info.validationLayer = false;
+                config.validationLayer = false;
                 LOGGER(LOGGER::WARNING) << "Validation layer not available, disabling validataion layer";
             }
         }
@@ -38,10 +38,10 @@ void VkCore::CreateVkInstance(Info& info, const std::vector<const char*>& additi
 
     VkApplicationInfo applicationInfo{};
     applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    applicationInfo.pApplicationName = info.applicationName.c_str();
-    applicationInfo.applicationVersion = VK_MAKE_VERSION(info.majorVersion, info.minorVersion, info.patchVersion);
-    applicationInfo.pEngineName = info.applicationName.c_str();
-    applicationInfo.engineVersion = VK_MAKE_VERSION(info.majorVersion, info.minorVersion, info.patchVersion);
+    applicationInfo.pApplicationName = config.applicationName.c_str();
+    applicationInfo.applicationVersion = VK_MAKE_VERSION(config.majorVersion, config.minorVersion, config.patchVersion);
+    applicationInfo.pEngineName = config.applicationName.c_str();
+    applicationInfo.engineVersion = VK_MAKE_VERSION(config.majorVersion, config.minorVersion, config.patchVersion);
     applicationInfo.apiVersion = VK_API_VERSION_1_3;
 
     std::vector<const char*> vulkanInstanceExtensions;
@@ -53,7 +53,7 @@ void VkCore::CreateVkInstance(Info& info, const std::vector<const char*>& additi
         vulkanInstanceExtensions.push_back(windowExtensions[i]);
     }
 
-    if (info.validationLayer) {
+    if (config.validationLayer) {
         vulkanInstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
@@ -82,7 +82,7 @@ void VkCore::CreateVkInstance(Info& info, const std::vector<const char*>& additi
     instanceCreateInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
 
-    if (info.validationLayer) {
+    if (config.validationLayer) {
         debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
                                           VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
@@ -111,7 +111,7 @@ void VkCore::CreateVkInstance(Info& info, const std::vector<const char*>& additi
         Util::ErrorPopup("Failed to create vulkan instance");
     }
 
-    if (info.validationLayer) {
+    if (config.validationLayer) {
         vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
             vkGetInstanceProcAddr(GetRenderInstance(), "vkCreateDebugUtilsMessengerEXT"));
         if (vkCreateDebugUtilsMessengerEXT(GetRenderInstance(), &debugCreateInfo, nullptr, &vkDebugMessenger) !=
@@ -170,11 +170,11 @@ void VkCore::SelectPhysicalDevice() {
     }
 }
 
-void VkCore::CreateVkDevice(Info& info, const std::vector<const char*>& additionalDeviceExts, bool xr) {
+void VkCore::CreateVkDevice(Config& config, const std::vector<const char*>& additionalDeviceExts, bool xr) {
     std::vector<const char*> deviceExtensions(0);
 
     deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    if (info.validationLayer) {
+    if (config.validationLayer) {
         deviceExtensions.push_back(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     }
 

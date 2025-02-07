@@ -12,18 +12,18 @@ class MeshManager {
     MeshManager(std::vector<Mesh*>& meshesContainer, std::vector<std::unique_ptr<Entity>>& hiearchyRoot);
     ~MeshManager();
     void WaitForAllMeshesToLoad();
-    void LoadMeshAsync(Mesh::MeshLoadInfo loadInfo, Entity*& bindPtr, Entity* parent = nullptr);
+    void LoadMeshAsync(Mesh::MeshLoadConfig loadConfig, Entity*& bindPtr, Entity* parent = nullptr);
     std::vector<Mesh*>& Meshes() { return meshes; }
 
    private:
-    void LoadMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Entity*& bindPtr);
-    void LoadMeshVerticesIndices(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh* newMesh, aiMesh* aiMesh);
-    void LoadMeshTextures(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
+    void LoadMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Entity*& bindPtr);
+    void LoadMeshVerticesIndices(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh);
+    void LoadMeshTextures(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
     void LoadEmbeddedTextures(Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
     void LoadSpecifiedTextures(Mesh::TextureData& texture, const std::string& path);
     void MeshLoadingThread();
 
-    void HandleInvalidMesh(const Mesh::MeshLoadInfo& meshLoadInfo, Mesh* newMesh);
+    void HandleInvalidMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh);
 
    private:
     std::vector<Mesh*>& meshes;
@@ -31,7 +31,7 @@ class MeshManager {
 
     // synchronization
     std::vector<std::future<void>> futures;
-    std::queue<std::pair<Mesh::MeshLoadInfo, Entity*&>> meshQueue;
+    std::queue<std::pair<Mesh::MeshLoadConfig, Entity*&>> meshQueue;
     std::condition_variable cv;
     std::mutex queueMutex;
     std::atomic<bool> stop;

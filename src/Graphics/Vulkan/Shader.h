@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Logger.h"
-#include "Utils/Info.h"
+#include "Utils/Config.h"
 #include "Utils/Util.h"
 #include "VkCore.h"
 

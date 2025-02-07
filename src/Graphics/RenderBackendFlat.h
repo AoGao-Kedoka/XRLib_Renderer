@@ -6,7 +6,7 @@ namespace XRLib {
 namespace Graphics {
 class RenderBackendFlat : public RenderBackend {
    public:
-    RenderBackendFlat(Info& info, VkCore& core, XR::XrCore& xrCore, Scene& scene);
+    RenderBackendFlat(Config& info, VkCore& core, XR::XrCore& xrCore, Scene& scene);
     ~RenderBackendFlat();
 
     void Prepare() override;

@@ -20,8 +20,8 @@ class Scene {
     MeshManager& GetMeshManager() { return meshManager; }
     std::vector<Mesh*>& Meshes() { return meshes; }
 
-    Scene& LoadMeshAsync(Mesh::MeshLoadInfo loadInfo, Entity* parent = nullptr);
-    Scene& LoadMeshAsyncWithBinding(Mesh::MeshLoadInfo loadInfo, Entity*& bindPtr, Entity* parent = nullptr);
+    Scene& LoadMeshAsync(Mesh::MeshLoadConfig loadConfig, Entity* parent = nullptr);
+    Scene& LoadMeshAsyncWithBinding(Mesh::MeshLoadConfig loadConfig, Entity*& bindPtr, Entity* parent = nullptr);
 
     void WaitForAllMeshesToLoad();
 
