@@ -4,9 +4,9 @@
 
 namespace XRLib {
 namespace Graphics {
-Image::Image(VkCore& core, std::vector<uint8_t> textureData, const unsigned int width, const unsigned int height, const unsigned int channels,
-             VkFormat format)
-    : core{core}, format{format}, width(width), height{height}{
+Image::Image(VkCore& core, std::vector<uint8_t> textureData, const unsigned int width, const unsigned int height,
+             const unsigned int channels, VkFormat format)
+    : core{core}, format{format}, width(width), height{height} {
     size = width * height * channels;
 
     std::unique_ptr<Buffer> imageBuffer = std::make_unique<Buffer>(core, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -16,12 +16,11 @@ Image::Image(VkCore& core, std::vector<uint8_t> textureData, const unsigned int 
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     // command buffer: copy buffer to the image
-    TransitionImageLayout(image, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    TransitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    CopyBufferToImage(imageBuffer->GetBuffer(), image, width, height);
+    CopyBufferToImage(imageBuffer->GetBuffer(), width, height);
 
-    TransitionImageLayout(image, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    TransitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 Image::Image(VkCore& core, const unsigned int width, const unsigned int height, VkFormat format, VkImageTiling tiling,
@@ -31,7 +30,8 @@ Image::Image(VkCore& core, const unsigned int width, const unsigned int height, 
     resizable = true;
 }
 
-Image::Image(VkCore& core, VkImage image, VkFormat format, const unsigned int width, const unsigned int height, uint32_t layerCount)
+Image::Image(VkCore& core, VkImage image, VkFormat format, const unsigned int width, const unsigned int height,
+             uint32_t layerCount)
     : core{core}, image{image}, format{format}, width{width}, height{height}, layerCount{layerCount} {}
 
 void Image::Resize(unsigned int width, unsigned int height) {
@@ -139,7 +139,7 @@ bool hasStencilComponent(VkFormat format) {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void Image::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
+void Image::TransitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout) {
     auto commandBuffer = CommandBuffer::BeginSingleTimeCommands(core);
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -204,7 +204,7 @@ void Image::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout 
                          &barrier);
     CommandBuffer::EndSingleTimeCommands(commandBuffer);
 }
-void Image::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+void Image::CopyBufferToImage(VkBuffer buffer, uint32_t width, uint32_t height) {
     auto commandBuffer = CommandBuffer::BeginSingleTimeCommands(core);
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
@@ -230,7 +230,6 @@ void Image::StoreImageProperties(VkFormat format, VkImageTiling tiling, VkImageU
     this->tiling = tiling;
     this->usageFlags = usageFlags;
     this->propertyFlags = property;
-    this->layerCount = layerCount;
     this->format = format;
 }
 
@@ -242,7 +241,6 @@ void Image::ResetImage() {
     sampler = VK_NULL_HANDLE;
     imageMemory = VK_NULL_HANDLE;
 }
-
 
 }    // namespace Graphics
 }    // namespace XRLib
