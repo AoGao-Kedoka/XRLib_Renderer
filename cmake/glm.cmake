@@ -1,5 +1,5 @@
-find_package(GLM QUIET)
-if (NOT GLM_FOUND)
+find_package(glm CONFIG QUIET)
+if (NOT glm_FOUND)
     message("${MESSAGE_BOX}\nglm not found, try fetching...\n${MESSAGE_BOX}")
     FetchContent_Declare(
         glm

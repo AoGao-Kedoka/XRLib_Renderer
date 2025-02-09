@@ -38,7 +38,7 @@ target_link_libraries(YOUR_TARGET PRIVATE XRLib::XRLib)
 
 It's **recommended** to pre-install the dependencies via vcpkg, otherwise it will cause very long compile time for the first time:
 ```
-vcpkg install openxr-loader vulkan glm glfw3 shaderc
+vcpkg install openxr-loader vulkan glm glfw3 shaderc assimp fmt
 ```
 Then build your project via:
 ```

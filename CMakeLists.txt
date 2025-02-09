@@ -21,19 +21,18 @@ add_library(XRLib::XRLib ALIAS XRLib)
 
 if (LINUX)
     message( STATUS "Platform: Linux" )
-
-    FIND_PACKAGE( PkgConfig REQUIRED)
-    PKG_CHECK_MODULES( GTK REQUIRED gtk+-3.0 )
-    INCLUDE_DIRECTORIES(${GTK_INCLUDE_DIRS})
-    LINK_DIRECTORIES(${GTK_LIBRARY_DIRS})
-    ADD_DEFINITIONS(${GTK_CFLAGS_OTHER})
-    link_libraries( ${GTK_LIBRARIES} )
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(GTK REQUIRED gtk+-3.0)
+    target_include_directories(${PROJECT_NAME} PUBLIC ${GTK_INCLUDE_DIRS})
+    target_link_directories(${PROJECT_NAME} PUBLIC ${GTK_LIBRARY_DIRS})
+    target_compile_options(${PROJECT_NAME} PRIVATE ${GTK_CFLAGS_OTHER})
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${GTK_LIBRARIES})
 elseif (APPLE)
     find_library(COCOA_LIBRARY Cocoa)
     target_link_libraries(${PROJECT_NAME} PUBLIC ${COCOA_LIBRARY})
+else()
+    message( STATUS "Platform: Unkown" )
 endif()
-
-
 
 set(MESSAGE_BOX "---------------------------")
 include(FetchContent)
@@ -120,12 +119,5 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
 if (NOT HAS_STD_FORMAT)
     find_dependency(fmt REQUIRED)
 endif()
-
-    include(\"\${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}Targets.cmake\")
-)
-
-install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+    include("${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}Targets.cmake")
 )
