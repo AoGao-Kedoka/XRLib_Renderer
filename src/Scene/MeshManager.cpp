@@ -172,6 +172,7 @@ void MeshManager::LoadMeshTextures(const Mesh::MeshLoadConfig& meshLoadConfig, M
     LoadSpecifiedTextures(newMesh->Normal, meshLoadConfig.normalTexturePath);
     LoadSpecifiedTextures(newMesh->Roughness, meshLoadConfig.roughnessTexturePath);
     LoadSpecifiedTextures(newMesh->Emissive, meshLoadConfig.emissiveTexturePath);
+    LoadSpecifiedTextures(newMesh->Metallic, meshLoadConfig.metallicTexturePath);
 
     // last fallback, create temporary white texture
     if (newMesh->Diffuse.textureData.empty()) {
@@ -223,6 +224,7 @@ void MeshManager::LoadEmbeddedTextures(Mesh* newMesh, aiMesh* aiMesh, const aiSc
     if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS) {
         const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(texturePath.C_Str());
         if (embeddedTexture) {
+            newMesh->Diffuse.textureData.clear();
             loadTextureFromEmbedding(embeddedTexture, newMesh->Diffuse);
         }
     }
@@ -232,6 +234,7 @@ void MeshManager::LoadEmbeddedTextures(Mesh* newMesh, aiMesh* aiMesh, const aiSc
         material->GetTexture(aiTextureType_HEIGHT, 0, &texturePath) == AI_SUCCESS) {
         const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(texturePath.C_Str());
         if (embeddedTexture) {
+            newMesh->Normal.textureData.clear();
             loadTextureFromEmbedding(embeddedTexture, newMesh->Normal);
         }
     }
@@ -240,6 +243,7 @@ void MeshManager::LoadEmbeddedTextures(Mesh* newMesh, aiMesh* aiMesh, const aiSc
     if (material->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &texturePath) == AI_SUCCESS) {
         const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(texturePath.C_Str());
         if (embeddedTexture) {
+            newMesh->Roughness.textureData.clear();
             loadTextureFromEmbedding(embeddedTexture, newMesh->Roughness);
         }
     }
@@ -248,17 +252,33 @@ void MeshManager::LoadEmbeddedTextures(Mesh* newMesh, aiMesh* aiMesh, const aiSc
     if (material->GetTexture(aiTextureType_EMISSIVE, 0, &texturePath) == AI_SUCCESS) {
         const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(texturePath.C_Str());
         if (embeddedTexture) {
+            newMesh->Emissive.textureData.clear();
             loadTextureFromEmbedding(embeddedTexture, newMesh->Emissive);
+        }
+    }
+
+    // Metallic
+    if (material->GetTexture(aiTextureType_METALNESS, 0, &texturePath) == AI_SUCCESS) {
+        const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(texturePath.C_Str());
+        if (embeddedTexture) {
+            newMesh->Metallic.textureData.clear();
+            loadTextureFromEmbedding(embeddedTexture, newMesh->Metallic);
         }
     }
 }
 
 void MeshManager::LoadSpecifiedTextures(Mesh::TextureData& texture, const std::string& path) {
-    if (texture.textureData.empty() && !path.empty()) {
+    if (path.empty()) {
+        return;
+    }
+
+    // check fallback texture
+    if (texture.textureChannels == 4 && texture.textureWidth == 1 && texture.textureHeight == 1) {
         unsigned char* imageData = stbi_load(path.c_str(), &texture.textureWidth, &texture.textureHeight,
                                              &texture.textureChannels, STBI_rgb_alpha);
 
         if (imageData) {
+            texture.textureData.clear();
             size_t imageSize = texture.textureWidth * texture.textureHeight * 4;
             texture.textureChannels = 4;
             texture.textureData.resize(imageSize);

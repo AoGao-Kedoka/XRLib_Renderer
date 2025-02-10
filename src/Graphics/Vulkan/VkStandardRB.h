@@ -20,8 +20,9 @@ class VkStandardRB : public StandardRB {
     ////////////////////////////////////////////////////
 
     static const std::string_view defaultVertFlat;
-    static const std::string_view defaultPhongFrag;
     static const std::string_view defaultVertStereo;
+    static const std::string_view defaultPhongFrag;
+    static const std::string_view defaultPBRFrag;
 
     inline constexpr static std::string_view defaultShaderCachePath = "./ShaderCache";
 

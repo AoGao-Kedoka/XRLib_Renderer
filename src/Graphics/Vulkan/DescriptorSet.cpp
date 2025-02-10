@@ -42,7 +42,7 @@ void DescriptorSet::Init() {
 
     // Create storage for buffer and image infos
     std::vector<VkDescriptorBufferInfo> bufferInfos(elements.size());
-    std::vector<VkDescriptorImageInfo> imageInfos(elements.size());
+    std::vector<std::vector<VkDescriptorImageInfo>> imageInfos(elements.size());
 
     std::vector<VkWriteDescriptorSet> descriptorWrites(elements.size());
     for (int i = 0; i < elements.size(); ++i) {
@@ -62,17 +62,16 @@ void DescriptorSet::Init() {
             descriptorWrites[i].pBufferInfo = &bufferInfos[i];
 
         } else if (const auto images = std::get_if<std::vector<std::shared_ptr<Image>>>(&elements[i].data)) {
-            imageInfos.resize(images->size());
-            for (int j = 0; j < imageInfos.size(); ++j) {
+            imageInfos[i].resize(images->size());
+            for (int j = 0; j < imageInfos[i].size(); ++j) {
                 std::shared_ptr<Image>& currentImage = images->at(j);
-
-                imageInfos[j].imageView = currentImage->GetImageView();
-                imageInfos[j].sampler = currentImage->GetSampler();
-                imageInfos[j].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageInfos[i][j].imageView = currentImage->GetImageView();
+                imageInfos[i][j].sampler = currentImage->GetSampler();
+                imageInfos[i][j].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
 
             descriptorWrites[i].descriptorCount = images->size();
-            descriptorWrites[i].pImageInfo = imageInfos.data();
+            descriptorWrites[i].pImageInfo = imageInfos[i].data();
         }
     }
 

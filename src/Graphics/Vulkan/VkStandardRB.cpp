@@ -91,7 +91,8 @@ const std::string_view VkStandardRB::defaultPhongFrag = R"(
         float intensity;
     };
 
-    layout(set = 0, binding = 2) uniform sampler2D texSamplers[];
+    layout(set = 0, binding = 2) uniform sampler2D diffuseSamplers[];
+    layout(set = 0, binding = 3) uniform sampler2D normalSamplers[];
 
     layout(set = 1, binding = 0) uniform LightsCount{
         int lightsCount;
@@ -132,7 +133,7 @@ const std::string_view VkStandardRB::defaultPhongFrag = R"(
         vec3 normal = normalize(fragNormal);
         vec3 viewDir = normalize(cameraPos - fragWorldPos);
 
-        vec4 texColor = texture(texSamplers[modelIndex], fragTexCoord);
+        vec4 texColor = texture(diffuseSamplers[modelIndex], fragTexCoord);
         vec3 result = vec3(0.0);
 
         for (int i = 0; i < lightsCount; i++) {
@@ -140,11 +141,121 @@ const std::string_view VkStandardRB::defaultPhongFrag = R"(
             vec3 lightDir = normalize(lightPos - fragWorldPos);
             vec3 lightColor = lights[i].color.rgb;
             float lightIntensity = lights[i].intensity;
-
-            result += calculatePhongLighting(normal, viewDir, lightDir, lightColor, lightIntensity, texColor.rgb);
+            
+            float distance = length(lightPos - fragWorldPos);
+            float attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * (distance * distance));
+            result += calculatePhongLighting(normal, viewDir, lightDir, lightColor, lightIntensity, texColor.rgb) * attenuation;
         }
 
         outColor = vec4(result, texColor.a);
+    }
+)";
+
+// modified from: https://learnopengl.com/PBR/Lighting
+const std::string_view VkStandardRB::defaultPBRFrag = R"(
+    #version 450
+    #extension GL_ARB_separate_shader_objects : enable
+    #extension GL_EXT_multiview : enable
+    #extension GL_EXT_nonuniform_qualifier: enable
+
+    struct Light {
+        mat4 transform;
+        vec4 color;
+        float intensity;
+    };
+
+    layout(set = 0, binding = 2) uniform sampler2D diffuseSamplers[];
+    layout(set = 0, binding = 3) uniform sampler2D normalSamplers[];
+    layout(set = 0, binding = 4) uniform sampler2D metallicSamplers[];
+    layout(set = 0, binding = 5) uniform sampler2D roughnessSamplers[];
+    layout(set = 0, binding = 6) uniform sampler2D emissiveSamplers[];
+
+    layout(set = 1, binding = 0) uniform LightsCount {
+        int lightsCount;
+    };
+
+    layout(set = 1, binding = 1) readonly buffer Lights {
+        Light lights[];
+    };
+
+    layout(push_constant) uniform PushConstants {
+        uint modelIndex;
+    };
+
+    layout(location = 0) in vec3 fragNormal;
+    layout(location = 1) in vec2 fragTexCoord;
+    layout(location = 2) in vec3 fragWorldPos;
+    layout(location = 3) in vec3 cameraPos;
+
+    layout(location = 0) out vec4 outColor;
+
+    const float PI = 3.14159265359;
+
+    float DistributionGGX(vec3 N, vec3 H, float roughness) {
+        float a = roughness * roughness;
+        float a2 = a * a;
+        float NdotH = max(dot(N, H), 0.0);
+        float NdotH2 = NdotH * NdotH;
+        float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+        return a2 / (PI * denom * denom);
+    }
+
+    float GeometrySchlickGGX(float NdotV, float roughness) {
+        float r = roughness + 1.0;
+        float k = (r * r) / 8.0;
+        return NdotV / (NdotV * (1.0 - k) + k);
+    }
+
+    float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
+        float NdotV = max(dot(N, V), 0.0);
+        float NdotL = max(dot(N, L), 0.0);
+        float ggx1 = GeometrySchlickGGX(NdotV, roughness);
+        float ggx2 = GeometrySchlickGGX(NdotL, roughness);
+        return ggx1 * ggx2;
+    }
+
+    vec3 FresnelSchlick(float cosTheta, vec3 F0) {
+        return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+    }
+
+    void main() {
+        int index = int(modelIndex);
+        vec3 albedo = texture(diffuseSamplers[index], fragTexCoord).rgb;
+        float metallic = texture(metallicSamplers[index], fragTexCoord).r;
+        float roughness = texture(roughnessSamplers[index], fragTexCoord).r;
+        vec3 emissive = texture(emissiveSamplers[index], fragTexCoord).rgb;
+        vec3 normalMapSample = texture(normalSamplers[index], fragTexCoord).rgb;
+        normalMapSample = normalMapSample * 2.0 - 1.0;
+        vec3 N = normalize(fragNormal); // TODO: normal map with TBN
+        vec3 V = normalize(cameraPos - fragWorldPos);
+        vec3 F0 = mix(vec3(0.04), albedo, metallic);
+        vec3 Lo = vec3(0.0);
+
+        for (int i = 0; i < lightsCount; ++i) {
+            vec3 lightPos = vec3(lights[i].transform[3]);
+            vec3 L = normalize(lightPos - fragWorldPos);
+            vec3 H = normalize(V + L);
+            float distance = length(lightPos - fragWorldPos);
+            float attenuation = 1.0 / (distance * distance);
+            vec3 radiance = lights[i].color.rgb * lights[i].intensity * attenuation;
+            float NDF = DistributionGGX(N, H, roughness);
+            float G = GeometrySmith(N, V, L, roughness);
+            vec3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
+            vec3 numerator = NDF * G * F;
+            float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
+            vec3 specular = numerator / denominator;
+            vec3 kS = F;
+            vec3 KD = vec3(1.0) - kS;
+            kD *= 1.0 - metallic;
+            float NdotL = max(dot(N, L), 0.0);
+            Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+        }
+
+        vec3 ambient = vec3(0.03) * albedo;
+        vec3 color = ambient + Lo + emissive;
+        color = color / (color + vec3(1.0));
+        color = pow(color, vec3(1.0/2.2));
+        outColor = vec4(color, 1.0);
     }
 )";
 
@@ -225,20 +336,16 @@ std::shared_ptr<Buffer> CreateViewProjectionBuffer(VkCore& core, Scene& scene, P
     return viewProjBuffer;
 }
 
-std::vector<std::shared_ptr<Image>> CreateTextures(VkCore& core, Scene& scene) {
+std::vector<std::shared_ptr<Image>>
+CreateTextures(VkCore& core, Scene& scene, const std::function<const Mesh::TextureData&(const Mesh&)>& getTexture) {
     std::vector<std::shared_ptr<Image>> textures(scene.Meshes().size());
-    if (textures.empty()) {
-        std::vector<uint8_t> textureData;
-        textureData.resize(1 * 1 * 4, 255);
-        textures.push_back(std::make_shared<Image>(core, textureData, 1, 1, 4, VK_FORMAT_R8G8B8A8_SRGB));
-        return textures;
-    }
 
-    for (int i = 0; i < textures.size(); ++i) {
-        textures[i] =
-            std::make_shared<Image>(core, scene.Meshes()[i]->Diffuse.textureData,
-                                    scene.Meshes()[i]->Diffuse.textureWidth, scene.Meshes()[i]->Diffuse.textureHeight,
-                                    scene.Meshes()[i]->Diffuse.textureChannels, VK_FORMAT_R8G8B8A8_SRGB);
+    for (size_t i = 0; i < textures.size(); ++i) {
+        const auto& mesh = *scene.Meshes()[i];
+        const auto& texture = getTexture(mesh);
+
+        textures[i] = std::make_shared<Image>(core, texture.textureData, texture.textureWidth, texture.textureHeight,
+                                              texture.textureChannels, VK_FORMAT_R8G8B8A8_SRGB);
     }
 
     return textures;
@@ -276,11 +383,24 @@ std::pair<std::shared_ptr<Buffer>, std::shared_ptr<Buffer>> CreateLightBuffer(Vk
 void VkStandardRB::PrepareDefaultRenderPasses(std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages,
                                               std::shared_ptr<Buffer> viewProjBuffer) {
     auto modelPositionsBuffer = std::move(CreateModelPositionBuffer(core, scene));
-    auto textures = std::move(CreateTextures(core, scene));
+
+    auto diffuseTextures = std::move(
+        CreateTextures(core, scene, [](const Mesh& mesh) -> const Mesh::TextureData& { return mesh.Diffuse; }));
+    auto normalTextures = std::move(
+        CreateTextures(core, scene, [](const Mesh& mesh) -> const Mesh::TextureData& { return mesh.Normal; }));
+    auto metallicTextures = std::move(
+        CreateTextures(core, scene, [](const Mesh& mesh) -> const Mesh::TextureData& { return mesh.Metallic; }));
+    auto roughnessTextures = std::move(
+        CreateTextures(core, scene, [](const Mesh& mesh) -> const Mesh::TextureData& { return mesh.Roughness; }));
+    auto emissiveTextures = std::move(
+        CreateTextures(core, scene, [](const Mesh& mesh) -> const Mesh::TextureData& { return mesh.Emissive; }));
+
     auto [lightsCountBuffer, lightsBuffer] = std::move(CreateLightBuffer(core, scene));
 
     std::vector<std::unique_ptr<DescriptorSet>> descriptorSets;
-    auto descriptorSet = std::make_unique<DescriptorSet>(core, viewProjBuffer, modelPositionsBuffer, textures);
+    auto descriptorSet =
+        std::make_unique<DescriptorSet>(core, viewProjBuffer, modelPositionsBuffer, diffuseTextures, normalTextures,
+                                        metallicTextures, roughnessTextures, emissiveTextures);
     descriptorSet->AllocatePushConstant(sizeof(uint32_t));
     descriptorSets.push_back(std::move(descriptorSet));
 

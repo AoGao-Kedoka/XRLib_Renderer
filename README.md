@@ -11,12 +11,12 @@ This project is currently in the very early stages of development and is subject
 ## Implementation Overview
 **Completed features**:
 - screen space and vr rendering
-- basic single-pass phong illumination
+- basic PBR and phong illumination
 - controller binding "/khr/simple_controller"
 
 **WIP**:
-- PBR
 - more controller profiles (Quest, Pico)
+- multiple render passes
 - xr mirror view
 
 ## Usage

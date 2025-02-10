@@ -4,8 +4,7 @@
 namespace XRLib {
 namespace Graphics {
 
-Shader::Shader(VkCore& core, const std::filesystem::path& filePath, ShaderStage shaderStage,
-               bool stereo)
+Shader::Shader(VkCore& core, const std::filesystem::path& filePath, ShaderStage shaderStage, bool stereo)
     : core{core}, stage{shaderStage} {
     Util::EnsureDirExists(VkStandardRB::defaultShaderCachePath);
     std::string rawCode;
@@ -15,7 +14,7 @@ Shader::Shader(VkCore& core, const std::filesystem::path& filePath, ShaderStage 
                 rawCode = stereo ? VkStandardRB::defaultVertStereo : VkStandardRB::defaultVertFlat;
                 break;
             case ShaderStage::FRAGMENT_SHADER:
-                rawCode = VkStandardRB::defaultPhongFrag;
+                rawCode = VkStandardRB::defaultPBRFrag;
                 break;
         }
     } else {
@@ -25,7 +24,8 @@ Shader::Shader(VkCore& core, const std::filesystem::path& filePath, ShaderStage 
     std::string cacheNamePrefix = filePath.empty() ? "defaultMain" : filePath.filename().generic_string();
     std::string cacheNameSuffix = std::to_string(Util::HashString(rawCode));
 
-    std::string cacheFilePath = FORMAT_STRING("{}/{}_{}.spv", VkStandardRB::defaultShaderCachePath, cacheNamePrefix, cacheNameSuffix);
+    std::string cacheFilePath =
+        FORMAT_STRING("{}/{}_{}.spv", VkStandardRB::defaultShaderCachePath, cacheNamePrefix, cacheNameSuffix);
 
     std::vector<uint32_t> code;
     if (std::filesystem::exists(cacheFilePath)) {
