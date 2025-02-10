@@ -39,12 +39,18 @@ void IncreaseLoadingRegistrationcounter(int& loadingRegistrationCounter, std::mu
 }
 
 void MeshManager::WaitForAllMeshesToLoad() {
+	if (meshQueue.empty()){
+        loadingStatusCounter = -1;
+        loadingRegistrationCounter = -1;
+		return;
+	}
     {
         std::unique_lock<std::mutex> lock(queueMutex);
         cv.wait(lock, [this] { return loadingStatusCounter == loadingRegistrationCounter; });
 
         loadingStatusCounter = -1;
         loadingRegistrationCounter = -1;
+		cv.notify_all();
     }
 }
 
