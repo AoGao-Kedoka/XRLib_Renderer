@@ -12,7 +12,7 @@ RenderBackendFlat::~RenderBackendFlat() {
 }
 
 void RenderBackendFlat::Prepare() {
-    VkStandardRB* vkSRB = dynamic_cast<VkStandardRB*>(renderBahavior.get());
+    VkStandardRB* vkSRB = dynamic_cast<VkStandardRB*>(renderBehavior.get());
     vkSRB->GetSwapchain() = std::make_unique<Swapchain>(vkCore);
 
     // register window resize callback
@@ -62,7 +62,7 @@ void RenderBackendFlat::OnMouseMovement(double deltaX, double deltaY) {
 }
 
 void RenderBackendFlat::OnKeyPressed(int keyCode) {
-    float movementSensitivity = info.movementSpeed;
+    float movementSensitivity = info.movementSpeed * Time::GetDeltaTime();
     auto& cam = scene.MainCamera()->GetLocalTransform();
     if (keyCode == GLFW_KEY_W) {
         cam.Translate(-cam.FrontVector() * movementSensitivity);

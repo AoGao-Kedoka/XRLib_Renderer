@@ -20,6 +20,6 @@ class Config {
 
     // input
     float mouseSensitivity = 0.1f;
-    float movementSpeed = 0.02;
+    float movementSpeed = 5.0f;
 };
 }    // namespace XRLib

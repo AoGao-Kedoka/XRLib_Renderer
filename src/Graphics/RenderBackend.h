@@ -21,9 +21,9 @@ class RenderBackend {
     void RecordFrame(uint32_t& imageIndex, std::function<void(uint32_t&, CommandBuffer&)> recordingFunction);
     void EndFrame(uint32_t& imageIndex);
 
-    void SetRenderBahavior(std::unique_ptr<StandardRB>& newRenderBahavior) {
-        this->renderBahavior = std::move(newRenderBahavior);
-        renderBahavior->UpdateRenderPasses(RenderPasses);
+    void SetRenderBehavior(std::unique_ptr<StandardRB>& newRenderBahavior) {
+        this->renderBehavior = std::move(newRenderBahavior);
+        renderBehavior->UpdateRenderPasses(RenderPasses);
     }
 
     std::vector<std::unique_ptr<IGraphicsRenderpass>> RenderPasses;
@@ -34,7 +34,7 @@ class RenderBackend {
     XR::XrCore& xrCore;
     VkCore& vkCore;
 
-    std::unique_ptr<StandardRB> renderBahavior =
+    std::unique_ptr<StandardRB> renderBehavior =
         std::make_unique<VkStandardRB>(vkCore, scene, &RenderPasses, xrCore.IsXRValid());
 
    private:

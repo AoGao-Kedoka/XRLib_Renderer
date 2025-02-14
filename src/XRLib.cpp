@@ -2,6 +2,8 @@
 
 namespace XRLib {
 
+float Time::deltaTime = 0.0f;
+
 XRLib::XRLib() {
     Util::CheckPlatformSupport();
 
@@ -70,7 +72,7 @@ XRLib& XRLib::Init(bool xr, std::unique_ptr<Graphics::StandardRB> renderBahavior
     SceneBackend().WaitForAllMeshesToLoad();
 
     if (renderBahavior) {
-        renderBackend->SetRenderBahavior(renderBahavior);
+        renderBackend->SetRenderBehavior(renderBahavior);
     }
 
     renderBackend->Prepare();
@@ -82,7 +84,7 @@ XRLib& XRLib::Init(bool xr, std::unique_ptr<Graphics::StandardRB> renderBahavior
 }
 
 void XRLib::Run() {
-    UpdateDeltaTIme();
+    UpdateDeltaTime();
 
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_PRE_RENDERING);
 
@@ -109,11 +111,11 @@ void XRLib::Run() {
     EventSystem::TriggerEvent(Events::XRLIB_EVENT_APPLICATION_POST_RENDERING);
 }
 
-void XRLib::UpdateDeltaTIme() {
+void XRLib::UpdateDeltaTime() {
     auto currentTime = std::chrono::steady_clock::now();
 
     std::chrono::duration<float> deltaTime = currentTime - prevTime;
-    deltaTimeSeconds = deltaTime.count();
+    Time::UpdateDeltaTime( deltaTime.count());
 
     prevTime = currentTime;
 }

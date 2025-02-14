@@ -35,7 +35,8 @@ const std::string_view VkStandardRB::defaultVertFlat = R"(
     void main() {
         vec4 worldPos = models[modelIndex] * vec4(inPosition, 1.0);
         gl_Position = vp.proj * vp.view * worldPos;
-        fragNormal = inNormal;
+        mat3 normalMatrix = transpose(inverse(mat3(models[modelIndex])));
+        fragNormal = normalize(normalMatrix * inNormal);
         fragTexCoord = inTexCoord;
         fragWorldPos = worldPos.xyz;
         cameraPos = -vec3(vp.view[3]);
@@ -72,7 +73,8 @@ const std::string_view VkStandardRB::defaultVertStereo = R"(
     void main() {
         vec4 worldPos = models[modelIndex] * vec4(inPosition, 1.0);
         gl_Position = vp.proj[gl_ViewIndex] * vp.view[gl_ViewIndex] * worldPos;
-        fragNormal = inNormal;
+        mat3 normalMatrix = transpose(inverse(mat3(models[modelIndex])));
+        fragNormal = normalize(normalMatrix * inNormal);
         fragTexCoord = inTexCoord;
         fragWorldPos = worldPos.xyz;
         cameraPos = -vec3(vp.view[gl_ViewIndex][3]);
@@ -147,6 +149,7 @@ const std::string_view VkStandardRB::defaultPhongFrag = R"(
             result += calculatePhongLighting(normal, viewDir, lightDir, lightColor, lightIntensity, texColor.rgb) * attenuation;
         }
 
+        result = pow(result, vec3(1.0/2.2));
         outColor = vec4(result, texColor.a);
     }
 )";

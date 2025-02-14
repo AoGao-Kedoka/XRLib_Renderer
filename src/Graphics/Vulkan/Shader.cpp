@@ -14,6 +14,7 @@ Shader::Shader(VkCore& core, const std::filesystem::path& filePath, ShaderStage 
                 rawCode = stereo ? VkStandardRB::defaultVertStereo : VkStandardRB::defaultVertFlat;
                 break;
             case ShaderStage::FRAGMENT_SHADER:
+                //rawCode = VkStandardRB::defaultPhongFrag;
                 rawCode = VkStandardRB::defaultPBRFrag;
                 break;
         }

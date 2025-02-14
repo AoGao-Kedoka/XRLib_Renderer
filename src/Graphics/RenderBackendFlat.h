@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RenderBackend.h"
+#include "Utils/Time.h"
 
 namespace XRLib {
 namespace Graphics {

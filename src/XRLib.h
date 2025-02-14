@@ -6,6 +6,7 @@
 #include "Graphics/RenderBackendFlat.h"
 #include "Scene/Scene.h"
 #include "XR/XrBackend.h"
+#include "Utils/Time.h"
 
 namespace XRLib {
 class XRLib {
@@ -30,10 +31,8 @@ class XRLib {
     Graphics::VkCore& GetVkCore() { return vkCore; }
     XR::XrCore& GetXrCore() { return xrCore; }
 
-    const float GetDeltaTime() { return deltaTimeSeconds; }
-
    private:
-    void UpdateDeltaTIme();
+    void UpdateDeltaTime();
 
    private:
     Config info;
@@ -48,7 +47,6 @@ class XRLib {
     void InitRenderBackend();
 
     std::chrono::steady_clock::time_point prevTime{std::chrono::steady_clock::now()};
-    float deltaTimeSeconds{0};
 };
 
 static XRLib* instance;

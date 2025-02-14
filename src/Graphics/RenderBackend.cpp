@@ -28,7 +28,7 @@ void RenderBackend::Prepare() {
     }
 
     // vulkan prepare
-    VkStandardRB* vkSRB = dynamic_cast<VkStandardRB*>(renderBahavior.get());
+    VkStandardRB* vkSRB = dynamic_cast<VkStandardRB*>(renderBehavior.get());
     vkSRB->InitVerticesIndicesBuffers();
     vkSRB->Prepare();
 }
@@ -41,20 +41,20 @@ void RenderBackend::GetSwapchainConfig() {
                                                           static_cast<VkFormat>(xrCore.SwapchainFormats()[0]), width,
                                                           height, 2));
     }
-    VkStandardRB* vkSRB = dynamic_cast<VkStandardRB*>(renderBahavior.get());
+    VkStandardRB* vkSRB = dynamic_cast<VkStandardRB*>(renderBehavior.get());
     vkSRB->GetSwapchain() = std::make_unique<Swapchain>(vkCore, swapchainImages);
 }
 
 bool RenderBackend::StartFrame(uint32_t& imageIndex) {
-    return renderBahavior->StartFrame(imageIndex);
+    return renderBehavior->StartFrame(imageIndex);
 }
 
 void RenderBackend::RecordFrame(uint32_t& imageIndex) {
-    renderBahavior->RecordFrame(imageIndex);
+    renderBehavior->RecordFrame(imageIndex);
 }
 
 void RenderBackend::EndFrame(uint32_t& imageIndex) {
-    renderBahavior->EndFrame(imageIndex);
+    renderBehavior->EndFrame(imageIndex);
 }
 }    // namespace Graphics
 }    // namespace XRLib
