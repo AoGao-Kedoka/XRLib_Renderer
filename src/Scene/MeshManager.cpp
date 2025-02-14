@@ -77,7 +77,7 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Entity*& 
     Assimp::Importer importer;
 
     const aiScene* scene = importer.ReadFile(meshLoadConfig.meshPath, aiProcess_Triangulate | aiProcess_FlipUVs |
-                                                                          aiProcess_JoinIdenticalVertices |
+                                                                          aiProcess_JoinIdenticalVertices | 
                                                                           aiProcess_PreTransformVertices);
 
     auto meshPathValid = [&]() -> bool {
@@ -176,9 +176,8 @@ void MeshManager::LoadMeshTextures(const Mesh::MeshLoadConfig& meshLoadConfig, M
     // get meshloadinfo specified texture
     LoadSpecifiedTextures(newMesh->Diffuse, meshLoadConfig.diffuseTexturePath);
     LoadSpecifiedTextures(newMesh->Normal, meshLoadConfig.normalTexturePath);
-    LoadSpecifiedTextures(newMesh->Roughness, meshLoadConfig.roughnessTexturePath);
+    LoadSpecifiedTextures(newMesh->MetallicRoughness, meshLoadConfig.metallicRoughnessTexturePath);
     LoadSpecifiedTextures(newMesh->Emissive, meshLoadConfig.emissiveTexturePath);
-    LoadSpecifiedTextures(newMesh->Metallic, meshLoadConfig.metallicTexturePath);
 
     // last fallback, create temporary white texture
     if (newMesh->Diffuse.textureData.empty()) {
@@ -245,15 +244,6 @@ void MeshManager::LoadEmbeddedTextures(Mesh* newMesh, aiMesh* aiMesh, const aiSc
         }
     }
 
-    // Roughness
-    if (material->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &texturePath) == AI_SUCCESS) {
-        const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(texturePath.C_Str());
-        if (embeddedTexture) {
-            newMesh->Roughness.textureData.clear();
-            loadTextureFromEmbedding(embeddedTexture, newMesh->Roughness);
-        }
-    }
-
     // Emissive
     if (material->GetTexture(aiTextureType_EMISSIVE, 0, &texturePath) == AI_SUCCESS) {
         const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(texturePath.C_Str());
@@ -263,12 +253,12 @@ void MeshManager::LoadEmbeddedTextures(Mesh* newMesh, aiMesh* aiMesh, const aiSc
         }
     }
 
-    // Metallic
-    if (material->GetTexture(aiTextureType_METALNESS, 0, &texturePath) == AI_SUCCESS) {
+    // Metallic and roughness
+    if (material->GetTexture(aiTextureType_UNKNOWN, 0, &texturePath) == AI_SUCCESS) {
         const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(texturePath.C_Str());
         if (embeddedTexture) {
-            newMesh->Metallic.textureData.clear();
-            loadTextureFromEmbedding(embeddedTexture, newMesh->Metallic);
+            newMesh->MetallicRoughness.textureData.clear();
+            loadTextureFromEmbedding(embeddedTexture, newMesh->MetallicRoughness);
         }
     }
 }

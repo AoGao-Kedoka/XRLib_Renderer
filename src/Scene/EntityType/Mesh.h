@@ -16,9 +16,8 @@ class Mesh : public Entity {
 
         std::string diffuseTexturePath{""};
         std::string normalTexturePath{""};
-        std::string roughnessTexturePath{""};
+        std::string metallicRoughnessTexturePath{""};
         std::string emissiveTexturePath{""};
-        std::string metallicTexturePath{""};
     };
 
     struct TextureData {
@@ -33,8 +32,7 @@ class Mesh : public Entity {
 
     TextureData Diffuse{{255, 255, 255, 255}, 1, 1, 4};
     TextureData Normal{{128, 128, 255, 255}, 1, 1, 4};
-    TextureData Metallic{{0, 0, 0, 0}, 1, 1, 4};
-    TextureData Roughness{{255, 255, 255, 255}, 1, 1, 4};
+    TextureData MetallicRoughness{{255, 128, 0, 0}, 1, 1, 4}; // default half roughness, non metallic
     TextureData Emissive{{0, 0, 0, 0}, 1, 1, 4};
 
    private:

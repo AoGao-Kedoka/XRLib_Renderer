@@ -166,9 +166,8 @@ const std::string_view VkStandardRB::defaultPBRFrag = R"(
 
     layout(set = 0, binding = 2) uniform sampler2D diffuseSamplers[];
     layout(set = 0, binding = 3) uniform sampler2D normalSamplers[];
-    layout(set = 0, binding = 4) uniform sampler2D metallicSamplers[];
-    layout(set = 0, binding = 5) uniform sampler2D roughnessSamplers[];
-    layout(set = 0, binding = 6) uniform sampler2D emissiveSamplers[];
+    layout(set = 0, binding = 4) uniform sampler2D metallicRoughnessSampler[];
+    layout(set = 0, binding = 5) uniform sampler2D emissiveSamplers[];
 
     layout(set = 1, binding = 0) uniform LightsCount {
         int lightsCount;
@@ -221,11 +220,11 @@ const std::string_view VkStandardRB::defaultPBRFrag = R"(
     void main() {
         int index = int(modelIndex);
         vec3 albedo = texture(diffuseSamplers[index], fragTexCoord).rgb;
-        float metallic = texture(metallicSamplers[index], fragTexCoord).r;
-        float roughness = texture(roughnessSamplers[index], fragTexCoord).r;
+        float ao = texture(metallicRoughnessSampler[index], fragTexCoord).r;
+        float metallic = texture(metallicRoughnessSampler[index], fragTexCoord).b;
+        float roughness = texture(metallicRoughnessSampler[index], fragTexCoord).g;
         vec3 emissive = texture(emissiveSamplers[index], fragTexCoord).rgb;
         vec3 normalMapSample = texture(normalSamplers[index], fragTexCoord).rgb;
-        normalMapSample = normalMapSample * 2.0 - 1.0;
         vec3 N = normalize(fragNormal); // TODO: normal map with TBN
         vec3 V = normalize(cameraPos - fragWorldPos);
         vec3 F0 = mix(vec3(0.04), albedo, metallic);
@@ -251,7 +250,7 @@ const std::string_view VkStandardRB::defaultPBRFrag = R"(
             Lo += (kD * albedo / PI + specular) * radiance * NdotL;
         }
 
-        vec3 ambient = vec3(0.03) * albedo;
+        vec3 ambient = vec3(0.03) * albedo * ao;
         vec3 color = ambient + Lo + emissive;
         color = color / (color + vec3(1.0));
         color = pow(color, vec3(1.0/2.2));
@@ -388,10 +387,8 @@ void VkStandardRB::PrepareDefaultRenderPasses(std::vector<std::vector<std::uniqu
         CreateTextures(core, scene, [](const Mesh& mesh) -> const Mesh::TextureData& { return mesh.Diffuse; }));
     auto normalTextures = std::move(
         CreateTextures(core, scene, [](const Mesh& mesh) -> const Mesh::TextureData& { return mesh.Normal; }));
-    auto metallicTextures = std::move(
-        CreateTextures(core, scene, [](const Mesh& mesh) -> const Mesh::TextureData& { return mesh.Metallic; }));
-    auto roughnessTextures = std::move(
-        CreateTextures(core, scene, [](const Mesh& mesh) -> const Mesh::TextureData& { return mesh.Roughness; }));
+    auto metallicRoughness = std::move(
+        CreateTextures(core, scene, [](const Mesh& mesh) -> const Mesh::TextureData& { return mesh.MetallicRoughness; }));
     auto emissiveTextures = std::move(
         CreateTextures(core, scene, [](const Mesh& mesh) -> const Mesh::TextureData& { return mesh.Emissive; }));
 
@@ -400,7 +397,7 @@ void VkStandardRB::PrepareDefaultRenderPasses(std::vector<std::vector<std::uniqu
     std::vector<std::unique_ptr<DescriptorSet>> descriptorSets;
     auto descriptorSet =
         std::make_unique<DescriptorSet>(core, viewProjBuffer, modelPositionsBuffer, diffuseTextures, normalTextures,
-                                        metallicTextures, roughnessTextures, emissiveTextures);
+                                        metallicRoughness, emissiveTextures);
     descriptorSet->AllocatePushConstant(sizeof(uint32_t));
     descriptorSets.push_back(std::move(descriptorSet));
 
