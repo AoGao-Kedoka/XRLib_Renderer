@@ -39,18 +39,18 @@ void IncreaseLoadingRegistrationcounter(int& loadingRegistrationCounter, std::mu
 }
 
 void MeshManager::WaitForAllMeshesToLoad() {
-	if (meshQueue.empty()){
+    if (meshQueue.empty()) {
         loadingStatusCounter = -1;
         loadingRegistrationCounter = -1;
-		return;
-	}
+        return;
+    }
     {
         std::unique_lock<std::mutex> lock(queueMutex);
         cv.wait(lock, [this] { return loadingStatusCounter == loadingRegistrationCounter; });
 
         loadingStatusCounter = -1;
         loadingRegistrationCounter = -1;
-		cv.notify_all();
+        cv.notify_all();
     }
 }
 
@@ -77,7 +77,7 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Entity*& 
     Assimp::Importer importer;
 
     const aiScene* scene = importer.ReadFile(meshLoadConfig.meshPath, aiProcess_Triangulate | aiProcess_FlipUVs |
-                                                                          aiProcess_JoinIdenticalVertices | 
+                                                                          aiProcess_JoinIdenticalVertices |
                                                                           aiProcess_PreTransformVertices);
 
     auto meshPathValid = [&]() -> bool {
@@ -171,7 +171,7 @@ void MeshManager::LoadMeshTextures(const Mesh::MeshLoadConfig& meshLoadConfig, M
                                    const aiScene* scene) {
 
     // get embedded textures
-    LoadEmbeddedTextures(newMesh, aiMesh, scene);
+    LoadEmbeddedTextures(meshLoadConfig, newMesh, aiMesh, scene);
 
     // get meshloadinfo specified texture
     LoadSpecifiedTextures(newMesh->Diffuse, meshLoadConfig.diffuseTexturePath);
@@ -185,7 +185,8 @@ void MeshManager::LoadMeshTextures(const Mesh::MeshLoadConfig& meshLoadConfig, M
     }
 }
 
-void MeshManager::LoadEmbeddedTextures(Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene) {
+void MeshManager::LoadEmbeddedTextures(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh,
+                                       const aiScene* scene) {
     if (aiMesh->mMaterialIndex < 0) {
         return;
     }
@@ -231,6 +232,13 @@ void MeshManager::LoadEmbeddedTextures(Mesh* newMesh, aiMesh* aiMesh, const aiSc
         if (embeddedTexture) {
             newMesh->Diffuse.textureData.clear();
             loadTextureFromEmbedding(embeddedTexture, newMesh->Diffuse);
+        } else {
+            auto path = std::filesystem::path(meshLoadConfig.meshPath).parent_path() /
+                        std::filesystem::path(texturePath.C_Str());
+            if (std::filesystem::is_regular_file(path)) {
+                newMesh->Diffuse.textureData.clear();
+                LoadSpecifiedTextures(newMesh->Diffuse, path.generic_string());
+            }
         }
     }
 
@@ -241,6 +249,13 @@ void MeshManager::LoadEmbeddedTextures(Mesh* newMesh, aiMesh* aiMesh, const aiSc
         if (embeddedTexture) {
             newMesh->Normal.textureData.clear();
             loadTextureFromEmbedding(embeddedTexture, newMesh->Normal);
+        } else {
+            auto path = std::filesystem::path(meshLoadConfig.meshPath).parent_path() /
+                        std::filesystem::path(texturePath.C_Str());
+            if (std::filesystem::is_regular_file(path)) {
+                newMesh->Diffuse.textureData.clear();
+                LoadSpecifiedTextures(newMesh->Normal, path.generic_string());
+            }
         }
     }
 
@@ -250,6 +265,13 @@ void MeshManager::LoadEmbeddedTextures(Mesh* newMesh, aiMesh* aiMesh, const aiSc
         if (embeddedTexture) {
             newMesh->Emissive.textureData.clear();
             loadTextureFromEmbedding(embeddedTexture, newMesh->Emissive);
+        } else {
+            auto path = std::filesystem::path(meshLoadConfig.meshPath).parent_path() /
+                        std::filesystem::path(texturePath.C_Str());
+            if (std::filesystem::is_regular_file(path)) {
+                newMesh->Diffuse.textureData.clear();
+                LoadSpecifiedTextures(newMesh->Emissive, path.generic_string());
+            }
         }
     }
 
@@ -259,6 +281,13 @@ void MeshManager::LoadEmbeddedTextures(Mesh* newMesh, aiMesh* aiMesh, const aiSc
         if (embeddedTexture) {
             newMesh->MetallicRoughness.textureData.clear();
             loadTextureFromEmbedding(embeddedTexture, newMesh->MetallicRoughness);
+        } else {
+            auto path = std::filesystem::path(meshLoadConfig.meshPath).parent_path() /
+                        std::filesystem::path(texturePath.C_Str());
+            if (std::filesystem::is_regular_file(path)) {
+                newMesh->Diffuse.textureData.clear();
+                LoadSpecifiedTextures(newMesh->MetallicRoughness, path.generic_string());
+            }
         }
     }
 }
