@@ -1,8 +1,9 @@
 # XRLib
 This is a personal library aimed at accelerating the development of XR applications without the use of a traditional game engine. The library is built using Vulkan and OpenXR.
 
-
 This project is currently in the very early stages of development and is subject to significant changes. As this is an ongoing personal project, stability and feature completeness cannot be guaranteed at this time.
+
+This library is not suitable for large model loading and is not optimized for handling large meshes.
 
 ![image](./imgs/screenshot.png)
 

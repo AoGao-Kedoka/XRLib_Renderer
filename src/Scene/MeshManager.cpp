@@ -38,6 +38,11 @@ void IncreaseLoadingRegistrationcounter(int& loadingRegistrationCounter, std::mu
     }
 }
 
+glm::mat4 ConvertMatrixToGLM(const aiMatrix4x4& from) {
+    return glm::mat4(from.a1, from.b1, from.c1, from.d1, from.a2, from.b2, from.c2, from.d2, from.a3, from.b3, from.c3,
+                     from.d3, from.a4, from.b4, from.c4, from.d4);
+}
+
 void MeshManager::WaitForAllMeshesToLoad() {
     if (meshQueue.empty()) {
         loadingStatusCounter = -1;
@@ -74,13 +79,13 @@ void CreateTempTexture(XRLib::Mesh& newMesh, uint8_t color) {
 }
 
 void MeshManager::LoadMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Entity*& bindPtr) {
+    LOGGER(LOGGER::INFO) << "Loading: " << meshLoadConfig.meshPath;
     Assimp::Importer importer;
 
-    const aiScene* scene = importer.ReadFile(meshLoadConfig.meshPath, aiProcess_Triangulate | aiProcess_FlipUVs |
-                                                                          aiProcess_JoinIdenticalVertices |
-                                                                          aiProcess_PreTransformVertices);
+    const aiScene* scene =
+        importer.ReadFile(meshLoadConfig.meshPath, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_FlipUVs);
 
-    auto meshPathValid = [&]() -> bool {
+    auto meshPathInValid = [&]() -> bool {
         return !scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode;
     };
 
@@ -93,15 +98,7 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Entity*& 
         return meshPtr;
     };
 
-    auto loadMeshData = [&](Mesh* mesh, aiMesh* aiMesh) {
-        LoadMeshVerticesIndices(meshLoadConfig, mesh, aiMesh);
-        LoadMeshTextures(meshLoadConfig, mesh, aiMesh, scene);
-        mesh->Rename(aiMesh->mName.C_Str());
-        mesh->GetLocalTransform() = meshLoadConfig.transform;
-        LOGGER(LOGGER::INFO) << "Loaded mesh: " << aiMesh->mName.C_Str();
-    };
-
-    if (meshPathValid()) {
+    if (meshPathInValid()) {
         LOGGER(LOGGER::ERR) << importer.GetErrorString();
         auto newMesh = createMeshPlaceHolder();
         HandleInvalidMesh(meshLoadConfig, newMesh);
@@ -110,29 +107,18 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Entity*& 
     }
 
     if (scene->mNumMeshes > 0) {
-        auto entityParent = (scene->mNumMeshes > 1)
-                                ? std::make_unique<Entity>(Util::GetFileNameWithoutExtension(meshLoadConfig.meshPath))
-                                : nullptr;
+        auto entityParent = std::make_unique<Entity>(Util::GetFileNameWithoutExtension(meshLoadConfig.meshPath));
+        bindPtr = entityParent.get();
 
-        for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
-            aiMesh* aiMesh = scene->mMeshes[i];
-            auto meshChild = std::make_unique<Mesh>();
-            auto newMesh = meshChild.get();
-
-            if (entityParent) {
-                bindPtr = entityParent.get();
-                Entity::AddEntity(meshChild, entityParent.get(), &meshes);
-            } else {
-                bindPtr = newMesh;
-                Entity::AddEntity(meshChild, hiearchyRoot, &meshes);
-            }
-
-            loadMeshData(newMesh, aiMesh);
+        std::vector<std::future<void>> loadFutures;
+        ProcessNode(scene->mRootNode, scene, meshLoadConfig, entityParent.get(), loadFutures);
+        for (auto& future : loadFutures) {
+            future.wait();
         }
 
-        if (entityParent) {
-            Entity::AddEntity(entityParent, hiearchyRoot);
-        }
+        entityParent->GetLocalTransform() =
+            meshLoadConfig.transform.GetMatrix() * entityParent->GetLocalTransform().GetMatrix();
+        Entity::AddEntity(entityParent, hiearchyRoot);
     }
 
     IncreaseLoadingStatusCounter(loadingStatusCounter, queueMutex, cv);
@@ -140,6 +126,33 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Entity*& 
     if (loadingStatusCounter == loadingRegistrationCounter) {
         EventSystem::TriggerEvent(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED);
     }
+}
+void MeshManager::ProcessNode(aiNode* node, const aiScene* scene, const Mesh::MeshLoadConfig& meshLoadConfig,
+                              Entity* parent, std::vector<std::future<void>>& loadFutures) {
+    parent->GetLocalTransform() = ConvertMatrixToGLM(node->mTransformation);
+
+    // handles meshes
+    for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
+        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+        loadFutures.push_back(
+            std::async(std::launch::async, &MeshManager::ProcessMesh, this, mesh, scene, meshLoadConfig, parent));
+    }
+
+    // handles node, transfer to an entity
+    for (unsigned int i = 0; i < node->mNumChildren; ++i) {
+        auto entity = std::make_unique<Entity>(Util::GetFileNameWithoutExtension(meshLoadConfig.meshPath));
+        ProcessNode(node->mChildren[i], scene, meshLoadConfig, entity.get(), loadFutures);
+        Entity::AddEntity(entity, parent);
+    }
+}
+void MeshManager::ProcessMesh(aiMesh* aiMesh, const aiScene* scene, const Mesh::MeshLoadConfig& meshLoadConfig,
+                              Entity* parent) {
+    auto mesh = std::make_unique<Mesh>();
+    LoadMeshVerticesIndices(meshLoadConfig, mesh.get(), aiMesh);
+    LoadMeshTextures(meshLoadConfig, mesh.get(), aiMesh, scene);
+    mesh->Rename(aiMesh->mName.C_Str());
+    Entity::AddEntity(mesh, parent, &meshes);
+    LOGGER(LOGGER::DEBUG) << "Loaded mesh: " << aiMesh->mName.C_Str();
 }
 
 void MeshManager::LoadMeshVerticesIndices(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh) {
@@ -253,7 +266,7 @@ void MeshManager::LoadEmbeddedTextures(const Mesh::MeshLoadConfig& meshLoadConfi
             auto path = std::filesystem::path(meshLoadConfig.meshPath).parent_path() /
                         std::filesystem::path(texturePath.C_Str());
             if (std::filesystem::is_regular_file(path)) {
-                newMesh->Diffuse.textureData.clear();
+                newMesh->Normal.textureData.clear();
                 LoadSpecifiedTextures(newMesh->Normal, path.generic_string());
             }
         }
@@ -269,7 +282,7 @@ void MeshManager::LoadEmbeddedTextures(const Mesh::MeshLoadConfig& meshLoadConfi
             auto path = std::filesystem::path(meshLoadConfig.meshPath).parent_path() /
                         std::filesystem::path(texturePath.C_Str());
             if (std::filesystem::is_regular_file(path)) {
-                newMesh->Diffuse.textureData.clear();
+                newMesh->Emissive.textureData.clear();
                 LoadSpecifiedTextures(newMesh->Emissive, path.generic_string());
             }
         }
@@ -285,7 +298,7 @@ void MeshManager::LoadEmbeddedTextures(const Mesh::MeshLoadConfig& meshLoadConfi
             auto path = std::filesystem::path(meshLoadConfig.meshPath).parent_path() /
                         std::filesystem::path(texturePath.C_Str());
             if (std::filesystem::is_regular_file(path)) {
-                newMesh->Diffuse.textureData.clear();
+                newMesh->MetallicRoughness.textureData.clear();
                 LoadSpecifiedTextures(newMesh->MetallicRoughness, path.generic_string());
             }
         }

@@ -21,6 +21,10 @@ class MeshManager {
     void LoadMeshTextures(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
     void LoadEmbeddedTextures(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
     void LoadSpecifiedTextures(Mesh::TextureData& texture, const std::string& path);
+
+    void ProcessNode(aiNode* node, const aiScene* scene, const Mesh::MeshLoadConfig& meshLoadConfig, Entity* parent, std::vector<std::future<void>>& loadFutures);
+    void ProcessMesh(aiMesh* aiMesh, const aiScene* scene, const Mesh::MeshLoadConfig& meshLoadConfig, Entity* parent);
+
     void MeshLoadingThread();
 
     void HandleInvalidMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh);
