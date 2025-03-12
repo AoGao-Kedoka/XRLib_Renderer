@@ -12,22 +12,20 @@ class MeshManager {
     MeshManager(std::vector<Mesh*>& meshesContainer, std::vector<std::unique_ptr<Entity>>& hiearchyRoot);
     ~MeshManager();
     void WaitForAllMeshesToLoad();
-    void LoadMeshAsync(Mesh::MeshLoadConfig loadConfig, Entity*& bindPtr, Entity* parent = nullptr);
+    void LoadMeshAsync(const Mesh::MeshLoadConfig& loadConfig, Entity*& bindPtr, Entity* parent = nullptr);
     std::vector<Mesh*>& Meshes() { return meshes; }
 
    private:
-    void LoadMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Entity*& bindPtr);
-    void LoadMeshVerticesIndices(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh);
-    void LoadMeshTextures(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
-    void LoadEmbeddedTextures(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
+    void LoadMesh(Mesh::MeshLoadConfig& loadConfig, Entity*& bindPtr, Entity* parent);
+    void LoadMeshVerticesIndices(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh);
+    void LoadMeshTextures(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
+    void LoadEmbeddedTextures(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
     void LoadSpecifiedTextures(Mesh::TextureData& texture, const std::string& path);
 
-    void ProcessNode(aiNode* node, const aiScene* scene, const Mesh::MeshLoadConfig& meshLoadConfig, Entity* parent, std::vector<std::future<void>>& loadFutures);
-    void ProcessMesh(aiMesh* aiMesh, const aiScene* scene, const Mesh::MeshLoadConfig& meshLoadConfig, Entity* parent);
+    void ProcessNode(aiNode* node, const aiScene* scene, Mesh::MeshLoadConfig& meshLoadConfig, Entity* parent, std::vector<std::future<void>>& loadFutures);
+    void ProcessMesh(aiMesh* aiMesh, const aiScene* scene, Mesh::MeshLoadConfig& meshLoadConfig, Entity* parent);
 
-    void MeshLoadingThread();
-
-    void HandleInvalidMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh);
+    void HandleInvalidMesh(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh);
 
    private:
     std::vector<Mesh*>& meshes;
@@ -35,16 +33,6 @@ class MeshManager {
 
     // synchronization
     std::vector<std::future<void>> futures;
-    std::queue<std::pair<Mesh::MeshLoadConfig, Entity*&>> meshQueue;
-    std::condition_variable cv;
-    std::mutex queueMutex;
-    std::atomic<bool> stop;
-    std::thread workerThread;
-
-
-    // count for loading tasks registered
-    int loadingRegistrationCounter{-1};
-    // count when loading tasks finished
-    int loadingStatusCounter{-1};
+    std::mutex mutex;
 };
 }    // namespace XRLib

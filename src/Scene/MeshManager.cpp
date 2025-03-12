@@ -6,37 +6,8 @@
 namespace XRLib {
 
 MeshManager::MeshManager(std::vector<Mesh*>& meshesContainer, std::vector<std::unique_ptr<Entity>>& hiearchyRoot)
-    : stop{false}, meshes{meshesContainer}, hiearchyRoot{hiearchyRoot} {
-    workerThread = std::thread(&MeshManager::MeshLoadingThread, this);
-}
-MeshManager::~MeshManager() {
-    {
-        std::lock_guard<std::mutex> lock(queueMutex);
-        stop = true;
-    }
-    cv.notify_all();
-
-    if (workerThread.joinable()) {
-        workerThread.join();
-    }
-}
-
-void IncreaseLoadingStatusCounter(int& loadingStatusCounter, std::mutex& queueMutex, std::condition_variable& cv) {
-    {
-        std::lock_guard<std::mutex> lock(queueMutex);
-        loadingStatusCounter++;
-        cv.notify_all();
-    }
-}
-
-void IncreaseLoadingRegistrationcounter(int& loadingRegistrationCounter, std::mutex& queueMutex,
-                                        std::condition_variable& cv) {
-    {
-        std::lock_guard<std::mutex> lock(queueMutex);
-        loadingRegistrationCounter++;
-        cv.notify_all();
-    }
-}
+    : meshes{meshesContainer}, hiearchyRoot{hiearchyRoot} {}
+MeshManager::~MeshManager() {}
 
 glm::mat4 ConvertMatrixToGLM(const aiMatrix4x4& from) {
     return glm::mat4(from.a1, from.b1, from.c1, from.d1, from.a2, from.b2, from.c2, from.d2, from.a3, from.b3, from.c3,
@@ -44,28 +15,10 @@ glm::mat4 ConvertMatrixToGLM(const aiMatrix4x4& from) {
 }
 
 void MeshManager::WaitForAllMeshesToLoad() {
-    if (meshQueue.empty()) {
-        loadingStatusCounter = -1;
-        loadingRegistrationCounter = -1;
-        return;
+    for (const auto& future : futures) {
+        future.wait();
     }
-    {
-        std::unique_lock<std::mutex> lock(queueMutex);
-        cv.wait(lock, [this] { return loadingStatusCounter == loadingRegistrationCounter; });
-
-        loadingStatusCounter = -1;
-        loadingRegistrationCounter = -1;
-        cv.notify_all();
-    }
-}
-
-void MeshManager::LoadMeshAsync(Mesh::MeshLoadConfig loadConfig, Entity*& bindPtr, Entity* parent) {
-    {
-        std::lock_guard<std::mutex> lock(queueMutex);
-        meshQueue.push({loadConfig, bindPtr});
-    }
-    cv.notify_all();
-    IncreaseLoadingRegistrationcounter(loadingRegistrationCounter, queueMutex, cv);
+    EventSystem::TriggerEvent(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED);
 }
 
 void CreateTempTexture(XRLib::Mesh& newMesh, uint8_t color) {
@@ -78,12 +31,19 @@ void CreateTempTexture(XRLib::Mesh& newMesh, uint8_t color) {
     newMesh.Diffuse = textureData;
 }
 
-void MeshManager::LoadMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Entity*& bindPtr) {
-    LOGGER(LOGGER::INFO) << "Loading: " << meshLoadConfig.meshPath;
+void MeshManager::LoadMeshAsync(const Mesh::MeshLoadConfig& loadConfig, Entity*& bindPtr, Entity* parent) {
+    Mesh::MeshLoadConfig mutableLoadConfig = loadConfig;
+    futures.push_back(std::async(std::launch::async, [this, mutableLoadConfig, bindPtr, parent]() mutable {
+        this->LoadMesh(mutableLoadConfig, bindPtr, parent);
+    }));
+}
+
+void MeshManager::LoadMesh(Mesh::MeshLoadConfig& loadConfig, Entity*& bindPtr, Entity* parent) {
+    LOGGER(LOGGER::INFO) << "Loading: " << loadConfig.meshPath;
     Assimp::Importer importer;
 
     const aiScene* scene =
-        importer.ReadFile(meshLoadConfig.meshPath, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_FlipUVs);
+        importer.ReadFile(loadConfig.meshPath, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_FlipUVs);
 
     auto meshPathInValid = [&]() -> bool {
         return !scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode;
@@ -94,40 +54,45 @@ void MeshManager::LoadMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Entity*& 
         Mesh* meshPtr = meshPlaceHolder.get();
         bindPtr = meshPtr;
         meshes.push_back(meshPtr);
-        Entity::AddEntity(meshPlaceHolder, hiearchyRoot, &meshes);
+
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            Entity::AddEntity(meshPlaceHolder, hiearchyRoot, &meshes);
+        }
+
         return meshPtr;
     };
 
     if (meshPathInValid()) {
         LOGGER(LOGGER::ERR) << importer.GetErrorString();
         auto newMesh = createMeshPlaceHolder();
-        HandleInvalidMesh(meshLoadConfig, newMesh);
-        IncreaseLoadingStatusCounter(loadingStatusCounter, queueMutex, cv);
+        HandleInvalidMesh(loadConfig, newMesh);
         return;
     }
 
     if (scene->mNumMeshes > 0) {
-        auto entityParent = std::make_unique<Entity>(Util::GetFileNameWithoutExtension(meshLoadConfig.meshPath));
+        auto entityParent = std::make_unique<Entity>(Util::GetFileNameWithoutExtension(loadConfig.meshPath));
         bindPtr = entityParent.get();
-
         std::vector<std::future<void>> loadFutures;
-        ProcessNode(scene->mRootNode, scene, meshLoadConfig, entityParent.get(), loadFutures);
+        ProcessNode(scene->mRootNode, scene, loadConfig, entityParent.get(), loadFutures);
         for (auto& future : loadFutures) {
             future.wait();
         }
 
         entityParent->GetLocalTransform() =
-            meshLoadConfig.transform.GetMatrix() * entityParent->GetLocalTransform().GetMatrix();
-        Entity::AddEntity(entityParent, hiearchyRoot);
-    }
-
-    IncreaseLoadingStatusCounter(loadingStatusCounter, queueMutex, cv);
-
-    if (loadingStatusCounter == loadingRegistrationCounter) {
-        EventSystem::TriggerEvent(Events::XRLIB_EVENT_MESHES_LOADING_FINISHED);
+            loadConfig.transform.GetMatrix() * entityParent->GetLocalTransform().GetMatrix();
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            if (parent == nullptr) {
+                Entity::AddEntity(entityParent, hiearchyRoot);
+            } else {
+                Entity::AddEntity(entityParent, parent);
+            }
+        }
     }
 }
-void MeshManager::ProcessNode(aiNode* node, const aiScene* scene, const Mesh::MeshLoadConfig& meshLoadConfig,
+
+void MeshManager::ProcessNode(aiNode* node, const aiScene* scene, Mesh::MeshLoadConfig& meshLoadConfig,
                               Entity* parent, std::vector<std::future<void>>& loadFutures) {
     parent->GetLocalTransform() = ConvertMatrixToGLM(node->mTransformation);
 
@@ -135,27 +100,35 @@ void MeshManager::ProcessNode(aiNode* node, const aiScene* scene, const Mesh::Me
     for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
         loadFutures.push_back(
-            std::async(std::launch::async, &MeshManager::ProcessMesh, this, mesh, scene, meshLoadConfig, parent));
+            std::async(std::launch::async, &MeshManager::ProcessMesh, this, mesh, scene, std::ref(meshLoadConfig), parent));
     }
 
     // handles node, transfer to an entity
     for (unsigned int i = 0; i < node->mNumChildren; ++i) {
         auto entity = std::make_unique<Entity>(Util::GetFileNameWithoutExtension(meshLoadConfig.meshPath));
         ProcessNode(node->mChildren[i], scene, meshLoadConfig, entity.get(), loadFutures);
-        Entity::AddEntity(entity, parent);
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            Entity::AddEntity(entity, parent);
+        }
     }
 }
-void MeshManager::ProcessMesh(aiMesh* aiMesh, const aiScene* scene, const Mesh::MeshLoadConfig& meshLoadConfig,
+void MeshManager::ProcessMesh(aiMesh* aiMesh, const aiScene* scene, Mesh::MeshLoadConfig& meshLoadConfig,
                               Entity* parent) {
     auto mesh = std::make_unique<Mesh>();
     LoadMeshVerticesIndices(meshLoadConfig, mesh.get(), aiMesh);
     LoadMeshTextures(meshLoadConfig, mesh.get(), aiMesh, scene);
     mesh->Rename(aiMesh->mName.C_Str());
-    Entity::AddEntity(mesh, parent, &meshes);
+
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        Entity::AddEntity(mesh, parent, &meshes);
+    }
+
     LOGGER(LOGGER::DEBUG) << "Loaded mesh: " << aiMesh->mName.C_Str();
 }
 
-void MeshManager::LoadMeshVerticesIndices(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh) {
+void MeshManager::LoadMeshVerticesIndices(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh) {
     // Process vertices
     for (unsigned int j = 0; j < aiMesh->mNumVertices; j++) {
         Graphics::Primitives::Vertex vertex;
@@ -180,7 +153,7 @@ void MeshManager::LoadMeshVerticesIndices(const Mesh::MeshLoadConfig& meshLoadCo
     }
 }
 
-void MeshManager::LoadMeshTextures(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh,
+void MeshManager::LoadMeshTextures(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh,
                                    const aiScene* scene) {
 
     // get embedded textures
@@ -198,7 +171,7 @@ void MeshManager::LoadMeshTextures(const Mesh::MeshLoadConfig& meshLoadConfig, M
     }
 }
 
-void MeshManager::LoadEmbeddedTextures(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh,
+void MeshManager::LoadEmbeddedTextures(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh,
                                        const aiScene* scene) {
     if (aiMesh->mMaterialIndex < 0) {
         return;
@@ -328,29 +301,7 @@ void MeshManager::LoadSpecifiedTextures(Mesh::TextureData& texture, const std::s
     }
 }
 
-void MeshManager::MeshLoadingThread() {
-    while (true) {
-        std::unique_lock<std::mutex> lock(queueMutex);
-        cv.wait(lock, [this] { return !meshQueue.empty() || stop; });
-        if (stop && meshQueue.empty()) {
-            return;
-        }
-
-        auto [loadConfig, entityPtr] = meshQueue.front();
-        meshQueue.pop();
-        lock.unlock();
-
-        std::future<void> future =
-            std::async(std::launch::async, &MeshManager::LoadMesh, this, loadConfig, std::ref(entityPtr));
-
-        {
-            std::lock_guard<std::mutex> lock(queueMutex);
-            futures.push_back(std::move(future));
-        }
-    }
-}
-
-void MeshManager::HandleInvalidMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh) {
+void MeshManager::HandleInvalidMesh(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh) {
     Transform transform;
     newMesh->GetLocalTransform() = transform;
     newMesh->Rename(meshLoadConfig.meshPath);

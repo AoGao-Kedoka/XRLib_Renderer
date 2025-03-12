@@ -16,7 +16,7 @@ RenderBackend::~RenderBackend() {}
 void RenderBackend::InitVulkan() {
     vkCore.CreateVkInstance(info, xrCore.VkAdditionalInstanceExts2());
     if (xrCore.IsXRValid())
-        xrCore.VkSetPhysicalDevice(vkCore.GetRenderInstance(), &vkCore.VkPhysicalDeviceRef());
+        xrCore.VkSetPhysicalDevice2(vkCore.GetRenderInstance(), &vkCore.VkPhysicalDeviceRef());
     else
         vkCore.SelectPhysicalDevice();
     vkCore.CreateVkDevice(info, xrCore.VkAdditionalDeviceExts2(), xrCore.IsXRValid());

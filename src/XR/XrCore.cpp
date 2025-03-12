@@ -99,5 +99,18 @@ void XrCore::VkSetPhysicalDevice(VkInstance instance, VkPhysicalDevice* physical
         Util::ErrorPopup("Failed to get vulkan graphics device");
     }
 }
+
+void XrCore::VkSetPhysicalDevice2(VkInstance instance, VkPhysicalDevice* physicalDevice) {
+    XrVulkanGraphicsDeviceGetInfoKHR deviceGetInfo{XR_TYPE_VULKAN_GRAPHICS_DEVICE_GET_INFO_KHR};
+    deviceGetInfo.systemId = GetSystemID();
+    deviceGetInfo.vulkanInstance = instance;
+
+    auto xrGetGraphicsDevice2KHR =
+        XrUtil::XrGetXRFunction<PFN_xrGetVulkanGraphicsDevice2KHR>(GetXRInstance(), "xrGetVulkanGraphicsDevice2KHR");
+    XrResult result = xrGetGraphicsDevice2KHR(GetXRInstance(), &deviceGetInfo, physicalDevice);
+    if (result != XR_SUCCESS) {
+        Util::ErrorPopup("Failed to get vulkan graphics device");
+    }
+}
 }    // namespace XR
 }    // namespace XRLib

@@ -95,7 +95,7 @@ void XrBackend::CreateXrInstance() {
         XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to enumerate InstanceExtensionProperties.";
     }
-    for (auto& requestedInstanceExtension : instanceExtensions) {
+    for (auto& requestedInstanceExtension : instanceExtensions2) {
         bool found = false;
         for (auto& extensionProperty : extensionProperties) {
             if (strcmp(requestedInstanceExtension.c_str(), extensionProperty.extensionName) != 0) {
@@ -189,16 +189,16 @@ void XrBackend::CreateXrSession() {
 }
 
 void XrBackend::CreateXrSession2() {
-    auto xrGetVulkanGraphicsRequirementsKHR = XrUtil::XrGetXRFunction<PFN_xrGetVulkanGraphicsRequirementsKHR>(
-        xrCore.GetXRInstance(), "xrGetVulkanGraphicsRequirementsKHR");
+    auto xrGetVulkanGraphicsRequirementsKHR = XrUtil::XrGetXRFunction<PFN_xrGetVulkanGraphicsRequirements2KHR>(
+        xrCore.GetXRInstance(), "xrGetVulkanGraphicsRequirements2KHR");
     auto result = xrGetVulkanGraphicsRequirementsKHR(xrCore.GetXRInstance(), xrCore.GetSystemID(),
                                                      &xrCore.GetGraphicsRequirements2());
     if (result != XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to get vulkan graphics requirements";
     }
 
-    XrGraphicsBindingVulkanKHR graphicsBinding{};
-    graphicsBinding.type = XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR;
+    XrGraphicsBindingVulkan2KHR graphicsBinding{};
+    graphicsBinding.type = XR_TYPE_GRAPHICS_BINDING_VULKAN2_KHR;
     graphicsBinding.instance = vkCore.GetRenderInstance();
     graphicsBinding.device = vkCore.GetRenderDevice();
     graphicsBinding.queueFamilyIndex = vkCore.GetGraphicsQueueFamilyIndex();

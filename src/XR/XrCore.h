@@ -61,6 +61,7 @@ class XrCore {
     std::vector<const char*> VkAdditionalDeviceExts(); //deprecated
     std::vector<const char*> VkAdditionalDeviceExts2();
     void VkSetPhysicalDevice(VkInstance instance, VkPhysicalDevice* physicalDevice);
+    void VkSetPhysicalDevice2(VkInstance instance, VkPhysicalDevice* physicalDevice);
 
    private:
     void CreatePlaySpace();
