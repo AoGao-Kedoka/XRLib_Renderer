@@ -20,7 +20,8 @@ class XrCore {
 
     std::vector<XrViewConfigurationView>& GetXRViewConfigurationView() { return xrViewsConfiguration; }
 
-    XrGraphicsRequirementsVulkanKHR& GetGraphicsRequirements() { return graphicsRequirements; }
+    XrGraphicsRequirementsVulkanKHR& GetGraphicsRequirements() { return graphicsRequirements; } // deprecated
+    XrGraphicsRequirementsVulkan2KHR& GetGraphicsRequirements2() { return graphicsRequirements2; }
 
     XrSwapchain& GetXrSwapchain() { return xrSwapchain; }
 
@@ -53,9 +54,12 @@ class XrCore {
         return {GetXRViewConfigurationView()[0].recommendedImageRectWidth,
                 GetXRViewConfigurationView()[0].recommendedImageRectHeight};
     }
+
     // Vulkan
-    std::vector<const char*> VkAdditionalInstanceExts();
-    std::vector<const char*> VkAdditionalDeviceExts();
+    std::vector<const char*> VkAdditionalInstanceExts(); //deprecated
+    std::vector<const char*> VkAdditionalInstanceExts2();
+    std::vector<const char*> VkAdditionalDeviceExts(); //deprecated
+    std::vector<const char*> VkAdditionalDeviceExts2();
     void VkSetPhysicalDevice(VkInstance instance, VkPhysicalDevice* physicalDevice);
 
    private:
@@ -65,7 +69,9 @@ class XrCore {
     XrTime time{0};
     XrInstance xrInstance{XR_NULL_HANDLE};
     XrSystemId xrSystemID;
-    XrGraphicsRequirementsVulkanKHR graphicsRequirements{XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR};
+
+    XrGraphicsRequirementsVulkanKHR graphicsRequirements{XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR}; //deprecated
+    XrGraphicsRequirementsVulkan2KHR graphicsRequirements2{XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN2_KHR};
 
     XrSession xrSession{XR_NULL_HANDLE};
     XrSessionState xrSessionState{XR_SESSION_STATE_UNKNOWN};

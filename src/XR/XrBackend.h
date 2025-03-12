@@ -21,7 +21,9 @@ class XrBackend {
     void Prepare();
     void CreateXrInstance();
 
-    void CreateXrSession();
+    void CreateXrSession(); //deprecated
+    void CreateXrSession2();
+
     void CreateXrSwapchain();
     void PrepareXrSwapchainImages();
 
@@ -42,8 +44,8 @@ class XrBackend {
     std::vector<const char*> activeInstanceExtensions = {};
     std::vector<std::string> apiLayers = {};
 
-    //TODO: XR_KHR_vulkan_enable is deprecated, change to XR_KHR_vulkan_enable2
-    std::vector<std::string> instanceExtensions = {XR_KHR_VULKAN_ENABLE_EXTENSION_NAME};
+    std::vector<std::string> instanceExtensions = {XR_KHR_VULKAN_ENABLE_EXTENSION_NAME}; //deprecated
+    std::vector<std::string> instanceExtensions2 = {XR_KHR_VULKAN_ENABLE2_EXTENSION_NAME};
 
     XrDebugUtilsMessengerEXT xrDebugUtilsMessenger{XR_NULL_HANDLE};
 

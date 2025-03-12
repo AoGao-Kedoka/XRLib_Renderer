@@ -51,7 +51,7 @@ XrBackend::~XrBackend() {
 void XrBackend::Prepare() {
     if (!xrCore.IsXRValid())
         return;
-    CreateXrSession();
+    CreateXrSession2();
     CreateXrSwapchain();
     PrepareXrSwapchainImages();
     input = std::move(XrInput(xrCore));
@@ -167,6 +167,32 @@ void XrBackend::CreateXrSession() {
         xrCore.GetXRInstance(), "xrGetVulkanGraphicsRequirementsKHR");
     auto result = xrGetVulkanGraphicsRequirementsKHR(xrCore.GetXRInstance(), xrCore.GetSystemID(),
                                                      &xrCore.GetGraphicsRequirements());
+    if (result != XR_SUCCESS) {
+        LOGGER(LOGGER::ERR) << "Failed to get vulkan graphics requirements";
+    }
+
+    XrGraphicsBindingVulkanKHR graphicsBinding{};
+    graphicsBinding.type = XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR;
+    graphicsBinding.instance = vkCore.GetRenderInstance();
+    graphicsBinding.device = vkCore.GetRenderDevice();
+    graphicsBinding.queueFamilyIndex = vkCore.GetGraphicsQueueFamilyIndex();
+    graphicsBinding.physicalDevice = vkCore.GetRenderPhysicalDevice();
+    graphicsBinding.queueIndex = 0;
+
+    XrSessionCreateInfo sessionCreateInfo{};
+    sessionCreateInfo.type = XR_TYPE_SESSION_CREATE_INFO;
+    sessionCreateInfo.systemId = xrCore.GetSystemID();
+    sessionCreateInfo.next = &graphicsBinding;
+    if (xrCreateSession(xrCore.GetXRInstance(), &sessionCreateInfo, &xrCore.GetXRSession()) != XR_SUCCESS) {
+        Util::ErrorPopup("Failed to create session");
+    }
+}
+
+void XrBackend::CreateXrSession2() {
+    auto xrGetVulkanGraphicsRequirementsKHR = XrUtil::XrGetXRFunction<PFN_xrGetVulkanGraphicsRequirementsKHR>(
+        xrCore.GetXRInstance(), "xrGetVulkanGraphicsRequirementsKHR");
+    auto result = xrGetVulkanGraphicsRequirementsKHR(xrCore.GetXRInstance(), xrCore.GetSystemID(),
+                                                     &xrCore.GetGraphicsRequirements2());
     if (result != XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to get vulkan graphics requirements";
     }

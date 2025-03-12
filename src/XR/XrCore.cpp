@@ -23,6 +23,15 @@ void XrCore::CreatePlaySpace() {
     }
 }
 
+std::vector<const char*> XrCore::VkAdditionalInstanceExts2() {
+#if defined(_WIN32) || defined(_WIN64)
+    return {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, "VK_KHR_win32_surface"};
+#elif defined(__linux__)
+    return {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, "VK_KHR_xcb_surface"};
+    #endif
+}
+
+// deprecated
 std::vector<const char*> XrCore::VkAdditionalInstanceExts() {
     std::vector<const char*> additionalInstanceExts;
     if (!IsXRValid()) {
@@ -52,6 +61,12 @@ std::vector<const char*> XrCore::VkAdditionalInstanceExts() {
     return additionalInstanceExts;
 }
 
+
+std::vector<const char*> XrCore::VkAdditionalDeviceExts2() {
+    return {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_MAINTENANCE1_EXTENSION_NAME};
+}
+
+// deprecated
 std::vector<const char*> XrCore::VkAdditionalDeviceExts() {
     std::vector<const char*> additionalDeviceExts;
     if (!IsXRValid()) {
