@@ -4,12 +4,13 @@
 #include "Event/Events.h"
 #include "Utils/Transform.h"
 #include "XrCore.h"
+#include "XrProfile.h"
 
 namespace XRLib {
 namespace XR {
 class XrInput {
    public:
-    XrInput(XrCore& core, const std::string& interactionProfile = "");
+    XrInput(XrCore& core, XrProfile::InteractionProfile profile = XrProfile::KHR_SIMPLE_CONTROLLER);
     XrInput() = default;
     ~XrInput() = default;
     void UpdateInput();
@@ -22,7 +23,8 @@ class XrInput {
 
    private:
     XrCore* core{nullptr};
-    std::string suggestedInteractionProfile{"/interaction_profiles/khr/simple_controller"};
+    XrProfile profile;
+    XrProfile::InteractionProfile selectedProfile;
 
     XrActionSet actionSet{XR_NULL_HANDLE};
 

@@ -2,7 +2,7 @@
 
 namespace XRLib {
 namespace XR {
-XrInput::XrInput(XrCore& core, const std::string& interactionProfile) : core{&core} {
+XrInput::XrInput(XrCore& core, XrProfile::InteractionProfile profile) : core{&core}, selectedProfile{profile} {
     XrResult result;
     XrActionSetCreateInfo actionSetCreateInfo{XR_TYPE_ACTION_SET_CREATE_INFO};
     std::strcpy(actionSetCreateInfo.actionSetName, "xrlib_action_set");
@@ -12,11 +12,7 @@ XrInput::XrInput(XrCore& core, const std::string& interactionProfile) : core{&co
     }
     LOGGER(LOGGER::DEBUG) << "XRLib Action Set created";
 
-    if (interactionProfile == "") {
-        CreateDefaultInteractionActionBindings();
-    } else {
-        suggestedInteractionProfile = interactionProfile;
-    }
+    CreateDefaultInteractionActionBindings();
 }
 
 void XrInput::CreateDefaultInteractionActionBindings() {
@@ -54,7 +50,7 @@ void XrInput::CreateDefaultInteractionActionBindings() {
 
     XrInteractionProfileSuggestedBinding suggestedBindingInfo{XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING};
     suggestedBindingInfo.interactionProfile =
-        XrUtil::CreateXrPath(core->GetXRInstance(), suggestedInteractionProfile.c_str());
+        XrUtil::CreateXrPath(core->GetXRInstance(), profile.interactionProfileMap[selectedProfile].path.c_str());
     suggestedBindingInfo.suggestedBindings = suggestedBindings.data();
     suggestedBindingInfo.countSuggestedBindings = static_cast<uint32_t>(suggestedBindings.size());
 
@@ -63,7 +59,8 @@ void XrInput::CreateDefaultInteractionActionBindings() {
         Util::ErrorPopup("Failed to suggest interaction profile bindings");
     }
 
-    LOGGER(LOGGER::DEBUG) << "Using suggested interaction profile" << suggestedInteractionProfile;
+    LOGGER(LOGGER::DEBUG) << "Using suggested interaction profile"
+                          << profile.interactionProfileMap[selectedProfile].path;
 
     XrActionSpaceCreateInfo spaceInfo{XR_TYPE_ACTION_SPACE_CREATE_INFO};
     spaceInfo.action = controllerPoseAction;
@@ -114,7 +111,7 @@ void XrInput::UpdatePosePosition() {
                       &spaceLocation) == XR_SUCCESS) {
         if (spaceLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) {
             EventSystem::TriggerEvent<Transform>(Events::XRLIB_EVENT_LEFT_CONTROLLER_POSITION,
-                                      Transform{MathUtil::XrPoseToMatrix(spaceLocation.pose)});
+                                                 Transform{MathUtil::XrPoseToMatrix(spaceLocation.pose)});
         }
     }
 
@@ -122,7 +119,7 @@ void XrInput::UpdatePosePosition() {
                       &spaceLocation) == XR_SUCCESS) {
         if (spaceLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) {
             EventSystem::TriggerEvent<Transform>(Events::XRLIB_EVENT_RIGHT_CONTROLLER_POSITION,
-                                      Transform{MathUtil::XrPoseToMatrix(spaceLocation.pose)});
+                                                 Transform{MathUtil::XrPoseToMatrix(spaceLocation.pose)});
         }
     }
 }
