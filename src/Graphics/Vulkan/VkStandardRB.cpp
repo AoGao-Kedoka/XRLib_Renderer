@@ -342,6 +342,20 @@ std::vector<std::shared_ptr<Image>>
 CreateTextures(VkCore& core, Scene& scene, const std::function<const Mesh::TextureData&(const Mesh&)>& getTexture) {
     std::vector<std::shared_ptr<Image>> textures(scene.Meshes().size());
 
+    // create temp texture if the scene is empty for shader, TODO: better way to handle it
+    if (textures.size() == 0) {
+        Mesh::TextureData textureData;
+        textureData.textureChannels = 4;
+        textureData.textureHeight = 1;
+        textureData.textureWidth = 1;
+        textureData.textureData.resize(
+            textureData.textureChannels * textureData.textureHeight * textureData.textureWidth, 1);
+        textures.push_back(std::make_shared<Image>(core, textureData.textureData, textureData.textureWidth,
+                                                   textureData.textureHeight, textureData.textureChannels,
+                                                   VK_FORMAT_R8G8B8A8_SRGB));
+        return textures;
+    }
+
     for (size_t i = 0; i < textures.size(); ++i) {
         const auto& mesh = *scene.Meshes()[i];
         const auto& texture = getTexture(mesh);
@@ -390,17 +404,16 @@ void VkStandardRB::PrepareDefaultRenderPasses(std::vector<std::vector<std::uniqu
         CreateTextures(core, scene, [](const Mesh& mesh) -> const Mesh::TextureData& { return mesh.Diffuse; }));
     auto normalTextures = std::move(
         CreateTextures(core, scene, [](const Mesh& mesh) -> const Mesh::TextureData& { return mesh.Normal; }));
-    auto metallicRoughness = std::move(
-        CreateTextures(core, scene, [](const Mesh& mesh) -> const Mesh::TextureData& { return mesh.MetallicRoughness; }));
+    auto metallicRoughness = std::move(CreateTextures(
+        core, scene, [](const Mesh& mesh) -> const Mesh::TextureData& { return mesh.MetallicRoughness; }));
     auto emissiveTextures = std::move(
         CreateTextures(core, scene, [](const Mesh& mesh) -> const Mesh::TextureData& { return mesh.Emissive; }));
 
     auto [lightsCountBuffer, lightsBuffer] = std::move(CreateLightBuffer(core, scene));
 
     std::vector<std::unique_ptr<DescriptorSet>> descriptorSets;
-    auto descriptorSet =
-        std::make_unique<DescriptorSet>(core, viewProjBuffer, modelPositionsBuffer, diffuseTextures, normalTextures,
-                                        metallicRoughness, emissiveTextures);
+    auto descriptorSet = std::make_unique<DescriptorSet>(core, viewProjBuffer, modelPositionsBuffer, diffuseTextures,
+                                                         normalTextures, metallicRoughness, emissiveTextures);
     descriptorSet->AllocatePushConstant(sizeof(uint32_t));
     descriptorSets.push_back(std::move(descriptorSet));
 
