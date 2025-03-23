@@ -18,6 +18,10 @@ class Mesh : public Entity {
         std::string normalTexturePath{""};
         std::string metallicRoughnessTexturePath{""};
         std::string emissiveTexturePath{""};
+
+        // Note: Assimp may have issues with preTransformVertices in large scenes.  
+        // If you encounter problems with certain indices, consider setting it to false.
+        bool preTransformVertices = true;
     };
 
     struct TextureData {

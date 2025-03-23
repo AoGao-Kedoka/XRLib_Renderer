@@ -113,19 +113,21 @@ void Renderpass::CreateRenderPass() {
     renderPassInfo.pSubpasses = &subpass;
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
+
+    VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo{
+        VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO};
+    constexpr uint32_t viewMask = 0b00000011;
+    constexpr uint32_t correlationMask = 0b00000011;
+
+    renderPassMultiviewCreateInfo.subpassCount = 1;
+    renderPassMultiviewCreateInfo.pViewMasks = &viewMask;
+    renderPassMultiviewCreateInfo.correlationMaskCount = 1;
+    renderPassMultiviewCreateInfo.pCorrelationMasks = &correlationMask;
+
+    renderPassInfo.pNext = nullptr;
     if (multiview) {
-        constexpr uint32_t viewMask = 0b00000011;
-        constexpr uint32_t correlationMask = 0b00000011;
-
-        VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo{
-            VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO};
-        renderPassMultiviewCreateInfo.subpassCount = 1;
-        renderPassMultiviewCreateInfo.pViewMasks = &viewMask;
-        renderPassMultiviewCreateInfo.correlationMaskCount = 1;
-        renderPassMultiviewCreateInfo.pCorrelationMasks = &correlationMask;
-
         renderPassInfo.pNext = &renderPassMultiviewCreateInfo;
-    }
+    } 
 
     if (vkCreateRenderPass(core.GetRenderDevice(), &renderPassInfo, nullptr, &pass) != VK_SUCCESS) {
         Util::ErrorPopup("Failed to create render pass");

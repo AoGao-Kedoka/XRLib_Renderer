@@ -32,18 +32,22 @@ void CreateTempTexture(XRLib::Mesh& newMesh, uint8_t color) {
 }
 
 void MeshManager::LoadMeshAsync(const Mesh::MeshLoadConfig& loadConfig, Entity*& bindPtr, Entity* parent) {
-    Mesh::MeshLoadConfig mutableLoadConfig = loadConfig;
-    futures.push_back(std::async(std::launch::async, [this, mutableLoadConfig, bindPtr, parent]() mutable {
-        this->LoadMesh(mutableLoadConfig, bindPtr, parent);
-    }));
+    //futures.push_back(std::async(std::launch::async, [this, mutableLoadConfig, bindPtr, parent]() mutable {
+    //    this->LoadMesh(mutableLoadConfig, bindPtr, parent);
+    //}));
+    LoadMesh(loadConfig, bindPtr, parent);
 }
 
-void MeshManager::LoadMesh(Mesh::MeshLoadConfig& loadConfig, Entity*& bindPtr, Entity* parent) {
+void MeshManager::LoadMesh(const Mesh::MeshLoadConfig& loadConfig, Entity*& bindPtr, Entity* parent) {
     LOGGER(LOGGER::INFO) << "Loading: " << loadConfig.meshPath;
     Assimp::Importer importer;
 
-    const aiScene* scene =
-        importer.ReadFile(loadConfig.meshPath, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_FlipUVs);
+    uint32_t processFlags = aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_FlipUVs;
+    if (loadConfig.preTransformVertices) {
+        processFlags |= aiProcess_PreTransformVertices;
+    }
+
+    const aiScene* scene = importer.ReadFile(loadConfig.meshPath, processFlags);
 
     auto meshPathInValid = [&]() -> bool {
         return !scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode;
@@ -92,15 +96,15 @@ void MeshManager::LoadMesh(Mesh::MeshLoadConfig& loadConfig, Entity*& bindPtr, E
     }
 }
 
-void MeshManager::ProcessNode(aiNode* node, const aiScene* scene, Mesh::MeshLoadConfig& meshLoadConfig,
+void MeshManager::ProcessNode(aiNode* node, const aiScene* scene, const Mesh::MeshLoadConfig& meshLoadConfig,
                               Entity* parent, std::vector<std::future<void>>& loadFutures) {
     parent->GetLocalTransform() = ConvertMatrixToGLM(node->mTransformation);
 
     // handles meshes
     for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        loadFutures.push_back(
-            std::async(std::launch::async, &MeshManager::ProcessMesh, this, mesh, scene, std::ref(meshLoadConfig), parent));
+        loadFutures.push_back(std::async(std::launch::async, &MeshManager::ProcessMesh, this, mesh, scene,
+                                         std::ref(meshLoadConfig), parent));
     }
 
     // handles node, transfer to an entity
@@ -113,7 +117,7 @@ void MeshManager::ProcessNode(aiNode* node, const aiScene* scene, Mesh::MeshLoad
         }
     }
 }
-void MeshManager::ProcessMesh(aiMesh* aiMesh, const aiScene* scene, Mesh::MeshLoadConfig& meshLoadConfig,
+void MeshManager::ProcessMesh(aiMesh* aiMesh, const aiScene* scene, const Mesh::MeshLoadConfig& meshLoadConfig,
                               Entity* parent) {
     auto mesh = std::make_unique<Mesh>();
     LoadMeshVerticesIndices(meshLoadConfig, mesh.get(), aiMesh);
@@ -128,7 +132,7 @@ void MeshManager::ProcessMesh(aiMesh* aiMesh, const aiScene* scene, Mesh::MeshLo
     LOGGER(LOGGER::DEBUG) << "Loaded mesh: " << aiMesh->mName.C_Str();
 }
 
-void MeshManager::LoadMeshVerticesIndices(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh) {
+void MeshManager::LoadMeshVerticesIndices(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh) {
     // Process vertices
     for (unsigned int j = 0; j < aiMesh->mNumVertices; j++) {
         Graphics::Primitives::Vertex vertex;
@@ -153,7 +157,7 @@ void MeshManager::LoadMeshVerticesIndices(Mesh::MeshLoadConfig& meshLoadConfig, 
     }
 }
 
-void MeshManager::LoadMeshTextures(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh,
+void MeshManager::LoadMeshTextures(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh,
                                    const aiScene* scene) {
 
     // get embedded textures
@@ -171,7 +175,7 @@ void MeshManager::LoadMeshTextures(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* n
     }
 }
 
-void MeshManager::LoadEmbeddedTextures(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh,
+void MeshManager::LoadEmbeddedTextures(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh,
                                        const aiScene* scene) {
     if (aiMesh->mMaterialIndex < 0) {
         return;
@@ -301,7 +305,7 @@ void MeshManager::LoadSpecifiedTextures(Mesh::TextureData& texture, const std::s
     }
 }
 
-void MeshManager::HandleInvalidMesh(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh) {
+void MeshManager::HandleInvalidMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh) {
     Transform transform;
     newMesh->GetLocalTransform() = transform;
     newMesh->Rename(meshLoadConfig.meshPath);

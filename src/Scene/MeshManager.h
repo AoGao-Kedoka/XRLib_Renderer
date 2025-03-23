@@ -16,16 +16,16 @@ class MeshManager {
     std::vector<Mesh*>& Meshes() { return meshes; }
 
    private:
-    void LoadMesh(Mesh::MeshLoadConfig& loadConfig, Entity*& bindPtr, Entity* parent);
-    void LoadMeshVerticesIndices(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh);
-    void LoadMeshTextures(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
-    void LoadEmbeddedTextures(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
+    void LoadMesh(const Mesh::MeshLoadConfig& loadConfig, Entity*& bindPtr, Entity* parent);
+    void LoadMeshVerticesIndices(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh);
+    void LoadMeshTextures(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
+    void LoadEmbeddedTextures(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
     void LoadSpecifiedTextures(Mesh::TextureData& texture, const std::string& path);
 
-    void ProcessNode(aiNode* node, const aiScene* scene, Mesh::MeshLoadConfig& meshLoadConfig, Entity* parent, std::vector<std::future<void>>& loadFutures);
-    void ProcessMesh(aiMesh* aiMesh, const aiScene* scene, Mesh::MeshLoadConfig& meshLoadConfig, Entity* parent);
+    void ProcessNode(aiNode* node, const aiScene* scene, const Mesh::MeshLoadConfig& meshLoadConfig, Entity* parent, std::vector<std::future<void>>& loadFutures);
+    void ProcessMesh(aiMesh* aiMesh, const aiScene* scene, const Mesh::MeshLoadConfig& meshLoadConfig, Entity* parent);
 
-    void HandleInvalidMesh(Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh);
+    void HandleInvalidMesh(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh);
 
    private:
     std::vector<Mesh*>& meshes;
