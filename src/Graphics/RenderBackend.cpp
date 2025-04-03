@@ -14,12 +14,15 @@ RenderBackend::RenderBackend(Config& info, VkCore& vkCore, XR::XrCore& xrCore, X
 RenderBackend::~RenderBackend() {}
 
 void RenderBackend::InitVulkan() {
-    vkCore.CreateVkInstance(info, xrCore.VkAdditionalInstanceExts2());
-    if (xrCore.IsXRValid())
+    if (xrCore.IsXRValid()) {
+        vkCore.CreateVkInstance(info, xrCore.VkAdditionalInstanceExts2());
         xrCore.VkSetPhysicalDevice2(vkCore.GetRenderInstance(), &vkCore.VkPhysicalDeviceRef());
-    else
+        vkCore.CreateVkDevice(info, xrCore.VkAdditionalDeviceExts2(), xrCore.IsXRValid());
+    } else {
+        vkCore.CreateVkInstance(info, {});
         vkCore.SelectPhysicalDevice();
-    vkCore.CreateVkDevice(info, xrCore.VkAdditionalDeviceExts2(), xrCore.IsXRValid());
+        vkCore.CreateVkDevice(info, {}, xrCore.IsXRValid());
+    }
 }
 
 void RenderBackend::Prepare() {

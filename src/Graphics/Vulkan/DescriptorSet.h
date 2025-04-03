@@ -8,7 +8,8 @@ namespace Graphics {
 
 struct DescriptorLayoutElement {
 
-    std::variant<std::shared_ptr<Buffer>, std::vector<std::shared_ptr<Image>>> data; //buffer or images can be shared to multiple descriptors
+    std::variant<std::shared_ptr<Buffer>, std::vector<std::shared_ptr<Image>>>
+        data;    //buffer or images can be shared to multiple descriptors
     VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkDescriptorType GetType() const {
@@ -55,12 +56,9 @@ class DescriptorSet {
         } else if constexpr (std::is_same_v<std::remove_reference_t<T>, std::vector<std::shared_ptr<Image>>>) {
             elements.push_back(DescriptorLayoutElement{arg});
         } else {
-            static_assert(always_false<T>::value, "Invalid argument type for DescriptorSet constructor");
+            static_assert(std::false_type::value, "Invalid argument type for DescriptorSet constructor");
         }
     }
-
-    template <typename T>
-    struct always_false : std::false_type {};
 
    private:
     VkCore& core;

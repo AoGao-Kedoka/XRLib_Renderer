@@ -25,10 +25,14 @@ void XrCore::CreatePlaySpace() {
 
 std::vector<const char*> XrCore::VkAdditionalInstanceExts2() {
 #if defined(_WIN32) || defined(_WIN64)
-    return {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, "VK_KHR_win32_surface"};
+    return {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+            "VK_KHR_win32_surface"};
 #elif defined(__linux__)
-    return {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, "VK_KHR_xcb_surface"};
-    #endif
+    return {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+            "VK_KHR_xcb_surface"};
+#else
+    return {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME};
+#endif
 }
 
 // deprecated
@@ -60,7 +64,6 @@ std::vector<const char*> XrCore::VkAdditionalInstanceExts() {
     additionalInstanceExts.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     return additionalInstanceExts;
 }
-
 
 std::vector<const char*> XrCore::VkAdditionalDeviceExts2() {
     return {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_MAINTENANCE1_EXTENSION_NAME};
