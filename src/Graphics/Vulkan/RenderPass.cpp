@@ -2,7 +2,7 @@
 
 namespace XRLib {
 namespace Graphics {
-Renderpass::Renderpass(VkCore& core, std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets, bool multiview)
+Renderpass::Renderpass(VkCore& core, std::vector<std::vector<Image*>>& renderTargets, bool multiview)
     : core{core}, multiview{multiview}, renderTargets{renderTargets},
       depthImage{core,
                  renderTargets[0][0]->Width(),
@@ -17,7 +17,7 @@ Renderpass::Renderpass(VkCore& core, std::vector<std::vector<std::unique_ptr<Ima
         return;
     }
 
-    auto allImagesSameSizeAndFormat = [&](const std::vector<std::vector<std::unique_ptr<Image>>>& targets) {
+    auto allImagesSameSizeAndFormat = [&](const std::vector<std::vector<Image*>>& targets) {
         unsigned int referenceWidth = targets[0][0]->Width();
         unsigned int referenceHeight = targets[0][0]->Height();
         auto referenceFormat = targets[0][0]->GetFormat();
@@ -59,20 +59,27 @@ Renderpass::~Renderpass() {
     VkUtil::VkSafeClean(vkDestroyRenderPass, core.GetRenderDevice(), pass, nullptr);
 }
 void Renderpass::CreateRenderPass() {
-    VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = renderTargets[0][0]->GetFormat();
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout =
-        multiview ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    std::vector<VkAttachmentDescription> attachments;
+    std::vector<VkAttachmentReference> colorAttachmentRefs;
 
-    VkAttachmentReference colorAttachmentRef{};
-    colorAttachmentRef.attachment = 0;
-    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    for (size_t i = 0; i < renderTargets[0].size(); ++i) {
+        VkAttachmentDescription colorAttachment{};
+        colorAttachment.format = renderTargets[0][i]->GetFormat();
+        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+        attachments.push_back(colorAttachment);
+
+        VkAttachmentReference colorRef{};
+        colorRef.attachment = static_cast<uint32_t>(attachments.size() - 1);
+        colorRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        colorAttachmentRefs.push_back(colorRef);
+    }
 
     VkAttachmentDescription depthAttachment{};
     depthAttachment.format = depthImage.GetFormat();
@@ -85,13 +92,14 @@ void Renderpass::CreateRenderPass() {
     depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkAttachmentReference depthAttachmentRef{};
-    depthAttachmentRef.attachment = 1;
+    depthAttachmentRef.attachment = static_cast<uint32_t>(attachments.size());
     depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    attachments.push_back(depthAttachment);
 
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colorAttachmentRef;
+    subpass.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentRefs.size());
+    subpass.pColorAttachments = colorAttachmentRefs.data();
     subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
     VkSubpassDependency dependency{};
@@ -104,7 +112,6 @@ void Renderpass::CreateRenderPass() {
     dependency.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-    std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = attachments.size();
@@ -114,8 +121,7 @@ void Renderpass::CreateRenderPass() {
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo{
-        VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO};
+    VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo{VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO};
     constexpr uint32_t viewMask = 0b00000011;
     constexpr uint32_t correlationMask = 0b00000011;
 
@@ -127,19 +133,20 @@ void Renderpass::CreateRenderPass() {
     renderPassInfo.pNext = nullptr;
     if (multiview) {
         renderPassInfo.pNext = &renderPassMultiviewCreateInfo;
-    } 
+    }
 
     if (vkCreateRenderPass(core.GetRenderDevice(), &renderPassInfo, nullptr, &pass) != VK_SUCCESS) {
         Util::ErrorPopup("Failed to create render pass");
     }
 }
 
-void Renderpass::SetRenderTarget(std::vector<std::vector<std::unique_ptr<Image>>>& images) {
+void Renderpass::SetRenderTarget(std::vector<std::vector<Image*>>& images) {
     frameBuffers.resize(images.size());
     for (int i = 0; i < images.size(); ++i) {
         std::vector<VkImageView> attachments;
-        for (const auto& imageAttachmemt : images[i])
-            attachments.push_back(imageAttachmemt->GetImageView());
+        for (int j = 0; j < images[i].size(); ++j) {
+            attachments.push_back(images[i][j]->GetImageView());
+        }
         attachments.push_back(depthImage.GetImageView(VK_IMAGE_ASPECT_DEPTH_BIT));
 
         VkFramebufferCreateInfo framebufferCreateInfo{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
@@ -164,7 +171,8 @@ void Renderpass::CleanupFrameBuffers() {
     }
     frameBuffers.clear();
 }
-std::vector<std::vector<std::unique_ptr<Image>>>& Renderpass::GetRenderTargets() {
+
+std::vector<std::vector<Image*>>& Renderpass::GetRenderTargets() {
     return renderTargets;
 }
 

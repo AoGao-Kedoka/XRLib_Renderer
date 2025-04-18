@@ -10,8 +10,10 @@ namespace XRLib {
 namespace Graphics {
 class VkGraphicsRenderpass : public IGraphicsRenderpass {
    public:
+    // renderTargets: 
+    // first level vector: per image frame, second level vector: attachments per image frame
     VkGraphicsRenderpass(VkCore& core, bool multiview,
-                         std::vector<std::vector<std::unique_ptr<Image>>>& renderTargets,
+                         std::vector<std::vector<Image*>>& renderTargets,
                          std::vector<std::unique_ptr<DescriptorSet>>&& descriptorSets = {},
                          std::string vertexShaderPath = "", std::string fragmentShaderPath = "")
 

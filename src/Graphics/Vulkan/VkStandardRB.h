@@ -44,7 +44,7 @@ class VkStandardRB : public StandardRB {
     void EndFrame(uint32_t& imageIndex) override;
 
    private:
-    void PrepareDefaultRenderPasses(std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages,
+    void PrepareDefaultRenderPasses(std::vector<std::vector<Image*>>& swapchainImages,
                                     std::shared_ptr<Buffer> viewProjBuffer);
 
    protected:

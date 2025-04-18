@@ -16,10 +16,8 @@ Swapchain::Swapchain(VkCore& core) : core{core} {
 }
 
 Swapchain::Swapchain(VkCore& core, std::vector<std::unique_ptr<Image>>& images) : core{core} {
-    std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages = GetSwapchainImages(true);
-    swapchainImages.resize(images.size());
-    for (uint32_t i = 0; i < images.size(); ++i) {
-        swapchainImages[i].push_back(std::move(images[i]));
+    for (int i = 0; i < images.size(); ++i) {
+        swapchainImages.push_back(std::move(images[i]));
     }
     core.FramesInFlight = swapchainImages.size();
 }
@@ -56,9 +54,9 @@ void Swapchain::CreateSwapchain() {
     }
 }
 
-std::vector<std::vector<std::unique_ptr<Image>>>& Swapchain::GetSwapchainImages(bool ignoreEmpty) {
+std::vector<std::vector<Image*>>& Swapchain::GetSwapchainImages(bool ignoreEmpty) {
     if (!swapchainImages.empty() || ignoreEmpty) {
-        return swapchainImages;
+        return swapchainRenderTargets;
     }
 
     uint32_t imageCount;
@@ -67,13 +65,18 @@ std::vector<std::vector<std::unique_ptr<Image>>>& Swapchain::GetSwapchainImages(
     swapchainRawImages.resize(imageCount);
     swapchainImages.reserve(imageCount);
     vkGetSwapchainImagesKHR(core.GetRenderDevice(), swapchain, &imageCount, swapchainRawImages.data());
+
     for (const auto image : swapchainRawImages) {
-        std::vector<std::unique_ptr<Image>> swaphcainAttachment;
-        swaphcainAttachment.push_back(std::make_unique<Image>(core, image, swapchainImageFormat, swapchainExtent.width,
+        swapchainImages.push_back(std::make_unique<Image>(core, image, swapchainImageFormat, swapchainExtent.width,
                                                               swapchainExtent.height, 1));
-        swapchainImages.push_back(std::move(swaphcainAttachment));
     }
-    return swapchainImages;
+
+    swapchainRenderTargets.resize(swapchainImages.size());
+    for (int i = 0; i < swapchainImages.size(); ++i) {
+        swapchainRenderTargets[i].push_back(swapchainImages[i].get());
+    }
+
+    return swapchainRenderTargets;
 }
 
 VkSurfaceFormatKHR Swapchain::ChooseSwapchainImageFormat() {
@@ -136,6 +139,7 @@ VkSurfaceCapabilitiesKHR Swapchain::GetSurfaceCapabilities() {
 void Swapchain::RecreateSwapchain() {
     this->CreateSwapchain();
     swapchainImages.clear();
+    swapchainRenderTargets.clear();
 }
 }    // namespace Graphics
 }    // namespace XRLib

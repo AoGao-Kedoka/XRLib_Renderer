@@ -13,9 +13,10 @@ class Swapchain {
     Swapchain(VkCore& core, std::vector<std::unique_ptr<Image>>& images);
 
     ~Swapchain();
-    std::vector<std::vector<std::unique_ptr<Image>>>& GetSwapchainImages(bool ignoreEmpty = false);
+    std::vector<std::vector<Image*>>& GetSwapchainImages(bool ignoreEmpty = false);
     VkSwapchainKHR GetSwaphcain() { return swapchain; }
     void RecreateSwapchain();
+    int FramesInFlight() { return GetSwapchainImages().size(); }
 
    private:
     void CreateSwapchain();
@@ -28,8 +29,11 @@ class Swapchain {
     VkSurfaceKHR surface{VK_NULL_HANDLE};
     VkFormat swapchainImageFormat{VK_FORMAT_UNDEFINED};
     VkSwapchainKHR swapchain{VK_NULL_HANDLE};
-    std::vector<std::vector<std::unique_ptr<Image>>> swapchainImages;
+    std::vector<std::unique_ptr<Image>> swapchainImages;
     VkExtent2D swapchainExtent;
+
+    // this is just for render targets output of the swapchain images
+    std::vector<std::vector<Image*>> swapchainRenderTargets;
 };
 }    // namespace Graphics
 }    // namespace XRLib

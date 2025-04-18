@@ -396,7 +396,7 @@ std::pair<std::shared_ptr<Buffer>, std::shared_ptr<Buffer>> CreateLightBuffer(Vk
 ////////////////////////////////////////////////////
 // Default DescriptorLayout and Renderpasses binding
 ////////////////////////////////////////////////////
-void VkStandardRB::PrepareDefaultRenderPasses(std::vector<std::vector<std::unique_ptr<Image>>>& swapchainImages,
+void VkStandardRB::PrepareDefaultRenderPasses(std::vector<std::vector<Image*>>& swapchainImages,
                                               std::shared_ptr<Buffer> viewProjBuffer) {
     auto modelPositionsBuffer = std::move(CreateModelPositionBuffer(core, scene));
 
