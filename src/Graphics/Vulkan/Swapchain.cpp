@@ -56,6 +56,10 @@ void Swapchain::CreateSwapchain() {
 
 std::vector<std::vector<Image*>>& Swapchain::GetSwapchainImages(bool ignoreEmpty) {
     if (!swapchainImages.empty() || ignoreEmpty) {
+        swapchainRenderTargets.resize(swapchainImages.size());
+        for (int i = 0; i < swapchainImages.size(); ++i) {
+            swapchainRenderTargets[i].push_back(swapchainImages[i].get());
+        }
         return swapchainRenderTargets;
     }
 
