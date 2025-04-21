@@ -7,7 +7,7 @@ namespace XRLib {
 namespace Graphics {
 class Renderpass {
    public:
-    Renderpass(VkCore& core, std::vector<std::vector<Image*>>& renderTargets,
+    Renderpass(VkCore& core, std::vector<std::vector<Image*>>& renderTargets, bool presentRenderTargets,
                bool multiview);
     ~Renderpass();
 
@@ -33,6 +33,7 @@ class Renderpass {
     std::vector<std::vector<Image*>>& renderTargets;
 
     bool multiview = false;
+    bool presentRenderTargets = true;
 };
 }    // namespace Graphics
 }    // namespace XRLib

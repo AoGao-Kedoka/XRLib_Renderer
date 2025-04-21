@@ -15,6 +15,7 @@ class Config {
 
     // window properties
     int windowMode = 0;
+    bool resizable = true;
     unsigned int defaultWindowWidth = 720;
     unsigned int defaultWindowHeight = 480;
 

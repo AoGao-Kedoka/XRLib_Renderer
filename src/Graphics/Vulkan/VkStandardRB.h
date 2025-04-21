@@ -43,6 +43,10 @@ class VkStandardRB : public StandardRB {
     void RecordFrame(uint32_t& imageIndex) override;
     void EndFrame(uint32_t& imageIndex) override;
 
+   protected:
+    virtual void RecordPass(CommandBuffer& commandBuffer, VkGraphicsRenderpass* pass, uint8_t passIndex,
+                            uint32_t& imageIndex);
+
    private:
     void PrepareDefaultRenderPasses(std::vector<std::vector<Image*>>& swapchainImages,
                                     std::shared_ptr<Buffer> viewProjBuffer);

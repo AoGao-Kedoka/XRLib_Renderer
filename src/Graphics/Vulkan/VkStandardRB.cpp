@@ -342,20 +342,6 @@ std::vector<std::shared_ptr<Image>>
 CreateTextures(VkCore& core, Scene& scene, const std::function<const Mesh::TextureData&(const Mesh&)>& getTexture) {
     std::vector<std::shared_ptr<Image>> textures(scene.Meshes().size());
 
-    // create temp texture if the scene is empty for shader, TODO: better way to handle it
-    if (textures.size() == 0) {
-        Mesh::TextureData textureData;
-        textureData.textureChannels = 4;
-        textureData.textureHeight = 1;
-        textureData.textureWidth = 1;
-        textureData.textureData.resize(
-            textureData.textureChannels * textureData.textureHeight * textureData.textureWidth, 1);
-        textures.push_back(std::make_shared<Image>(core, textureData.textureData, textureData.textureWidth,
-                                                   textureData.textureHeight, textureData.textureChannels,
-                                                   VK_FORMAT_R8G8B8A8_SRGB));
-        return textures;
-    }
-
     for (size_t i = 0; i < textures.size(); ++i) {
         const auto& mesh = *scene.Meshes()[i];
         const auto& texture = getTexture(mesh);
@@ -422,7 +408,7 @@ void VkStandardRB::PrepareDefaultRenderPasses(std::vector<std::vector<Image*>>& 
     descriptorSets.push_back(std::move(descriptorSet2));
 
     std::unique_ptr<IGraphicsRenderpass> graphicsRenderPass =
-        std::make_unique<VkGraphicsRenderpass>(core, stereo, swapchainImages, std::move(descriptorSets));
+        std::make_unique<VkGraphicsRenderpass>(core, stereo, swapchainImages, true, std::move(descriptorSets));
     renderPasses->push_back(std::move(graphicsRenderPass));
 }
 
@@ -493,9 +479,27 @@ void VkStandardRB::RecordFrame(uint32_t& imageIndex) {
     vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
 
     // default frame recording
-    auto currentPassIndex = 0;
-    auto currentPass = static_cast<VkGraphicsRenderpass*>(renderPasses->at(currentPassIndex).get());
-    commandBuffer.StartRecord().StartPass(*currentPass, imageIndex).BindDescriptorSets(*currentPass, 0);
+    commandBuffer.StartRecord();
+    for (int i = 0; i < renderPasses->size(); ++i) {
+        auto currentPass = static_cast<VkGraphicsRenderpass*>(renderPasses->at(i).get());
+        RecordPass(commandBuffer, currentPass, i, imageIndex);
+
+        // add barrier synchronization between render passes
+        if (i!= renderPasses->size() - 1) {
+            commandBuffer.BarrierBetweenPasses(imageIndex, *currentPass);
+        }
+    }
+
+    if (!stereo)
+        commandBuffer.EndRecord({core.GetImageAvailableSemaphore()}, {core.GetRenderFinishedSemaphore()},
+                                core.GetInFlightFence());
+    else {
+        commandBuffer.EndRecord({}, {}, core.GetInFlightFence());
+    }
+}
+void VkStandardRB::RecordPass(CommandBuffer& commandBuffer, VkGraphicsRenderpass* currentPass,
+                              uint8_t currentPassIndex, uint32_t& imageIndex) {
+    commandBuffer.StartPass(*currentPass, imageIndex).BindDescriptorSets(*currentPass, 0);
     for (uint32_t i = 0; i < scene.Meshes().size(); ++i) {
         commandBuffer.PushConstant(*currentPass, sizeof(uint32_t), &i);
         if (!vertexBuffers.empty() && !indexBuffers.empty() && vertexBuffers[i] != nullptr &&
@@ -512,18 +516,6 @@ void VkStandardRB::RecordFrame(uint32_t& imageIndex) {
                                                    (renderPasses->size() - 1) - currentPassIndex, commandBuffer);
 
     commandBuffer.EndPass();
-
-    // add barrier synchronization between render passes
-    if (currentPassIndex != renderPasses->size() - 1) {
-        commandBuffer.BarrierBetweenPasses(imageIndex, *currentPass);
-    }
-
-    if (!stereo)
-        commandBuffer.EndRecord({core.GetImageAvailableSemaphore()}, {core.GetRenderFinishedSemaphore()},
-                                core.GetInFlightFence());
-    else {
-        commandBuffer.EndRecord({}, {}, core.GetInFlightFence());
-    }
 }
 
 void VkStandardRB::EndFrame(uint32_t& imageIndex) {

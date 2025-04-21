@@ -22,8 +22,8 @@ class XRLib {
 
     void Run();
     bool ShouldStop();
-    XRLib& SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode);
-    XRLib& SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode, unsigned int width, unsigned int height);
+    XRLib& SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode, bool resizable);
+    XRLib& SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode, bool resizable, unsigned int width, unsigned int height);
     Scene& SceneBackend();
     Graphics::RenderBackend& RenderBackend();
     XR::XrBackend& XrBackend();

@@ -56,9 +56,13 @@ class DescriptorSet {
         } else if constexpr (std::is_same_v<std::remove_reference_t<T>, std::vector<std::shared_ptr<Image>>>) {
             elements.push_back(DescriptorLayoutElement{arg});
         } else {
-            static_assert(std::false_type::value, "Invalid argument type for DescriptorSet constructor");
+            static_assert(always_false<T>::value, "Invalid argument type for DescriptorSet constructor");
         }
     }
+
+    // needed for cl
+    template <typename T>
+    struct always_false : std::false_type {};
 
    private:
     VkCore& core;

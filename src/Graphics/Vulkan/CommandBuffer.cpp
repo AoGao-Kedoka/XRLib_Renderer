@@ -82,18 +82,24 @@ CommandBuffer& CommandBuffer::StartPass(VkGraphicsRenderpass& pass, uint32_t ima
         Util::ErrorPopup("Graphics pipeline not initialized");
     }
 
+    auto renderTargets = pass.GetRenderpass().GetRenderTargets()[imageIndex];
+
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = pass.GetRenderpass().GetVkRenderpass();
     renderPassInfo.framebuffer = pass.GetRenderpass().GetFrameBuffers()[imageIndex];
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = {
-        static_cast<uint32_t>(pass.GetRenderpass().GetRenderTargets()[imageIndex][0]->Width()),
-        static_cast<uint32_t>(pass.GetRenderpass().GetRenderTargets()[imageIndex][0]->Height())};
+    renderPassInfo.renderArea.extent = {static_cast<uint32_t>(renderTargets[0]->Width()),
+                                        static_cast<uint32_t>(renderTargets[0]->Height())};
 
-    std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-    clearValues[1].depthStencil = {1.0f, 0};
+    std::vector<VkClearValue> clearValues{renderTargets.size() + 1}; // attachments + depth
+    for (int i = 0; i < clearValues.size(); ++i) {
+        if (i != renderTargets.size()) {
+            clearValues[i].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+        } else {
+            clearValues[i].depthStencil = {1.0f, 0};
+        }
+    }
     renderPassInfo.clearValueCount = clearValues.size();
     renderPassInfo.pClearValues = clearValues.data();
 
@@ -189,7 +195,7 @@ void CommandBuffer::BarrierBetweenPasses(uint32_t imageIndex, VkGraphicsRenderpa
         barrier.subresourceRange.levelCount = 1;
         barrier.subresourceRange.baseArrayLayer = 0;
         barrier.subresourceRange.layerCount = 1;
-        PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0,
+        PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,
                         nullptr, 0, nullptr, 1, &barrier);
     }
 }

@@ -2,8 +2,8 @@
 
 namespace XRLib {
 namespace Graphics {
-Renderpass::Renderpass(VkCore& core, std::vector<std::vector<Image*>>& renderTargets, bool multiview)
-    : core{core}, multiview{multiview}, renderTargets{renderTargets},
+Renderpass::Renderpass(VkCore& core, std::vector<std::vector<Image*>>& renderTargets, bool presentRenderTargets, bool multiview)
+    : core{core}, multiview{multiview}, renderTargets{renderTargets}, presentRenderTargets {presentRenderTargets},
       depthImage{core,
                  renderTargets[0][0]->Width(),
                  renderTargets[0][0]->Height(),
@@ -71,7 +71,11 @@ void Renderpass::CreateRenderPass() {
         colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        if (!presentRenderTargets) {
+            colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        } else {
+            colorAttachment.finalLayout =  VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        }
 
         attachments.push_back(colorAttachment);
 

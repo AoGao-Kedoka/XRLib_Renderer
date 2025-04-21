@@ -115,7 +115,7 @@ void XRLib::UpdateDeltaTime() {
     auto currentTime = std::chrono::steady_clock::now();
 
     std::chrono::duration<float> deltaTime = currentTime - prevTime;
-    Time::UpdateDeltaTime( deltaTime.count());
+    Time::UpdateDeltaTime(deltaTime.count());
 
     prevTime = currentTime;
 }
@@ -124,14 +124,16 @@ bool XRLib::ShouldStop() {
     return xrCore.IsXRValid() ? xrBackend->XrShouldStop() : renderBackend->WindowShouldClose();
 }
 
-XRLib& XRLib::SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode) {
+XRLib& XRLib::SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode, bool resizable) {
     info.windowMode = windowMode;
+    info.resizable = resizable;
     return *this;
 }
 
-XRLib& XRLib::SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode, unsigned int width,
+XRLib& XRLib::SetWindowProperties(Graphics::WindowHandler::WindowMode windowMode, bool resizable, unsigned int width,
                                   unsigned int height) {
     info.windowMode = windowMode;
+    info.resizable = resizable;
     info.defaultWindowWidth = width;
     info.defaultWindowHeight = height;
     return *this;
