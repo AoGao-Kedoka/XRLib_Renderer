@@ -31,14 +31,12 @@ void CreateTempTexture(XRLib::Mesh& newMesh, uint8_t color) {
     newMesh.Diffuse = textureData;
 }
 
-void MeshManager::LoadMeshAsync(const Mesh::MeshLoadConfig& loadConfig, Entity*& bindPtr, Entity* parent) {
-    //futures.push_back(std::async(std::launch::async, [this, mutableLoadConfig, bindPtr, parent]() mutable {
-    //    this->LoadMesh(mutableLoadConfig, bindPtr, parent);
-    //}));
-    LoadMesh(loadConfig, bindPtr, parent);
+void MeshManager::LoadMeshAsync(const Mesh::MeshLoadConfig& loadConfig, Entity* bindPtr, Entity* parent) {
+    futures.push_back(
+    std::async(std::launch::async, &MeshManager::LoadMesh, this, loadConfig, std::ref(bindPtr), parent));
 }
 
-void MeshManager::LoadMesh(const Mesh::MeshLoadConfig& loadConfig, Entity*& bindPtr, Entity* parent) {
+void MeshManager::LoadMesh(const Mesh::MeshLoadConfig& loadConfig, Entity* bindPtr, Entity* parent) {
     LOGGER(LOGGER::INFO) << "Loading: " << loadConfig.meshPath;
     Assimp::Importer importer;
 

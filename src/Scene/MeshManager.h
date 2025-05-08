@@ -12,11 +12,11 @@ class MeshManager {
     MeshManager(std::vector<Mesh*>& meshesContainer, std::vector<std::unique_ptr<Entity>>& hiearchyRoot);
     ~MeshManager();
     void WaitForAllMeshesToLoad();
-    void LoadMeshAsync(const Mesh::MeshLoadConfig& loadConfig, Entity*& bindPtr, Entity* parent = nullptr);
+    void LoadMeshAsync(const Mesh::MeshLoadConfig& loadConfig, Entity* bindPtr, Entity* parent = nullptr);
     std::vector<Mesh*>& Meshes() { return meshes; }
 
    private:
-    void LoadMesh(const Mesh::MeshLoadConfig& loadConfig, Entity*& bindPtr, Entity* parent);
+    void LoadMesh(const Mesh::MeshLoadConfig& loadConfig, Entity* bindPtr, Entity* parent);
     void LoadMeshVerticesIndices(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh);
     void LoadMeshTextures(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);
     void LoadEmbeddedTextures(const Mesh::MeshLoadConfig& meshLoadConfig, Mesh* newMesh, aiMesh* aiMesh, const aiScene* scene);

@@ -67,7 +67,6 @@ void VkCore::CreateVkInstance(Config& config, const std::vector<const char*>& ad
 
     VkInstanceCreateInfo instanceCreateInfo{};
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-    VkValidationFeaturesEXT validationFeatures{};
     std::vector<VkValidationFeatureEnableEXT> enabledValidationFeatures;
 
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -91,14 +90,6 @@ void VkCore::CreateVkInstance(Config& config, const std::vector<const char*>& ad
                                       VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                                       VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         debugCreateInfo.pfnUserCallback = VkUtil::VkDebugCallback;
-
-        validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-        enabledValidationFeatures.push_back(VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT);
-        validationFeatures.enabledValidationFeatureCount = static_cast<uint32_t>(enabledValidationFeatures.size());
-        validationFeatures.pEnabledValidationFeatures = enabledValidationFeatures.data();
-
-        validationFeatures.pNext = &debugCreateInfo;
-        instanceCreateInfo.pNext = &validationFeatures;
 
         instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validataionLayers.size());
         instanceCreateInfo.ppEnabledLayerNames = validataionLayers.data();
