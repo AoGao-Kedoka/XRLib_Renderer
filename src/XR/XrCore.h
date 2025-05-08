@@ -63,6 +63,9 @@ class XrCore {
     void VkSetPhysicalDevice(VkInstance instance, VkPhysicalDevice* physicalDevice);
     void VkSetPhysicalDevice2(VkInstance instance, VkPhysicalDevice* physicalDevice);
 
+    // toggle for whether use vulkan or vulkan2, steamvr somehow has problem with vulkan2
+    bool UseVulkan2{false};
+
    private:
     void CreatePlaySpace();
 

@@ -51,7 +51,11 @@ XrBackend::~XrBackend() {
 void XrBackend::Prepare() {
     if (!xrCore.IsXRValid())
         return;
-    CreateXrSession2();
+    if (xrCore.UseVulkan2) {
+        CreateXrSession2();
+    } else {
+        CreateXrSession();
+    }
     CreateXrSwapchain();
     PrepareXrSwapchainImages();
     input = std::move(XrInput(xrCore));
@@ -95,7 +99,8 @@ void XrBackend::CreateXrInstance() {
         XR_SUCCESS) {
         LOGGER(LOGGER::ERR) << "Failed to enumerate InstanceExtensionProperties.";
     }
-    for (auto& requestedInstanceExtension : instanceExtensions2) {
+    auto exts = xrCore.UseVulkan2 ? instanceExtensions2 : instanceExtensions;
+    for (auto& requestedInstanceExtension : exts) {
         bool found = false;
         for (auto& extensionProperty : extensionProperties) {
             if (strcmp(requestedInstanceExtension.c_str(), extensionProperty.extensionName) != 0) {
@@ -360,7 +365,7 @@ XrResult XrBackend::EndFrame(uint32_t& imageIndex) {
     XrResult result;
     XrSwapchainImageReleaseInfo swapchainImageReleaseInfo{XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
     if ((result = xrReleaseSwapchainImage(xrCore.GetXrSwapchain(), &swapchainImageReleaseInfo)) != XR_SUCCESS) {
-        LOGGER(LOGGER::WARNING) << "Failed to release swapchain image" << result;
+        LOGGER(LOGGER::WARNING) << "Failed to release swapchain image";
     }
     XrCompositionLayerProjection compositionLayerProjection{XR_TYPE_COMPOSITION_LAYER_PROJECTION};
     compositionLayerProjection.space = xrCore.GetXrSpace();
