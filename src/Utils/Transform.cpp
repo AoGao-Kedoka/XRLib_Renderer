@@ -12,8 +12,7 @@ glm::mat4 Transform::GetMatrix() const {
 }
 
 glm::vec3 Transform::FrontVector() const {
-    glm::mat4 inverted = glm::inverse(transform);
-    return normalize(glm::vec3(inverted[2])) * glm::vec3(-1);
+    return normalize(glm::vec3(transform[2])) * glm::vec3(-1);
 }
 
 glm::vec3 Transform::BackVector() const {
@@ -21,8 +20,7 @@ glm::vec3 Transform::BackVector() const {
 }
 
 glm::vec3 Transform::DownVector() const {
-    glm::mat4 inverted = glm::inverse(transform);
-    return normalize(glm::vec3(inverted[1])) * glm::vec3(-1);
+    return normalize(glm::vec3(transform[1])) * glm::vec3(-1);
 }
 
 glm::vec3 Transform::UpVector() const {
@@ -34,8 +32,7 @@ glm::vec3 Transform::Position() const {
 }
 
 glm::vec3 Transform::LeftVector() const {
-    glm::mat4 inverted = glm::inverse(transform);
-    return normalize(glm::vec3(inverted[0])) * glm::vec3(-1);
+    return normalize(glm::vec3(transform[0])) * glm::vec3(-1);
 }
 
 glm::vec3 Transform::RightVector() const {

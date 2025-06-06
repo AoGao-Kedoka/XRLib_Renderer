@@ -61,26 +61,27 @@ void RenderBackendFlat::OnMouseMovement(double deltaX, double deltaY) {
     scene.MainCamera()->UpdateCamera(cameraFront);
 }
 
+bool temp = true;
 void RenderBackendFlat::OnKeyPressed(int keyCode) {
     float movementSensitivity = info.movementSpeed * Time::GetDeltaTime();
     auto& cam = scene.MainCamera()->GetLocalTransform();
     if (keyCode == GLFW_KEY_W) {
-        cam.Translate(-cam.FrontVector() * movementSensitivity);
+        cam.Translate(glm::vec3(0, 0, -1) * movementSensitivity);
     }
     if (keyCode == GLFW_KEY_S) {
-        cam.Translate(-cam.BackVector() * movementSensitivity);
+        cam.Translate(glm::vec3(0, 0, 1) * movementSensitivity);
     }
     if (keyCode == GLFW_KEY_A) {
-        cam.Translate(-cam.LeftVector() * movementSensitivity);
+        cam.Translate(glm::vec3(-1, 0, 0) * movementSensitivity);
     }
     if (keyCode == GLFW_KEY_D) {
-        cam.Translate(-cam.RightVector() * movementSensitivity);
+        cam.Translate(glm::vec3(1, 0, 0) * movementSensitivity);
     }
     if (keyCode == GLFW_KEY_SPACE) {
-        cam.Translate(-cam.UpVector() * movementSensitivity);
+        cam.Translate(glm::vec3(0, 1, 0) * movementSensitivity);
     }
     if (keyCode == GLFW_KEY_LEFT_CONTROL) {
-        cam.Translate(-cam.DownVector() * movementSensitivity);
+        cam.Translate(glm::vec3(0, -1, 0) * movementSensitivity);
     }
 }
 

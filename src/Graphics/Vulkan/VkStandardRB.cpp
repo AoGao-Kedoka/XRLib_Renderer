@@ -322,7 +322,7 @@ std::shared_ptr<Buffer> CreateViewProjectionBuffer(VkCore& core, Scene& scene, P
         static_cast<void*>(&viewProj), false);
     EventSystem::Callback<int> bufferOnKeyShouldUpdateCallback = [&scene, &viewProj,
                                                                   &buffer1 = *viewProjBuffer](int keyCode) {
-        viewProj.view = scene.MainCamera()->GetGlobalTransform().GetMatrix();
+        viewProj.view = scene.MainCamera()->CameraView();
         buffer1.UpdateBuffer(sizeof(Primitives::ViewProjection), static_cast<void*>(&viewProj));
     };
 
@@ -330,7 +330,7 @@ std::shared_ptr<Buffer> CreateViewProjectionBuffer(VkCore& core, Scene& scene, P
 
     EventSystem::Callback<double, double> bufferOnMouseShouldUpdateCallback =
         [&scene, &viewProj, &buffer2 = *viewProjBuffer](double deltaX, double deltaY) {
-            viewProj.view = scene.MainCamera()->GetGlobalTransform().GetMatrix();
+            viewProj.view = scene.MainCamera()->CameraView();
             buffer2.UpdateBuffer(sizeof(Primitives::ViewProjection), static_cast<void*>(&viewProj));
         };
 
@@ -446,7 +446,7 @@ void VkStandardRB::Prepare() {
                                    std::move(CreateViewProjectionBuffer(core, viewProjStereo)));
     } else {
         auto mainCamera = scene.MainCamera();
-        viewProj.view = mainCamera->GetGlobalTransform().GetMatrix();
+        viewProj.view = mainCamera->CameraView();
         viewProj.proj = mainCamera->CameraProjection();
         PrepareDefaultRenderPasses(swapchain->GetSwapchainImages(),
                                    std::move(CreateViewProjectionBuffer(core, scene, viewProj)));
@@ -485,7 +485,7 @@ void VkStandardRB::RecordFrame(uint32_t& imageIndex) {
         RecordPass(commandBuffer, currentPass, i, imageIndex);
 
         // add barrier synchronization between render passes
-        if (i!= renderPasses->size() - 1) {
+        if (i != renderPasses->size() - 1) {
             commandBuffer.BarrierBetweenPasses(imageIndex, *currentPass);
         }
     }
@@ -497,8 +497,8 @@ void VkStandardRB::RecordFrame(uint32_t& imageIndex) {
         commandBuffer.EndRecord({}, {}, core.GetInFlightFence());
     }
 }
-void VkStandardRB::RecordPass(CommandBuffer& commandBuffer, VkGraphicsRenderpass* currentPass,
-                              uint8_t currentPassIndex, uint32_t& imageIndex) {
+void VkStandardRB::RecordPass(CommandBuffer& commandBuffer, VkGraphicsRenderpass* currentPass, uint8_t currentPassIndex,
+                              uint32_t& imageIndex) {
     commandBuffer.StartPass(*currentPass, imageIndex).BindDescriptorSets(*currentPass, 0);
     for (uint32_t i = 0; i < scene.Meshes().size(); ++i) {
         commandBuffer.PushConstant(*currentPass, sizeof(uint32_t), &i);

@@ -12,6 +12,7 @@ class Camera : public Entity {
     ~Camera() = default;
 
     glm::mat4 CameraProjection(float near = 0.1f, float far = 1000.0f);
+    glm::mat4 CameraView();
 
     void UpdateCamera(glm::vec3 cameraFront);
 
